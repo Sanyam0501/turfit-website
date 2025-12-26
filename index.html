@@ -13,6 +13,9 @@
         .hero { background: var(--turf-green); color: #fff; padding: 40px 0; }
         .card { border-radius: 15px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,.05); }
         .day-badge { font-size: 0.8rem; background: #e9ecef; padding: 2px 8px; border-radius: 5px; color: #495057; font-weight: bold; }
+        .nav-pills .nav-link.active { background-color: var(--action); }
+        .btn-success { background-color: var(--action); border: none; }
+        .btn-success:hover { background-color: #1b4332; }
     </style>
 </head>
 <body>
@@ -24,8 +27,12 @@
 
 <div class="container">
     <ul class="nav nav-pills mb-4 justify-content-center bg-white p-2 rounded-pill shadow-sm mx-auto" style="max-width:350px">
-        <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-book">New Booking</button></li>
-        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-admin" onclick="loadBookings()">Manage All</button></li>
+        <li class="nav-item">
+            <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-book">New Booking</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-admin" onclick="loadBookings()">Manage All</button>
+        </li>
     </ul>
 
     <div class="tab-content">
@@ -33,39 +40,41 @@
             <div class="row g-4 justify-content-center">
                 <div class="col-md-5">
                     <div class="card p-4">
-                        <h5 class="fw-bold text-success mb-4 text-center">Reserve the Turf</h5>
+                        <h5 class="fw-bold text-success mb-4 text-center">Book the Turf</h5>
                         
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Select Date</label>
-                            <input type="date" id="bookDate" class="form-control" onchange="updateDayDisplay(); loadBookingsForDay();">
-                        </div>
-
-                        <div class="row">
-                            <div class="col-6 mb-3">
-                                <label class="form-label fw-bold">Start Time</label>
-                                <input type="time" id="startTime" class="form-control">
+                        <form id="bookingForm">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Select Date</label>
+                                <input type="date" id="bookDate" class="form-control" onchange="updateDayDisplay(); loadBookingsForDay();">
                             </div>
-                            <div class="col-6 mb-3">
-                                <label class="form-label fw-bold">Duration</label>
-                                <select id="duration" class="form-select">
-                                    <option value="1">1 Hour</option>
-                                    <option value="1.5">1.5 Hours</option>
-                                    <option value="2">2 Hours</option>
-                                    <option value="3">3 Hours</option>
-                                </select>
+
+                            <div class="row">
+                                <div class="col-6 mb-3">
+                                    <label class="form-label fw-bold">Start Time</label>
+                                    <input type="time" id="startTime" class="form-control">
+                                </div>
+                                <div class="col-6 mb-3">
+                                    <label class="form-label fw-bold">Duration</label>
+                                    <select id="duration" class="form-select">
+                                        <option value="1">1 Hour</option>
+                                        <option value="1.5">1.5 Hours</option>
+                                        <option value="2">2 Hours</option>
+                                        <option value="3">3 Hours</option>
+                                    </select>
+                                </div>
                             </div>
-                        </div>
 
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Customer Name</label>
-                            <input type="text" id="userName" class="form-control" placeholder="Full Name">
-                        </div>
-                        <div class="mb-4">
-                            <label class="form-label fw-bold">Phone Number</label>
-                            <input type="tel" id="userPhone" class="form-control" placeholder="Contact number">
-                        </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Customer Name</label>
+                                <input type="text" id="userName" class="form-control" placeholder="Full Name">
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Phone Number</label>
+                                <input type="tel" id="userPhone" class="form-control" placeholder="Contact number">
+                            </div>
 
-                        <button class="btn btn-success w-100 py-3 fw-bold" onclick="handleBooking()">CONFIRM BOOKING</button>
+                            <button type="button" class="btn btn-success w-100 py-3 fw-bold" onclick="handleBooking()">CONFIRM BOOKING</button>
+                        </form>
                     </div>
                 </div>
 
@@ -105,16 +114,20 @@
     let supabaseClient;
 
     async function initApp() {
-        const res = await fetch('/api/get-public-key');
-        const keys = await res.json();
-        supabaseClient = supabase.createClient(keys.SUPABASE_URL_PUBLIC, keys.SUPABASE_ANON_KEY);
-        
-        document.getElementById('bookDate').valueAsDate = new Date();
-        updateDayDisplay();
-        loadBookingsForDay();
+        try {
+            const res = await fetch('/api/get-public-key');
+            const keys = await res.json();
+            supabaseClient = supabase.createClient(keys.SUPABASE_URL_PUBLIC, keys.SUPABASE_ANON_KEY);
+            
+            // Set default date to today
+            document.getElementById('bookDate').valueAsDate = new Date();
+            updateDayDisplay();
+            loadBookingsForDay();
+        } catch (err) {
+            console.error("Initialization failed", err);
+        }
     }
 
-    // Helper: Formats YYYY-MM-DD into "Monday, Dec 26"
     function getDayName(dateString) {
         const date = new Date(dateString);
         return date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
@@ -142,7 +155,9 @@
         const start = document.getElementById('startTime').value;
         const duration = parseFloat(document.getElementById('duration').value);
 
-        if (!name || !phone || !date || !start) return Swal.fire("Incomplete", "Please fill all fields", "warning");
+        if (!name || !phone || !date || !start) {
+            return Swal.fire("Incomplete", "Please fill all fields", "warning");
+        }
 
         const end = calculateEndTime(start, duration);
 
@@ -170,9 +185,16 @@
             Swal.fire("Error", error.message, "error");
         } else {
             Swal.fire("Confirmed", "Booking successful!", "success");
-            loadBookingsForDay();
+            
+            // RELOAD/RESET FORM LOGIC HERE
             document.getElementById('userName').value = '';
             document.getElementById('userPhone').value = '';
+            document.getElementById('startTime').value = '';
+            document.getElementById('duration').value = '1';
+            
+            // Refresh visuals
+            loadBookingsForDay();
+            if(document.getElementById('tab-admin').classList.contains('active')) loadBookings();
         }
     }
 
@@ -208,30 +230,46 @@
 
         const body = document.getElementById('adminBody');
         body.innerHTML = '';
-        data.forEach(b => {
-            body.innerHTML += `
-                <tr>
-                    <td>
-                        <div class="fw-bold">${b.booking_date}</div>
-                        <div class="day-badge">${getDayName(b.booking_date).split(',')[0]}</div>
-                    </td>
-                    <td><span class="badge bg-success">${b.start_time.slice(0,5)} - ${b.end_time.slice(0,5)}</span></td>
-                    <td>${b.customer_name} <br> <small class="text-muted">${b.phone_number}</small></td>
-                    <td class="text-center">
-                        <button class="btn btn-outline-danger btn-sm" onclick="doDelete('${b.id}')">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </td>
-                </tr>`;
-        });
+        if (data) {
+            data.forEach(b => {
+                body.innerHTML += `
+                    <tr>
+                        <td>
+                            <div class="fw-bold">${b.booking_date}</div>
+                            <div class="day-badge">${getDayName(b.booking_date).split(',')[0]}</div>
+                        </td>
+                        <td><span class="badge bg-success">${b.start_time.slice(0,5)} - ${b.end_time.slice(0,5)}</span></td>
+                        <td>${b.customer_name} <br> <small class="text-muted">${b.phone_number}</small></td>
+                        <td class="text-center">
+                            <button class="btn btn-outline-danger btn-sm" onclick="doDelete('${b.id}')">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>`;
+            });
+        }
     }
 
     async function doDelete(id) {
-        const res = await Swal.fire({ title: 'Delete?', showCancelButton: true, confirmButtonColor: '#d33' });
+        const res = await Swal.fire({ 
+            title: 'Delete Booking?', 
+            text: "This action cannot be undone.",
+            icon: 'warning',
+            showCancelButton: true, 
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Yes, delete it!'
+        });
+        
         if (!res.isConfirmed) return;
-        await supabaseClient.from('turf_bookings').delete().eq('id', id);
-        loadBookings();
-        loadBookingsForDay();
+
+        const { error } = await supabaseClient.from('turf_bookings').delete().eq('id', id);
+        if(error) {
+            Swal.fire("Error", "Could not delete booking", "error");
+        } else {
+            loadBookings();
+            loadBookingsForDay();
+        }
     }
 
     initApp();
