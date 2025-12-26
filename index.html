@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TURFIT - Dynamic Bookings</title>
+    <title>TURFIT - Management</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -13,6 +13,8 @@
         .hero { background: var(--turf-green); color: #fff; padding: 40px 0; }
         .card { border-radius: 15px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,.05); }
         .day-badge { font-size: 0.8rem; background: #e9ecef; padding: 2px 8px; border-radius: 5px; color: #495057; font-weight: bold; }
+        .btn-edit { color: #0d6efd; border-color: #0d6efd; }
+        .btn-edit:hover { background: #0d6efd; color: white; }
     </style>
 </head>
 <body>
@@ -87,7 +89,7 @@
                                 <th>Date & Day</th>
                                 <th>Time Window</th>
                                 <th>Customer</th>
-                                <th class="text-center">Action</th>
+                                <th class="text-center">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="adminBody"></tbody>
@@ -114,7 +116,6 @@
         loadBookingsForDay();
     }
 
-    // Helper: Formats YYYY-MM-DD into "Monday, Dec 26"
     function getDayName(dateString) {
         const date = new Date(dateString);
         return date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
@@ -146,7 +147,6 @@
 
         const end = calculateEndTime(start, duration);
 
-        // Check for overlaps
         const { data: overlaps } = await supabaseClient
             .from('turf_bookings')
             .select('*')
@@ -218,12 +218,60 @@
                     <td><span class="badge bg-success">${b.start_time.slice(0,5)} - ${b.end_time.slice(0,5)}</span></td>
                     <td>${b.customer_name} <br> <small class="text-muted">${b.phone_number}</small></td>
                     <td class="text-center">
+                        <button class="btn btn-outline-primary btn-sm me-1" onclick="openEditModal('${b.id}', '${b.customer_name}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}')">
+                            <i class="bi bi-pencil"></i>
+                        </button>
                         <button class="btn btn-outline-danger btn-sm" onclick="doDelete('${b.id}')">
                             <i class="bi bi-trash"></i>
                         </button>
                     </td>
                 </tr>`;
         });
+    }
+
+    async function openEditModal(id, name, phone, date, start) {
+        const { value: formValues } = await Swal.fire({
+            title: 'Edit Booking',
+            html:
+                `<label class="swal2-label">Name</label><input id="swal-name" class="swal2-input" value="${name}">` +
+                `<label class="swal2-label">Phone</label><input id="swal-phone" class="swal2-input" value="${phone}">` +
+                `<label class="swal2-label">Date</label><input id="swal-date" type="date" class="swal2-input" value="${date}">` +
+                `<label class="swal2-label">Start Time</label><input id="swal-start" type="time" class="swal2-input" value="${start.slice(0,5)}">`,
+            focusConfirm: false,
+            showCancelButton: true,
+            preConfirm: () => {
+                return {
+                    name: document.getElementById('swal-name').value,
+                    phone: document.getElementById('swal-phone').value,
+                    date: document.getElementById('swal-date').value,
+                    start: document.getElementById('swal-start').value
+                }
+            }
+        });
+
+        if (formValues) {
+            // Recalculate end time (assuming 1 hr if duration isn't editable in modal, or you can add duration to modal)
+            const end = calculateEndTime(formValues.start, 1); 
+
+            const { error } = await supabaseClient
+                .from('turf_bookings')
+                .update({ 
+                    customer_name: formValues.name, 
+                    phone_number: formValues.phone,
+                    booking_date: formValues.date,
+                    start_time: formValues.start + ":00",
+                    end_time: end
+                })
+                .eq('id', id);
+
+            if (error) {
+                Swal.fire("Error", error.message, "error");
+            } else {
+                Swal.fire("Updated", "Booking changed successfully", "success");
+                loadBookings();
+                loadBookingsForDay();
+            }
+        }
     }
 
     async function doDelete(id) {
