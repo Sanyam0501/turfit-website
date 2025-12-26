@@ -3,92 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Turf Booking Pro</title>
+    <title>Turf Booking Manager</title>
+    <link rel="icon" href="data:,">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        :root { --turf-dark: #1b4332; --turf-light: #2d6a4f; --turf-accent: #95d5b2; }
-        body { background-color: #f4f7f6; font-family: 'Segoe UI', sans-serif; }
-        .hero-section { background: var(--turf-dark); color: white; padding: 3rem 0; border-bottom: 5px solid var(--turf-accent); }
-        .card { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        .slot-btn { cursor: pointer; transition: 0.2s; border: 2px solid #eee; background: white; border-radius: 8px; padding: 15px; }
-        .slot-btn:hover:not(.booked) { border-color: var(--turf-light); transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        .booked { background-color: #e9ecef !important; color: #adb5bd; cursor: not-allowed; border-style: dashed; text-decoration: line-through; }
-        .selected { background-color: var(--turf-light) !important; color: white !important; border-color: var(--turf-dark); }
-        .nav-pills .nav-link.active { background-color: var(--turf-light); }
-        .nav-link { color: var(--turf-dark); font-weight: 600; }
+        :root { --turf-green: #1b4332; --action: #2d6a4f; }
+        body { background-color: #f8f9fa; font-family: sans-serif; }
+        .hero { background: var(--turf-green); color: white; padding: 40px 0; margin-bottom: 30px; border-bottom: 4px solid #95d5b2; }
+        .slot-card { cursor: pointer; border: 2px solid #eee; transition: 0.2s; background: #fff; }
+        .slot-card:hover:not(.booked) { border-color: var(--action); transform: translateY(-2px); }
+        .booked { background: #e9ecef!important; color: #adb5bd; cursor: not-allowed; border-style: dashed; }
+        .selected { background: var(--action)!important; color: white!important; border-color: var(--turf-green); }
+        .nav-pills .nav-link.active { background-color: var(--action); }
     </style>
 </head>
 <body>
 
-<div class="hero-section text-center">
-    <h1 class="display-5 fw-bold">TURFIT</h1>
-    <!-- <p class="lead">Book your slot or manage existing reservations</p> -->
+<div class="hero text-center">
+    <h1>🏟️ Turf Booking & Admin</h1>
+    <p>Securely manage your slots and bookings</p>
 </div>
 
-<div class="container mt-n4">
-    <ul class="nav nav-pills justify-content-center mb-4 bg-white p-2 rounded-pill shadow-sm mx-auto" style="max-width: 400px;">
+<div class="container mt-4">
+    <ul class="nav nav-pills mb-4 justify-content-center" id="pills-tab">
         <li class="nav-item">
-            <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#user-booking">Book a Slot</button>
+            <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-book">Book Slot</button>
         </li>
         <li class="nav-item">
-            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#admin-panel" onclick="loadAllBookings()">Admin Panel</button>
+            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-admin" onclick="loadAdminTable()">Admin View</button>
         </li>
     </ul>
 
     <div class="tab-content">
-        <div class="tab-pane fade show active" id="user-booking">
+        <div class="tab-pane fade show active" id="tab-book">
             <div class="row g-4">
-                <div class="col-lg-4">
-                    <div class="card p-4">
-                        <h5 class="fw-bold mb-3"><i class="bi bi-person-badge me-2"></i>Details</h5>
-                        <div class="mb-3">
-                            <label class="form-label small text-muted">Select Date</label>
-                            <input type="date" id="bookDate" class="form-control" onchange="fetchSlots()">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small text-muted">Full Name</label>
-                            <input type="text" id="custName" class="form-control" placeholder="John Doe">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small text-muted">Phone Number</label>
-                            <input type="tel" id="custPhone" class="form-control" placeholder="9876543210">
-                        </div>
-                        <button id="bookBtn" class="btn btn-success w-100 py-3 fw-bold" onclick="submitBooking()">
-                            BOOK SELECTED SLOT
-                        </button>
+                <div class="col-md-4">
+                    <div class="card p-4 border-0 shadow-sm">
+                        <label class="form-label fw-bold">1. Select Date</label>
+                        <input type="date" id="bookDate" class="form-control mb-3" onchange="fetchSlots()">
+                        <label class="form-label fw-bold">2. Your Details</label>
+                        <input type="text" id="userName" class="form-control mb-2" placeholder="Full Name">
+                        <input type="tel" id="userPhone" class="form-control mb-3" placeholder="Phone Number">
+                        <button class="btn btn-success w-100 py-2 fw-bold" onclick="handleBooking()">RESERVE SLOT</button>
                     </div>
                 </div>
-                <div class="col-lg-8">
-                    <div class="card p-4">
-                        <h5 class="fw-bold mb-4"><i class="bi bi-calendar-check me-2"></i>Availability</h5>
-                        <div class="row g-3" id="slotsGrid">
-                            </div>
+                <div class="col-md-8">
+                    <div class="card p-4 border-0 shadow-sm">
+                        <h5 class="mb-3">Available Times</h5>
+                        <div class="row g-2" id="slotGrid"></div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="tab-pane fade" id="admin-panel">
-            <div class="card p-4">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h5 class="fw-bold m-0"><i class="bi bi-speedometer2 me-2"></i>All Reservations</h5>
-                    <button class="btn btn-sm btn-outline-secondary" onclick="loadAllBookings()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+        <div class="tab-pane fade" id="tab-admin">
+            <div class="card p-4 border-0 shadow-sm">
+                <div class="d-flex justify-content-between mb-3">
+                    <h5 class="m-0">All Bookings</h5>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="loadAdminTable()">Refresh</button>
                 </div>
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                        <thead class="table-light">
+                    <table class="table table-hover">
+                        <thead>
                             <tr>
                                 <th>Date</th>
-                                <th>Time Slot</th>
-                                <th>Customer</th>
+                                <th>Time</th>
+                                <th>Name</th>
                                 <th>Phone</th>
-                                <th class="text-center">Action</th>
+                                <th>Action</th>
                             </tr>
                         </thead>
-                        <tbody id="adminTableBody">
-                            </tbody>
+                        <tbody id="adminBody"></tbody>
                     </table>
                 </div>
             </div>
@@ -100,118 +87,100 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-    let db = null;
+    let supabaseClient = null;
     let selectedSlot = null;
-    const TIME_SLOTS = ["06:00 AM", "08:00 AM", "10:00 AM", "12:00 PM", "04:00 PM", "06:00 PM", "08:00 PM", "10:00 PM"];
+    const SLOTS = ["06:00 AM", "08:00 AM", "10:00 AM", "04:00 PM", "06:00 PM", "08:00 PM", "10:00 PM"];
 
-    // 1. Initialize Connection
-    async function init() {
+    async function initApp() {
         try {
             const res = await fetch('/api/get-public-key');
             const keys = await res.json();
-            db = supabase.createClient(keys.SUPABASE_URL_PUBLIC, keys.SUPABASE_ANON_KEY);
-            
+            supabaseClient = supabase.createClient(keys.SUPABASE_URL_PUBLIC, keys.SUPABASE_ANON_KEY);
             document.getElementById('bookDate').valueAsDate = new Date();
             fetchSlots();
         } catch (e) {
-            Swal.fire("Connection Error", "Check Vercel Env Variables", "error");
+            Swal.fire("Error", "Check your Vercel Environment Variables", "error");
         }
     }
 
-    // 2. Fetch Availability (User View)
     async function fetchSlots() {
-        if (!db) return;
+        if (!supabaseClient) return;
         const date = document.getElementById('bookDate').value;
-        const { data } = await db.from('turf_bookings').select('time_slot').eq('booking_date', date);
-        const booked = data ? data.map(b => b.time_slot) : [];
-        renderSlots(booked);
-    }
-
-    function renderSlots(booked) {
-        const grid = document.getElementById('slotsGrid');
+        const { data } = await supabaseClient.from('turf_bookings').select('time_slot').eq('booking_date', date);
+        const taken = data ? data.map(b => b.time_slot) : [];
+        
+        const grid = document.getElementById('slotGrid');
         grid.innerHTML = '';
         selectedSlot = null;
-        TIME_SLOTS.forEach(slot => {
-            const isBooked = booked.includes(slot);
-            grid.innerHTML += `
-                <div class="col-md-4 col-6">
-                    <div class="slot-btn text-center ${isBooked ? 'booked' : ''}" onclick="selectSlot(this, '${slot}', ${isBooked})">
-                        <div class="fw-bold">${slot}</div>
-                        <small>${isBooked ? 'Reserved' : 'Available'}</small>
-                    </div>
-                </div>`;
+
+        SLOTS.forEach(s => {
+            const isTaken = taken.includes(s);
+            const div = document.createElement('div');
+            div.className = 'col-6 col-lg-4';
+            div.innerHTML = `<div class="p-3 text-center rounded slot-card ${isTaken ? 'booked' : ''}" onclick="selectSlot(this, '${s}', ${isTaken})">
+                <div class="fw-bold">${s}</div>
+                <small>${isTaken ? 'Full' : 'Select'}</small>
+            </div>`;
+            grid.appendChild(div);
         });
     }
 
-    function selectSlot(el, slot, isBooked) {
-        if (isBooked) return;
-        document.querySelectorAll('.slot-btn').forEach(s => s.classList.remove('selected'));
+    function selectSlot(el, slot, isTaken) {
+        if (isTaken) return;
+        document.querySelectorAll('.slot-card').forEach(c => c.classList.remove('selected'));
         el.classList.add('selected');
         selectedSlot = slot;
     }
 
-    // 3. Submit Booking
-    async function submitBooking() {
-        const name = document.getElementById('custName').value.trim();
-        const phone = document.getElementById('custPhone').value.trim();
+    async function handleBooking() {
+        const name = document.getElementById('userName').value.trim();
+        const phone = document.getElementById('userPhone').value.trim();
         const date = document.getElementById('bookDate').value;
 
-        if (!selectedSlot || !name || !phone) return Swal.fire("Required", "Please fill all fields", "warning");
+        if (!selectedSlot || !name || !phone) return Swal.fire("Required", "Complete all info", "warning");
 
-        const { error } = await db.from('turf_bookings').insert([{
+        const { error } = await supabaseClient.from('turf_bookings').insert([{
             customer_name: name, phone_number: phone, booking_date: date, time_slot: selectedSlot
         }]);
 
-        if (error) Swal.fire("Error", "Slot taken or connection failed", "error");
+        if (error) Swal.fire("Error", "Slot taken or database error", "error");
         else {
-            Swal.fire("Success", "Booking Confirmed!", "success");
+            Swal.fire("Success", "Turf Booked!", "success");
             fetchSlots();
         }
     }
 
-    // 4. Admin Logic: Load All
-    async function loadAllBookings() {
-        if (!db) return;
-        const { data } = await db.from('turf_bookings').select('*').order('booking_date', { ascending: false });
-        const tbody = document.getElementById('adminTableBody');
-        tbody.innerHTML = data.length ? '' : '<tr><td colspan="5" class="text-center">No bookings found</td></tr>';
-        
+    async function loadAdminTable() {
+        if (!supabaseClient) return;
+        const { data } = await supabaseClient.from('turf_bookings').select('*').order('booking_date', {ascending: false});
+        const body = document.getElementById('adminBody');
+        body.innerHTML = '';
         data.forEach(b => {
-            tbody.innerHTML += `
-                <tr>
-                    <td>${b.booking_date}</td>
-                    <td><span class="badge bg-success">${b.time_slot}</span></td>
-                    <td>${b.customer_name}</td>
-                    <td>${b.phone_number}</td>
-                    <td class="text-center">
-                        <button class="btn btn-outline-danger btn-sm" onclick="deleteBooking('${b.id}')">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </td>
-                </tr>`;
+            body.innerHTML += `<tr>
+                <td>${b.booking_date}</td>
+                <td><span class="badge bg-success">${b.time_slot}</span></td>
+                <td>${b.customer_name}</td>
+                <td>${b.phone_number}</td>
+                <td><button class="btn btn-danger btn-sm" onclick="doDelete('${b.id}')"><i class="bi bi-trash"></i></button></td>
+            </tr>`;
         });
     }
 
-    // 5. Admin Logic: Delete
-    async function deleteBooking(id) {
-        const confirm = await Swal.fire({
-            title: 'Delete Booking?',
-            text: "This slot will become available again!",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33'
-        });
-
+    async function doDelete(id) {
+        const confirm = await Swal.fire({ title: 'Delete?', icon: 'warning', showCancelButton: true });
         if (confirm.isConfirmed) {
             const res = await fetch(`/api/delete-booking?id=${id}`, { method: 'DELETE' });
             if (res.ok) {
-                Swal.fire("Deleted", "The booking was removed", "success");
-                loadAllBookings();
+                Swal.fire("Deleted", "", "success");
+                loadAdminTable();
+                fetchSlots();
+            } else {
+                Swal.fire("Error", "Check Vercel Logs", "error");
             }
         }
     }
 
-    init();
+    initApp();
 </script>
 </body>
 </html>
