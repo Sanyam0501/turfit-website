@@ -173,51 +173,50 @@
         }
 
         /* ADMIN LOGIN (USERNAME + PASSWORD) */
-        async function adminLogin() {
-            const { value: form } = await Swal.fire({
-                title: 'Admin Login',
-                html:
-                    '<input id="username" class="swal2-input" placeholder="Admin ID">' +
-                    '<input id="password" type="password" class="swal2-input" placeholder="Password">',
-                preConfirm: () => ({
-                    username: document.getElementById('username').value,
-                    password: document.getElementById('password').value
-                })
-            });
+        /* ADMIN LOGIN (USERNAME + PASSWORD) */
+async function adminLogin() {
+    const { value: form } = await Swal.fire({
+        title: 'Admin Login',
+        html:
+            '<input id="username" class="swal2-input" placeholder="Admin ID">' +
+            '<input id="password" type="password" class="swal2-input" placeholder="Password">',
+        preConfirm: () => ({
+            username: document.getElementById('username').value,
+            password: document.getElementById('password').value
+        })
+    });
 
-            if (!form) return;
+    if (!form) return;
 
-            const { data, error } = await supabaseClient
-                .from('admin_users')
-                .select('password_hash')
-                .eq('username', form.username)
-                .maybeSingle();
+    // 1. Fetch from Supabase
+    const { data, error } = await supabaseClient
+        .from('admin_users')
+        .select('password_hash')
+        .eq('username', form.username)
+        .maybeSingle();
 
-            if (error) {
-                console.error("Supabase Error:", error);
-                return Swal.fire("Error", "Database connection failed", "error");
-            }
+    if (error) return Swal.fire("Error", "Database error", "error");
+    if (!data) return Swal.fire("Error", "User not found", "error");
 
-            if (!data) {
-                return Swal.fire("Error", "User not found", "error");
-            }
+    try {
+        // Use the global bcrypt object correctly
+        // Some versions use 'bcrypt', others 'dcodeIO.bcrypt'
+        const hasher = typeof bcrypt !== 'undefined' ? bcrypt : dcodeIO.bcrypt;
+        
+        const match = hasher.compareSync(form.password, data.password_hash);
 
-            // Use dcodeIO.bcrypt for the CDN version you are using
-            try {
-                const match = bcrypt.compareSync(form.password, data.password_hash);
-                if (match) {
-                    isAdmin = true;
-                    document.getElementById('logoutBtn').classList.remove('d-none');
-                    Swal.fire("Success", "Admin logged in", "success");
-                    loadAdminTable();
-                } else {
-                    Swal.fire("Error", "Invalid Password", "error");
-                }
-            } catch (e) {
-                console.error("Bcrypt Error:", e);
-                Swal.fire("Error", "Hashing verification failed", "error");
-            }
-        }
+        if (!match) return Swal.fire("Error", "Invalid Password", "error");
+
+        isAdmin = true;
+        document.getElementById('logoutBtn').classList.remove('d-none');
+        Swal.fire("Success", "Admin logged in", "success");
+        loadAdminTable();
+
+    } catch (err) {
+        console.error(err);
+        Swal.fire("Error", "The stored password is not a valid Bcrypt hash", "error");
+    }
+}
         function adminLogout() {
             isAdmin = false;
             logoutBtn.classList.add('d-none');
