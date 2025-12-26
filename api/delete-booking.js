@@ -1,21 +1,23 @@
-// api/delete-booking.js
+// File: api/delete-booking.js
 import { createClient } from '@supabase/supabase-js';
 
 export default async function handler(req, res) {
-    // 1. Only allow DELETE requests
-    if (req.method !== 'DELETE') return res.status(405).json({ error: 'Method not allowed' });
+    // 1. Only allow DELETE requests to this endpoint
+    if (req.method !== 'DELETE') {
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
 
     const { id } = req.query;
     const { SUPABASE_URL, SUPABASE_SERVICE_KEY } = process.env;
 
-    // 2. Check if environment variables exist
+    // 2. Safety check: Ensure the server has the required database keys
     if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
         return res.status(500).json({ error: 'Server configuration missing' });
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
-    // 3. Perform the delete
+    // 3. Delete the specific booking by its ID
     const { error } = await supabase
         .from('turf_bookings')
         .delete()
