@@ -7,76 +7,98 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        :root { --primary: #2d6a4f; --secondary: #40916c; }
-        body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; }
-        .turf-header { background: var(--primary); color: white; padding: 2rem 0; text-align: center; margin-bottom: 2rem; }
-        .slot-card { cursor: pointer; transition: 0.3s; border: 2px solid transparent; }
-        .slot-card:hover:not(.booked) { border-color: var(--secondary); transform: translateY(-3px); }
-        .booked { background-color: #dee2e6 !important; color: #6c757d; cursor: not-allowed; opacity: 0.6; }
+        :root { --primary: #1b4332; --secondary: #2d6a4f; --accent: #95d5b2; }
+        body { background-color: #f0f2f5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .turf-header { background: var(--primary); color: white; padding: 3rem 0; text-align: center; margin-bottom: 2rem; border-bottom: 5px solid var(--accent); }
+        .slot-card { cursor: pointer; transition: all 0.2s ease; border: 2px solid #dee2e6; background: white; }
+        .slot-card:hover:not(.booked) { border-color: var(--secondary); transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .booked { background-color: #e9ecef !important; color: #adb5bd; cursor: not-allowed; border-color: #dee2e6; text-decoration: line-through; }
         .selected { background-color: var(--secondary) !important; color: white !important; border-color: var(--primary); }
+        .btn-success { background-color: var(--secondary); border: none; }
+        .btn-success:hover { background-color: var(--primary); }
     </style>
 </head>
 <body>
 
 <div class="turf-header">
-    <h1>🏟️ Arena Turf Booking</h1>
-    <p>Select your date and preferred time slot</p>
+    <h1 class="display-4 fw-bold">🏟️ Arena Turf Booking</h1>
+    <p class="lead">Check availability and book your slot instantly</p>
 </div>
 
 <div class="container mb-5">
-    <div class="row">
+    <div class="row g-4">
         <div class="col-lg-4">
-            <div class="card shadow-sm p-4 mb-4">
-                <h5 class="mb-3">Booking Details</h5>
+            <div class="card shadow-sm border-0 p-4">
+                <h5 class="mb-3 fw-bold border-bottom pb-2">1. Your Details</h5>
                 <div class="mb-3">
-                    <label class="form-label">Select Date</label>
+                    <label class="form-label small text-uppercase fw-bold text-muted">Select Date</label>
                     <input type="date" id="bookingDate" class="form-control" onchange="fetchBookedSlots()">
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Your Name</label>
-                    <input type="text" id="custName" class="form-control" placeholder="John Doe">
+                    <label class="form-label small text-uppercase fw-bold text-muted">Full Name</label>
+                    <input type="text" id="custName" class="form-control" placeholder="Enter your name">
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Phone Number</label>
-                    <input type="tel" id="custPhone" class="form-control" placeholder="9876543210">
+                    <label class="form-label small text-uppercase fw-bold text-muted">Phone Number</label>
+                    <input type="tel" id="custPhone" class="form-control" placeholder="10-digit mobile number">
                 </div>
-                <button class="btn btn-success w-100 py-2" onclick="confirmBooking()">Book Selected Slot</button>
+                <button id="bookBtn" class="btn btn-success w-100 py-3 mt-2 fw-bold" onclick="confirmBooking()">
+                    CONFIRM BOOKING
+                </button>
             </div>
         </div>
 
         <div class="col-lg-8">
-            <div class="card shadow-sm p-4">
-                <h5 class="mb-4">Available Slots</h5>
+            <div class="card shadow-sm border-0 p-4">
+                <h5 class="mb-4 fw-bold border-bottom pb-2">2. Available Slots</h5>
                 <div class="row g-3" id="slotsContainer">
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-success" role="status"></div>
+                        <p class="mt-2 text-muted">Loading available slots...</p>
                     </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script>
-    // INITIALIZE SUPABASE
-    // Replace these with your actual keys from Supabase Dashboard -> Settings -> API
-    const SUPABASE_URL = "https://lwnghxofqcbahxplaitq.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3bmdoeG9mcWNiYWh4cGxhaXRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ0MjAwMzgsImV4cCI6MjA3OTk5NjAzOH0._ZoLSbagxvptaBOUnewyWmb18PSHNkLLXaUsJkbXjFY";
-    const supabase = lib.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    const SLOTS = [
-        "06:00 AM - 07:00 AM", "07:00 AM - 08:00 AM", "08:00 AM - 09:00 AM",
-        "04:00 PM - 05:00 PM", "05:00 PM - 06:00 PM", "06:00 PM - 07:00 PM",
-        "07:00 PM - 08:00 PM", "08:00 PM - 09:00 PM", "09:00 PM - 10:00 PM"
-    ];
-
+    let supabaseClient = null;
     let selectedSlot = null;
     let bookedSlots = [];
 
-    // Set default date to today
-    document.getElementById('bookingDate').valueAsDate = new Date();
+    const SLOTS = [
+        "06:00 AM", "07:00 AM", "08:00 AM", "09:00 AM", 
+        "04:00 PM", "05:00 PM", "06:00 PM", "07:00 PM", "08:00 PM", "09:00 PM"
+    ];
+
+    // INITIALIZATION: Fetch keys from Vercel via your API
+    async function init() {
+        try {
+            // This calls the helper API that reads your Vercel Env Variables
+            const response = await fetch('/api/get-public-key');
+            const { SUPABASE_URL_PUBLIC, SUPABASE_ANON_KEY } = await response.json();
+
+            if (!SUPABASE_URL_PUBLIC || !SUPABASE_ANON_KEY) throw new Error("Missing Keys");
+
+            supabaseClient = supabase.createClient(SUPABASE_URL_PUBLIC, SUPABASE_ANON_KEY);
+            
+            // Set default date to today and fetch
+            document.getElementById('bookingDate').valueAsDate = new Date();
+            fetchBookedSlots();
+        } catch (error) {
+            console.error("Setup Error:", error);
+            Swal.fire("Configuration Error", "Could not connect to database. Check Vercel Env Variables.", "error");
+        }
+    }
 
     async function fetchBookedSlots() {
+        if (!supabaseClient) return;
+        
         const date = document.getElementById('bookingDate').value;
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
             .from('turf_bookings')
             .select('time_slot')
             .eq('booking_date', date);
@@ -97,7 +119,8 @@
             div.innerHTML = `
                 <div class="card p-3 text-center slot-card ${isBooked ? 'booked' : ''}" 
                      onclick="selectSlot(this, '${slot}', ${isBooked})">
-                    ${slot}
+                    <div class="fw-bold">${slot}</div>
+                    <small class="d-block">${isBooked ? 'Reserved' : 'Available'}</small>
                 </div>
             `;
             container.appendChild(div);
@@ -106,39 +129,44 @@
 
     function selectSlot(element, slot, isBooked) {
         if (isBooked) return;
-        
         document.querySelectorAll('.slot-card').forEach(el => el.classList.remove('selected'));
         element.classList.add('selected');
         selectedSlot = slot;
     }
 
     async function confirmBooking() {
-        const name = document.getElementById('custName').value;
-        const phone = document.getElementById('custPhone').value;
+        const name = document.getElementById('custName').value.trim();
+        const phone = document.getElementById('custPhone').value.trim();
         const date = document.getElementById('bookingDate').value;
 
         if (!selectedSlot || !name || !phone) {
-            Swal.fire('Error', 'Please fill all fields and select a slot', 'error');
-            return;
+            return Swal.fire('Incomplete', 'Please provide name, phone, and select a slot.', 'warning');
         }
 
-        const { error } = await supabase.from('turf_bookings').insert([{
+        const btn = document.getElementById('bookBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Processing...';
+
+        const { error } = await supabaseClient.from('turf_bookings').insert([{
             customer_name: name,
             phone_number: phone,
             booking_date: date,
             time_slot: selectedSlot
         }]);
 
+        btn.disabled = false;
+        btn.innerHTML = 'CONFIRM BOOKING';
+
         if (error) {
-            Swal.fire('Already Booked', 'This slot was just taken. Please pick another.', 'error');
+            Swal.fire('Error', 'This slot might have just been booked by someone else!', 'error');
         } else {
-            Swal.fire('Success!', 'Your turf is booked.', 'success');
-            fetchBookedSlots();
+            Swal.fire('Success!', `Slot booked for ${selectedSlot}`, 'success');
+            fetchBookedSlots(); // Refresh UI
         }
     }
 
-    // Load initial slots
-    fetchBookedSlots();
+    // Run on page load
+    init();
 </script>
 </body>
 </html>
