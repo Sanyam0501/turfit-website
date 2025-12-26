@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TURFIT - Custom Bookings</title>
+    <title>TURFIT - Dynamic Bookings</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -12,32 +12,32 @@
         body { background: #f8f9fa; font-family: 'Segoe UI', sans-serif; }
         .hero { background: var(--turf-green); color: #fff; padding: 40px 0; }
         .card { border-radius: 15px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,.05); }
-        .booking-row { border-left: 5px solid var(--action); margin-bottom: 10px; padding: 15px; background: white; border-radius: 8px; }
+        .day-badge { font-size: 0.8rem; background: #e9ecef; padding: 2px 8px; border-radius: 5px; color: #495057; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="hero text-center mb-5">
     <h1 class="fw-bold">TURFIT BOOKINGS</h1>
-    <!-- <p class="opacity-75">Book any time, any duration</p> -->
+    <p class="opacity-75" id="currentDisplayDate"></p>
 </div>
 
 <div class="container">
     <ul class="nav nav-pills mb-4 justify-content-center bg-white p-2 rounded-pill shadow-sm mx-auto" style="max-width:350px">
         <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-book">New Booking</button></li>
-        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-admin" onclick="loadBookings()">All Bookings</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-admin" onclick="loadBookings()">Manage All</button></li>
     </ul>
 
     <div class="tab-content">
         <div class="tab-pane fade show active" id="tab-book">
-            <div class="row justify-content-center">
-                <div class="col-md-6">
+            <div class="row g-4 justify-content-center">
+                <div class="col-md-5">
                     <div class="card p-4">
                         <h5 class="fw-bold text-success mb-4 text-center">Reserve the Turf</h5>
                         
                         <div class="mb-3">
-                            <label class="form-label fw-bold">Date</label>
-                            <input type="date" id="bookDate" class="form-control" onchange="loadBookingsForDay()">
+                            <label class="form-label fw-bold">Select Date</label>
+                            <input type="date" id="bookDate" class="form-control" onchange="updateDayDisplay(); loadBookingsForDay();">
                         </div>
 
                         <div class="row">
@@ -46,12 +46,11 @@
                                 <input type="time" id="startTime" class="form-control">
                             </div>
                             <div class="col-6 mb-3">
-                                <label class="form-label fw-bold">Duration (Hours)</label>
+                                <label class="form-label fw-bold">Duration</label>
                                 <select id="duration" class="form-select">
                                     <option value="1">1 Hour</option>
                                     <option value="1.5">1.5 Hours</option>
                                     <option value="2">2 Hours</option>
-                                    <option value="2.5">2.5 Hours</option>
                                     <option value="3">3 Hours</option>
                                 </select>
                             </div>
@@ -59,21 +58,21 @@
 
                         <div class="mb-3">
                             <label class="form-label fw-bold">Customer Name</label>
-                            <input type="text" id="userName" class="form-control" placeholder="Enter name">
+                            <input type="text" id="userName" class="form-control" placeholder="Full Name">
                         </div>
                         <div class="mb-4">
-                            <label class="form-label fw-bold">Phone</label>
-                            <input type="tel" id="userPhone" class="form-control" placeholder="Enter phone">
+                            <label class="form-label fw-bold">Phone Number</label>
+                            <input type="tel" id="userPhone" class="form-control" placeholder="Contact number">
                         </div>
 
-                        <button class="btn btn-success w-100 py-3 fw-bold" onclick="handleBooking()">RESERVE NOW</button>
+                        <button class="btn btn-success w-100 py-3 fw-bold" onclick="handleBooking()">CONFIRM BOOKING</button>
                     </div>
                 </div>
 
-                <div class="col-md-5 mt-4 mt-md-0">
-                    <div class="card p-4">
-                        <h6 class="fw-bold mb-3 text-muted">Booked for selected day:</h6>
-                        <div id="dayList" class="small text-muted text-center">Select a date to see existing bookings</div>
+                <div class="col-md-5">
+                    <div class="card p-4 h-100">
+                        <h6 class="fw-bold mb-3 text-muted" id="scheduleHeader">Schedule</h6>
+                        <div id="dayList"></div>
                     </div>
                 </div>
             </div>
@@ -85,8 +84,8 @@
                     <table class="table table-hover align-middle">
                         <thead class="table-light">
                             <tr>
-                                <th>Date</th>
-                                <th>Time Range</th>
+                                <th>Date & Day</th>
+                                <th>Time Window</th>
                                 <th>Customer</th>
                                 <th class="text-center">Action</th>
                             </tr>
@@ -110,12 +109,24 @@
         const keys = await res.json();
         supabaseClient = supabase.createClient(keys.SUPABASE_URL_PUBLIC, keys.SUPABASE_ANON_KEY);
         
-        const d = new Date();
-        document.getElementById('bookDate').valueAsDate = d;
+        document.getElementById('bookDate').valueAsDate = new Date();
+        updateDayDisplay();
         loadBookingsForDay();
     }
 
-    // Helper to calculate End Time
+    // Helper: Formats YYYY-MM-DD into "Monday, Dec 26"
+    function getDayName(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+    }
+
+    function updateDayDisplay() {
+        const dateVal = document.getElementById('bookDate').value;
+        const display = getDayName(dateVal);
+        document.getElementById('currentDisplayDate').innerText = display;
+        document.getElementById('scheduleHeader').innerText = `Schedule for ${display}`;
+    }
+
     function calculateEndTime(startTime, durationHours) {
         let [hours, minutes] = startTime.split(':').map(Number);
         let totalMinutes = hours * 60 + minutes + (durationHours * 60);
@@ -131,12 +142,11 @@
         const start = document.getElementById('startTime').value;
         const duration = parseFloat(document.getElementById('duration').value);
 
-        if (!name || !phone || !date || !start) return Swal.fire("Required", "All fields are mandatory", "warning");
+        if (!name || !phone || !date || !start) return Swal.fire("Incomplete", "Please fill all fields", "warning");
 
         const end = calculateEndTime(start, duration);
 
-        // --- OVERLAP CHECK ---
-        // Checks if (NewStart < ExistingEnd) AND (NewEnd > ExistingStart)
+        // Check for overlaps
         const { data: overlaps } = await supabaseClient
             .from('turf_bookings')
             .select('*')
@@ -145,7 +155,7 @@
             .gt('end_time', start + ":00");
 
         if (overlaps && overlaps.length > 0) {
-            return Swal.fire("Unavailable", "This time overlaps with an existing booking!", "error");
+            return Swal.fire("Slot Taken", "This time range overlaps with another booking.", "error");
         }
 
         const { error } = await supabaseClient.from('turf_bookings').insert([{
@@ -159,8 +169,10 @@
         if (error) {
             Swal.fire("Error", error.message, "error");
         } else {
-            Swal.fire("Success", "Booking confirmed!", "success");
+            Swal.fire("Confirmed", "Booking successful!", "success");
             loadBookingsForDay();
+            document.getElementById('userName').value = '';
+            document.getElementById('userPhone').value = '';
         }
     }
 
@@ -178,13 +190,13 @@
         if (data && data.length > 0) {
             data.forEach(b => {
                 container.innerHTML += `
-                    <div class="alert alert-success py-2 mb-2 text-start">
-                        <strong>${b.start_time.slice(0,5)} - ${b.end_time.slice(0,5)}</strong><br>
-                        <span class="small">${b.customer_name}</span>
+                    <div class="p-3 border-start border-4 border-success bg-light mb-2 rounded shadow-sm">
+                        <div class="fw-bold text-success">${b.start_time.slice(0,5)} - ${b.end_time.slice(0,5)}</div>
+                        <div class="small text-dark">${b.customer_name}</div>
                     </div>`;
             });
         } else {
-            container.innerHTML = "No bookings for this date.";
+            container.innerHTML = `<div class="text-center py-5 text-muted">No bookings for this date.</div>`;
         }
     }
 
@@ -199,9 +211,12 @@
         data.forEach(b => {
             body.innerHTML += `
                 <tr>
-                    <td>${b.booking_date}</td>
-                    <td><span class="badge bg-success">${b.start_time.slice(0,5)} to ${b.end_time.slice(0,5)}</span></td>
-                    <td>${b.customer_name}</td>
+                    <td>
+                        <div class="fw-bold">${b.booking_date}</div>
+                        <div class="day-badge">${getDayName(b.booking_date).split(',')[0]}</div>
+                    </td>
+                    <td><span class="badge bg-success">${b.start_time.slice(0,5)} - ${b.end_time.slice(0,5)}</span></td>
+                    <td>${b.customer_name} <br> <small class="text-muted">${b.phone_number}</small></td>
                     <td class="text-center">
                         <button class="btn btn-outline-danger btn-sm" onclick="doDelete('${b.id}')">
                             <i class="bi bi-trash"></i>
@@ -212,7 +227,7 @@
     }
 
     async function doDelete(id) {
-        const res = await Swal.fire({ title: 'Delete?', showCancelButton: true });
+        const res = await Swal.fire({ title: 'Delete?', showCancelButton: true, confirmButtonColor: '#d33' });
         if (!res.isConfirmed) return;
         await supabaseClient.from('turf_bookings').delete().eq('id', id);
         loadBookings();
