@@ -48,8 +48,8 @@
 
                 <div class="row">
                     <div class="col-6 mb-3">
-                        <label class="form-label small fw-bold text-muted">START TIME</label>
-                        <input type="time" id="startTime" class="form-control">
+                        <label class="form-label small fw-bold text-muted">START TIME (5m Interval)</label>
+                        <input type="time" id="startTime" class="form-control" step="300">
                     </div>
                     <div class="col-6 mb-3">
                         <label class="form-label small fw-bold text-muted">DURATION</label>
@@ -152,9 +152,16 @@
             return Swal.fire("Required", "Please fill Name, Phone and Time", "warning");
         }
 
+        // 5-Minute Validation
         let [h, m] = start.split(':').map(Number);
-        let total = h * 60 + m + (duration * 60);
-        let end = `${String(Math.floor(total/60)%24).padStart(2,'0')}:${String(total%60).padStart(2,'0')}:00`;
+        if (m % 5 !== 0) {
+            return Swal.fire("Invalid Time", "Please select a time in 5-minute intervals (e.g., 5:00, 5:05, 5:10)", "warning");
+        }
+
+        let totalMinutes = h * 60 + m + (duration * 60);
+        let endH = Math.floor(totalMinutes / 60) % 24;
+        let endM = totalMinutes % 60;
+        let end = `${String(endH).padStart(2,'0')}:${String(endM).padStart(2,'0')}:00`;
 
         const bookingData = {
             customer_name: name,
@@ -185,12 +192,11 @@
     function sendWhatsApp(name, phone, date, start, end, type) {
         const cleanPhone = "91" + phone.replace(/\D/g, '');
         const formattedDate = new Date(date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
-        const timeRange = end ? `${start.slice(0,5)} - ${end.slice(0,5)}` : start.slice(0,5);
+        const timeRange = `${start.slice(0,5)} - ${end.slice(0,5)}`;
 
-        // FORMAL RULES SECTION
         const rules = `%0A%0A*RULES %26 REGULATIONS:*%0A` +
-                      `1. Spitting and Smoking is strictly prohibited inside the turf premises, pathway (outside turf) and the ramp. If caught doing the same, then a fine of ₹300 shall be charged from the booking team.%0A` +
-                      `2. Cricket bat or ball, football, stumps etc. are the property of the turf and shall not be carried outside the turf without the permission of the owner. If caught carrying outside then it will be treated as theft, fine of ₹500 shall be taken from the booking team%0A` +
+                      `1. Spitting and Smoking is strictly prohibited inside the turf premises and pathway. A fine of ₹300 shall be charged for violations.%0A` +
+                      `2. Turf equipment (Bats, Balls, etc.) are property of the turf. Unauthorized removal will be treated as theft (Fine: ₹500).%0A` +
                       `3. *Early Arrival:* Kindly wait outside the turf if you arrive before your slot. Accessing the turf early will be counted in your booking and charged extra.`;
 
         let message = "";
@@ -211,7 +217,6 @@
         document.getElementById('userPhone').value = phone;
         document.getElementById('bookDate').value = date;
         document.getElementById('startTime').value = start.slice(0,5);
-        
         document.getElementById('formTitle').innerText = "Edit Booking";
         document.getElementById('submitBtn').innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>UPDATE & NOTIFY';
         document.getElementById('cancelEditBtn').classList.remove('d-none');
@@ -243,7 +248,7 @@
             if (!error) {
                 sendWhatsApp(name, phone, date, start, '', 'cancel');
                 loadDaySlots();
-                Swal.fire('Deleted!', 'Booking cancelled.', 'success');
+                Swal.fire('Deleted!', 'Booking removed.', 'success');
             }
         }
     }
