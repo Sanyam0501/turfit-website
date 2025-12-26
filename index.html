@@ -21,6 +21,7 @@
         .btn-edit:hover { background: #fff3cd; }
         .btn-delete { color: #dc3545; border-color: #dc3545; }
         .btn-delete:hover { background: #f8d7da; }
+        .table-sm td { vertical-align: middle; font-size: 0.9rem; }
     </style>
 </head>
 <body>
@@ -30,7 +31,7 @@
     <p class="mb-0 opacity-75" id="currentDisplayDate"></p>
 </div>
 
-<div class="container">
+<div class="container mb-5">
     <div class="row g-4 justify-content-center">
         <div class="col-md-5">
             <div class="card p-4">
@@ -85,7 +86,7 @@
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h6 class="fw-bold mb-0 text-muted" id="scheduleHeader">Day Schedule</h6>
                     <button class="btn btn-sm btn-dark" data-bs-toggle="modal" data-bs-target="#upcomingModal" onclick="loadUpcoming()">
-                        <i class="bi bi-calendar-event me-1"></i> Upcoming
+                        <i class="bi bi-calendar-range me-1"></i> Upcoming
                     </button>
                 </div>
                 <div id="dayList"></div>
@@ -101,9 +102,9 @@
                 <h5 class="modal-title fw-bold">All Upcoming Bookings</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-hover">
+                    <table class="table table-hover mb-0">
                         <thead class="table-light">
                             <tr>
                                 <th>Date</th>
@@ -127,9 +128,11 @@
     let supabaseClient;
 
     async function init() {
+        // Replace this with your actual public keys or keep the fetch if you have the API endpoint set up
         const res = await fetch('/api/get-public-key');
         const keys = await res.json();
         supabaseClient = supabase.createClient(keys.SUPABASE_URL_PUBLIC, keys.SUPABASE_ANON_KEY);
+        
         document.getElementById('bookDate').valueAsDate = new Date();
         updateView();
     }
@@ -164,19 +167,18 @@
             end_time: end
         };
 
-        let error;
+        let result;
         if (id) {
-            const { error: err } = await supabaseClient.from('turf_bookings').update(bookingData).eq('id', id);
-            error = err;
+            result = await supabaseClient.from('turf_bookings').update(bookingData).eq('id', id);
+            if (!result.error) sendWhatsApp(name, phone, date, start, end, 'modify');
         } else {
-            const { error: err } = await supabaseClient.from('turf_bookings').insert([bookingData]);
-            error = err;
+            result = await supabaseClient.from('turf_bookings').insert([bookingData]);
+            if (!result.error) sendWhatsApp(name, phone, date, start, end, 'confirm');
         }
 
-        if (error) {
-            Swal.fire("Error", error.message, "error");
+        if (result.error) {
+            Swal.fire("Error", result.error.message, "error");
         } else {
-            sendWhatsApp(name, phone, date, start, end, 'confirm');
             resetForm();
             loadDaySlots();
             Swal.fire({ title: id ? 'Updated!' : 'Saved!', icon: 'success', timer: 1500, showConfirmButton: false });
@@ -193,7 +195,7 @@
         document.getElementById('formTitle').innerText = "Edit Booking";
         document.getElementById('submitBtn').innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>UPDATE & NOTIFY';
         document.getElementById('cancelEditBtn').classList.remove('d-none');
-        window.scrollTo(0,0);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function resetForm() {
@@ -209,7 +211,7 @@
     async function deleteBooking(id, name, phone, date, start) {
         const result = await Swal.fire({
             title: 'Cancel Booking?',
-            text: `Notify ${name} about cancellation?`,
+            text: `Notify ${name} that the booking is cancelled?`,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#dc3545',
@@ -221,7 +223,7 @@
             if (!error) {
                 sendWhatsApp(name, phone, date, start, '', 'cancel');
                 loadDaySlots();
-                Swal.fire('Deleted!', 'WhatsApp opened.', 'success');
+                Swal.fire('Deleted!', 'Booking removed and WhatsApp opened.', 'success');
             }
         }
     }
@@ -229,10 +231,16 @@
     function sendWhatsApp(name, phone, date, start, end, type) {
         const cleanPhone = "91" + phone.replace(/\D/g, '');
         const formattedDate = new Date(date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+        const timeRange = end ? `${start.slice(0,5)} - ${end.slice(0,5)}` : start.slice(0,5);
 
-        let message = type === 'confirm' 
-            ? `*TURFIT BOOKING CONFIRMED*%0A%0AHi *${name}*, your booking for *${formattedDate}* (${start.slice(0,5)} - ${end.slice(0,5)}) is successful!%0APlease reach 10 mins early.`
-            : `*TURFIT BOOKING CANCELLED*%0A%0AHi *${name}*, your booking for *${formattedDate}* at *${start.slice(0,5)}* has been cancelled.`;
+        let message = "";
+        if (type === 'confirm') {
+            message = `*TURFIT BOOKING CONFIRMED*%0A%0AHi *${name}*, your booking for *${formattedDate}* (${timeRange}) is successful!%0APlease reach 10 mins early.`;
+        } else if (type === 'modify') {
+            message = `*TURFIT BOOKING MODIFIED*%0A%0AHi *${name}*, your booking has been updated.%0A%0A📅 *New Date:* ${formattedDate}%0A⏰ *New Time:* ${timeRange}%0A%0ASee you there!`;
+        } else if (type === 'cancel') {
+            message = `*TURFIT BOOKING CANCELLED*%0A%0AHi *${name}*, your booking for *${formattedDate}* at *${start.slice(0,5)}* has been cancelled.`;
+        }
 
         window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank').focus();
     }
@@ -250,30 +258,35 @@
                 <div class="p-3 bg-light border rounded mb-2 d-flex justify-content-between align-items-center">
                     <div>
                         <div class="fw-bold text-success">${b.start_time.slice(0,5)} - ${b.end_time.slice(0,5)}</div>
-                        <div class="small text-dark">${b.customer_name}</div>
+                        <div class="small text-dark">${b.customer_name} (${b.phone_number})</div>
                     </div>
                     <div class="d-flex gap-1">
-                        <button class="action-btn btn-resend" onclick="sendWhatsApp('${sName}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}', '${b.end_time}', 'confirm')"><i class="bi bi-whatsapp"></i></button>
-                        <button class="action-btn btn-edit" onclick="editBooking('${b.id}', '${sName}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}')"><i class="bi bi-pencil"></i></button>
-                        <button class="action-btn btn-delete" onclick="deleteBooking('${b.id}', '${sName}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}')"><i class="bi bi-trash"></i></button>
+                        <button class="action-btn btn-resend" title="Resend Confirm" onclick="sendWhatsApp('${sName}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}', '${b.end_time}', 'confirm')"><i class="bi bi-whatsapp"></i></button>
+                        <button class="action-btn btn-edit" title="Edit" onclick="editBooking('${b.id}', '${sName}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}')"><i class="bi bi-pencil"></i></button>
+                        <button class="action-btn btn-delete" title="Delete" onclick="deleteBooking('${b.id}', '${sName}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}')"><i class="bi bi-trash"></i></button>
                     </div>
                 </div>`;
             });
-        } else { container.innerHTML = `<div class="text-center py-4 text-muted small">No slots.</div>`; }
+        } else { container.innerHTML = `<div class="text-center py-4 text-muted small">No slots booked for this date.</div>`; }
     }
 
     async function loadUpcoming() {
         const today = new Date().toISOString().split('T')[0];
         const { data } = await supabaseClient.from('turf_bookings').select('*').gte('booking_date', today).order('booking_date').order('start_time');
         const list = document.getElementById('upcomingList');
-        list.innerHTML = data.map(b => `
-            <tr>
-                <td class="small fw-bold">${b.booking_date}</td>
-                <td class="small">${b.start_time.slice(0,5)}</td>
-                <td class="small">${b.customer_name}</td>
-                <td class="small text-muted">${b.phone_number}</td>
-            </tr>
-        `).join('');
+        
+        if (data && data.length > 0) {
+            list.innerHTML = data.map(b => `
+                <tr>
+                    <td><span class="badge bg-secondary">${b.booking_date}</span></td>
+                    <td>${b.start_time.slice(0,5)}</td>
+                    <td>${b.customer_name}</td>
+                    <td>${b.phone_number}</td>
+                </tr>
+            `).join('');
+        } else {
+            list.innerHTML = '<tr><td colspan="4" class="text-center py-3 text-muted">No upcoming bookings found.</td></tr>';
+        }
     }
 
     init();
