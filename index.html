@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Turf Booking Pro</title>
+    <title>TURFIT BOOKINGS (Open Access)</title>
 
     <link rel="icon" href="data:,">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -11,223 +12,293 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
-        :root { --turf-green: #1b4332; --action: #2d6a4f; }
-        body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; }
-        .hero { background: var(--turf-green); color: white; padding: 40px 0; border-bottom: 5px solid #95d5b2; }
-        .card { border: none; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        .slot-card { cursor: pointer; border: 2px solid #eee; transition: 0.3s; background: #fff; border-radius: 10px; }
-        .slot-card:hover:not(.booked) { border-color: var(--action); transform: translateY(-3px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .booked { background: #e9ecef!important; color: #adb5bd; cursor: not-allowed; border-style: dashed; text-decoration: line-through; }
-        .selected { background: var(--action)!important; color: white!important; border-color: var(--turf-green); }
-        .nav-pills .nav-link { color: var(--turf-green); font-weight: 600; }
-        .nav-pills .nav-link.active { background-color: var(--action); }
+        :root {
+            --turf-green: #1b4332;
+            --action: #2d6a4f;
+        }
+
+        body {
+            background: #f8f9fa;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        .hero {
+            background: var(--turf-green);
+            color: #fff;
+            padding: 40px 0;
+        }
+
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, .05);
+            border: none;
+        }
+
+        .slot-card {
+            cursor: pointer;
+            border: 2px solid #eee;
+            transition: .3s;
+            border-radius: 10px;
+        }
+
+        .slot-card:hover:not(.booked) {
+            border-color: var(--action);
+            transform: translateY(-3px);
+        }
+
+        .booked {
+            background: #e9ecef !important;
+            color: #adb5bd;
+            cursor: not-allowed;
+            text-decoration: line-through;
+        }
+
+        .selected {
+            background: var(--action) !important;
+            color: #fff !important;
+        }
+
+        .nav-pills .nav-link {
+            color: var(--turf-green);
+            font-weight: 600;
+        }
+
+        .nav-pills .nav-link.active {
+            background: var(--action);
+        }
     </style>
 </head>
 
 <body>
 
-<div class="hero text-center mb-5">
-    <h1 class="fw-bold">TURFIT BOOKINGS</h1>
-    <!-- <p class="lead">Book a slot or manage the ground below</p> -->
-</div>
-
-<div class="container">
-    <ul class="nav nav-pills mb-4 justify-content-center bg-white p-2 rounded-pill shadow-sm mx-auto" style="max-width: 350px;">
-        <li class="nav-item">
-            <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-book">Book Slot</button>
-        </li>
-        <li class="nav-item">
-            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-admin" onclick="loadAdminTable()">Admin View</button>
-        </li>
-    </ul>
-
-    <div class="tab-content">
-
-        <!-- BOOK TAB -->
-        <div class="tab-pane fade show active" id="tab-book">
-            <div class="row g-4">
-                <div class="col-md-4">
-                    <div class="card p-4">
-                        <h5 class="fw-bold mb-3 text-success">1. Details</h5>
-                        <input type="date" id="bookDate" class="form-control mb-3" onchange="fetchSlots()">
-                        <input type="text" id="userName" class="form-control mb-2" placeholder="Full Name">
-                        <input type="tel" id="userPhone" class="form-control mb-3" placeholder="Phone Number">
-                        <button class="btn btn-success w-100 py-3 fw-bold" onclick="handleBooking()">BOOK NOW</button>
-                    </div>
-                </div>
-
-                <div class="col-md-8">
-                    <div class="card p-4">
-                        <h5 class="fw-bold mb-4 text-success text-center">Available Times</h5>
-                        <div class="row g-3" id="slotGrid"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ADMIN TAB -->
-        <div class="tab-pane fade" id="tab-admin">
-            <div class="card p-4">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h5 class="fw-bold m-0 text-success">All Bookings</h5>
-                    <button class="btn btn-sm btn-outline-success" onclick="loadAdminTable()">Refresh</button>
-                </div>
-
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Date</th>
-                                <th>Time</th>
-                                <th>Name</th>
-                                <th>Phone</th>
-                                <th class="text-center">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="adminBody"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
+    <div class="hero text-center mb-5">
+        <h1 class="fw-bold">TURFIT BOOKINGS</h1>
+        <p class="opacity-75">Public Booking & Management Portal</p>
     </div>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <div class="container">
 
-<script>
-let supabaseClient;
-let selectedSlot = null;
+        <ul class="nav nav-pills mb-4 justify-content-center bg-white p-2 rounded-pill shadow-sm mx-auto"
+            style="max-width:350px">
+            <li class="nav-item">
+                <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-book">Book Slot</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-admin"
+                    onclick="loadAdminTable()">All Bookings</button>
+            </li>
+        </ul>
 
-const SLOTS = ["06:00 AM","08:00 AM","10:00 AM","12:00 PM","04:00 PM","06:00 PM","08:00 PM","10:00 PM"];
+        <div class="tab-content">
 
-/* INIT */
-async function initApp() {
-    const res = await fetch('/api/get-public-key');
-    const keys = await res.json();
+            <div class="tab-pane fade show active" id="tab-book">
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="card p-4">
+                            <h5 class="fw-bold text-success mb-3">Booking Details</h5>
+                            <label class="small fw-bold text-muted">Select Date</label>
+                            <input type="date" id="bookDate" class="form-control mb-3" onchange="fetchSlots()">
+                            
+                            <label class="small fw-bold text-muted">Customer Name</label>
+                            <input type="text" id="userName" class="form-control mb-2" placeholder="Full Name">
+                            
+                            <label class="small fw-bold text-muted">Phone Number</label>
+                            <input type="tel" id="userPhone" class="form-control mb-3" placeholder="Phone Number">
+                            
+                            <button class="btn btn-success w-100 py-3 fw-bold" onclick="handleBooking()">
+                                BOOK NOW
+                            </button>
+                        </div>
+                    </div>
 
-    supabaseClient = supabase.createClient(
-        keys.SUPABASE_URL_PUBLIC,
-        keys.SUPABASE_ANON_KEY
-    );
-
-    document.getElementById('bookDate').valueAsDate = new Date();
-    fetchSlots();
-}
-
-/* FETCH SLOTS */
-async function fetchSlots() {
-    const date = document.getElementById('bookDate').value;
-    const { data } = await supabaseClient
-        .from('turf_bookings')
-        .select('time_slot')
-        .eq('booking_date', date);
-
-    const taken = data ? data.map(d => d.time_slot) : [];
-    const grid = document.getElementById('slotGrid');
-    grid.innerHTML = '';
-    selectedSlot = null;
-
-    SLOTS.forEach(slot => {
-        const isTaken = taken.includes(slot);
-        grid.innerHTML += `
-            <div class="col-6 col-lg-4">
-                <div class="p-3 text-center slot-card ${isTaken ? 'booked' : ''}"
-                     onclick="selectSlot(this,'${slot}',${isTaken})">
-                    <div class="fw-bold">${slot}</div>
-                    <small>${isTaken ? 'Full' : 'Select'}</small>
+                    <div class="col-md-8">
+                        <div class="card p-4">
+                            <h5 class="fw-bold text-success text-center mb-4">Available Times</h5>
+                            <div class="row g-3" id="slotGrid"></div>
+                        </div>
+                    </div>
                 </div>
-            </div>`;
-    });
-}
+            </div>
 
-/* SELECT SLOT */
-function selectSlot(el, slot, isTaken) {
-    if (isTaken) return;
-    document.querySelectorAll('.slot-card').forEach(c => c.classList.remove('selected'));
-    el.classList.add('selected');
-    selectedSlot = slot;
-}
+            <div class="tab-pane fade" id="tab-admin">
+                <div class="card p-4">
 
-/* BOOK */
-async function handleBooking() {
-    const name = userName.value.trim();
-    const phone = userPhone.value.trim();
-    const date = bookDate.value;
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold text-success m-0">Live Booking Schedule</h5>
+                        <span class="badge bg-light text-dark border">Public Management</span>
+                    </div>
 
-    if (!name || !phone || !selectedSlot) {
-        return Swal.fire("Required", "Fill all details", "warning");
-    }
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Time</th>
+                                    <th>Name</th>
+                                    <th>Phone</th>
+                                    <th class="text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminBody"></tbody>
+                        </table>
+                    </div>
 
-    const { error } = await supabaseClient.from('turf_bookings').insert([{
-        customer_name: name,
-        phone_number: phone,
-        booking_date: date,
-        time_slot: selectedSlot
-    }]);
+                </div>
+            </div>
 
-    if (error) {
-        Swal.fire("Error", error.message, "error");
-    } else {
-        Swal.fire("Success", "Booking Confirmed", "success");
-        fetchSlots();
-    }
-}
+        </div>
+    </div>
 
-/* ADMIN TABLE */
-async function loadAdminTable() {
-    const { data } = await supabaseClient
-        .from('turf_bookings')
-        .select('*')
-        .order('booking_date', { ascending: false });
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    const body = document.getElementById('adminBody');
-    body.innerHTML = '';
+    <script>
+        let supabaseClient;
+        let selectedSlot = null;
 
-    data.forEach(b => {
-        body.innerHTML += `
-            <tr>
-                <td>${b.booking_date}</td>
-                <td><span class="badge bg-success">${b.time_slot}</span></td>
-                <td>${b.customer_name}</td>
-                <td>${b.phone_number}</td>
-                <td class="text-center">
-                    <button class="btn btn-outline-danger btn-sm" onclick="doDelete('${b.id}')">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                </td>
-            </tr>`;
-    });
-}
+        const SLOTS = ["06:00 AM", "08:00 AM", "10:00 AM", "12:00 PM", "04:00 PM", "06:00 PM", "08:00 PM", "10:00 PM"];
 
-/* DELETE */
-async function doDelete(id) {
-    const confirm = await Swal.fire({
-        title: 'Delete Booking?',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#d33'
-    });
+        /* INIT APP */
+        async function initApp() {
+            try {
+                const res = await fetch('/api/get-public-key');
+                const keys = await res.json();
 
-    if (!confirm.isConfirmed) return;
+                supabaseClient = supabase.createClient(
+                    keys.SUPABASE_URL_PUBLIC,
+                    keys.SUPABASE_ANON_KEY
+                );
 
-    const { error } = await supabaseClient
-        .from('turf_bookings')
-        .delete()
-        .eq('id', id);
+                const dateInput = document.getElementById('bookDate');
+                dateInput.valueAsDate = new Date();
+                
+                fetchSlots();
+            } catch (err) {
+                console.error("Initialization failed:", err);
+            }
+        }
 
-    if (error) {
-        Swal.fire("Error", error.message, "error");
-    } else {
-        Swal.fire("Deleted", "Booking removed", "success");
-        loadAdminTable();
-        fetchSlots();
-    }
-}
+        /* FETCH SLOTS */
+        async function fetchSlots() {
+            const dateValue = document.getElementById('bookDate').value;
+            const { data, error } = await supabaseClient
+                .from('turf_bookings')
+                .select('time_slot')
+                .eq('booking_date', dateValue);
 
-initApp();
-</script>
+            const taken = data ? data.map(d => d.time_slot) : [];
+            const grid = document.getElementById('slotGrid');
+            grid.innerHTML = '';
+            selectedSlot = null;
+
+            SLOTS.forEach(s => {
+                const isTaken = taken.includes(s);
+                grid.innerHTML += `
+                    <div class="col-6 col-lg-4">
+                        <div class="p-3 text-center slot-card ${isTaken ? 'booked' : ''}" 
+                             onclick="selectSlot(this,'${s}',${isTaken})">
+                            <div class="fw-bold">${s}</div>
+                            <small>${isTaken ? 'Already Booked' : 'Available'}</small>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        /* SELECT SLOT */
+        function selectSlot(el, slot, isTaken) {
+            if (isTaken) return;
+            document.querySelectorAll('.slot-card').forEach(c => c.classList.remove('selected'));
+            el.classList.add('selected');
+            selectedSlot = slot;
+        }
+
+        /* HANDLE BOOKING */
+        async function handleBooking() {
+            const name = document.getElementById('userName').value;
+            const phone = document.getElementById('userPhone').value;
+            const date = document.getElementById('bookDate').value;
+
+            if (!name || !phone || !selectedSlot) {
+                return Swal.fire("Required", "Please fill in your name, phone, and pick a time slot.", "warning");
+            }
+
+            const { error } = await supabaseClient.from('turf_bookings').insert([{
+                customer_name: name,
+                phone_number: phone,
+                booking_date: date,
+                time_slot: selectedSlot
+            }]);
+
+            if (error) {
+                Swal.fire("Error", "This slot might have just been booked. Please refresh.", "error");
+            } else {
+                Swal.fire("Success!", "Your turf slot is confirmed.", "success");
+                // Reset inputs
+                document.getElementById('userName').value = '';
+                document.getElementById('userPhone').value = '';
+                fetchSlots();
+            }
+        }
+
+        /* LOAD ALL BOOKINGS */
+        async function loadAdminTable() {
+            const { data, error } = await supabaseClient.from('turf_bookings')
+                .select('*')
+                .order('booking_date', { ascending: false });
+
+            const body = document.getElementById('adminBody');
+            body.innerHTML = '';
+
+            if (data && data.length > 0) {
+                data.forEach(b => {
+                    body.innerHTML += `
+                        <tr>
+                            <td>${b.booking_date}</td>
+                            <td><span class="badge bg-success">${b.time_slot}</span></td>
+                            <td>${b.customer_name}</td>
+                            <td>${b.phone_number}</td>
+                            <td class="text-center">
+                                <button class="btn btn-outline-danger btn-sm" onclick="doDelete('${b.id}')">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                            </td>
+                        </tr>`;
+                });
+            } else {
+                body.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No bookings found</td></tr>';
+            }
+        }
+
+        /* DELETE BOOKING */
+        async function doDelete(id) {
+            const result = await Swal.fire({
+                title: 'Cancel Booking?',
+                text: "This will remove the booking permanently.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                confirmButtonText: 'Yes, delete it'
+            });
+
+            if (!result.isConfirmed) return;
+
+            const { error } = await supabaseClient
+                .from('turf_bookings')
+                .delete()
+                .eq('id', id);
+
+            if (error) {
+                Swal.fire("Error", "Could not delete booking.", "error");
+            } else {
+                Swal.fire("Deleted", "The slot is now available again.", "success");
+                loadAdminTable();
+                fetchSlots();
+            }
+        }
+
+        // Run on load
+        initApp();
+    </script>
 
 </body>
 </html>
