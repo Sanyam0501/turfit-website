@@ -127,6 +127,7 @@
     let supabaseClient;
 
     async function init() {
+        // This assumes your backend has an endpoint to provide keys safely
         const res = await fetch('/api/get-public-key');
         const keys = await res.json();
         supabaseClient = supabase.createClient(keys.SUPABASE_URL_PUBLIC, keys.SUPABASE_ANON_KEY);
@@ -192,18 +193,19 @@
     function sendWhatsApp(name, phone, date, start, end, type) {
         const cleanPhone = "91" + phone.replace(/\D/g, '');
         const formattedDate = new Date(date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
-        const timeRange = `${start.slice(0,5)} - ${end.slice(0,5)}`;
+        const timeRange = end ? `${start.slice(0,5)} - ${end.slice(0,5)}` : start.slice(0,5);
 
+        // RULES SECTION
         const rules = `%0A%0A*RULES %26 REGULATIONS:*%0A` +
-                      `1. Spitting and Smoking is strictly prohibited inside the turf premises and pathway. A fine of ₹300 shall be charged for violations.%0A` +
-                      `2. Turf equipment (Bats, Balls, etc.) are property of the turf. Unauthorized removal will be treated as theft (Fine: ₹500).%0A` +
-                      `3. *Early Arrival:* Kindly wait outside the turf if you arrive before your slot. Accessing the turf early will be counted in your booking and charged extra.`;
+                      `1. Spitting and Smoking is strictly prohibited inside the turf premises, pathway (outside turf) and the ramp. If caught doing the same, then a fine of ₹300 shall be charged from the booking team.%0A` +
+                      `2. Cricket bat or ball, football, stumps etc. are the property of the turf and shall not be carried outside the turf without the permission of the owner. If caught carrying outside then it will be treated as theft, fine of ₹500 shall be taken from the booking team%0A` +
+                      `3. *Early Arrival:* Kindly wait outside the turf if you arrive before your slot. Accessing the turf early will be counted in your booking and charged extra for that time.`;
 
         let message = "";
         if (type === 'confirm') {
             message = `*TURFIT BOOKING CONFIRMED*%0A%0AHi *${name}*, your booking for *${formattedDate}* (${timeRange}) is successful!${rules}`;
         } else if (type === 'modify') {
-            message = `*TURFIT BOOKING MODIFIED*%0A%0AHi *${name}*, your booking details have been updated to *${formattedDate}* (${timeRange}).${rules}`;
+            message = `*TURFIT BOOKING MODIFIED*%0A%0AHi *${name}*, your booking details have been *updated* to *${formattedDate}* (${timeRange}).${rules}`;
         } else if (type === 'cancel') {
             message = `*TURFIT BOOKING CANCELLED*%0A%0AHi *${name}*, your booking for *${formattedDate}* at *${start.slice(0,5)}* has been cancelled.`;
         }
@@ -217,6 +219,7 @@
         document.getElementById('userPhone').value = phone;
         document.getElementById('bookDate').value = date;
         document.getElementById('startTime').value = start.slice(0,5);
+        
         document.getElementById('formTitle').innerText = "Edit Booking";
         document.getElementById('submitBtn').innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>UPDATE & NOTIFY';
         document.getElementById('cancelEditBtn').classList.remove('d-none');
@@ -248,7 +251,7 @@
             if (!error) {
                 sendWhatsApp(name, phone, date, start, '', 'cancel');
                 loadDaySlots();
-                Swal.fire('Deleted!', 'Booking removed.', 'success');
+                Swal.fire('Deleted!', 'Booking removed and customer notified.', 'success');
             }
         }
     }
@@ -275,7 +278,7 @@
                     </div>
                 </div>`;
             });
-        } else { container.innerHTML = `<div class="text-center py-4 text-muted small">No slots booked.</div>`; }
+        } else { container.innerHTML = `<div class="text-center py-4 text-muted small">No slots booked for this date.</div>`; }
     }
 
     async function loadUpcoming() {
