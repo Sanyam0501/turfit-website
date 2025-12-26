@@ -1,331 +1,233 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TURFIT BOOKINGS</title>
+    <title>Turf Booking Pro</title>
 
     <link rel="icon" href="data:,">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcrypt.min.js"></script>
 
     <style>
-        :root {
-            --turf-green: #1b4332;
-            --action: #2d6a4f;
-        }
-
-        body {
-            background: #f8f9fa;
-            font-family: 'Segoe UI', sans-serif;
-        }
-
-        .hero {
-            background: var(--turf-green);
-            color: #fff;
-            padding: 40px 0;
-        }
-
-        .card {
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, .05);
-            border: none;
-        }
-
-        .slot-card {
-            cursor: pointer;
-            border: 2px solid #eee;
-            transition: .3s;
-            border-radius: 10px;
-        }
-
-        .slot-card:hover:not(.booked) {
-            border-color: var(--action);
-            transform: translateY(-3px);
-        }
-
-        .booked {
-            background: #e9ecef !important;
-            color: #adb5bd;
-            cursor: not-allowed;
-            text-decoration: line-through;
-        }
-
-        .selected {
-            background: var(--action) !important;
-            color: #fff !important;
-        }
-
-        .nav-pills .nav-link {
-            color: var(--turf-green);
-            font-weight: 600;
-        }
-
-        .nav-pills .nav-link.active {
-            background: var(--action);
-        }
+        :root { --turf-green: #1b4332; --action: #2d6a4f; }
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; }
+        .hero { background: var(--turf-green); color: white; padding: 40px 0; border-bottom: 5px solid #95d5b2; }
+        .card { border: none; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .slot-card { cursor: pointer; border: 2px solid #eee; transition: 0.3s; background: #fff; border-radius: 10px; }
+        .slot-card:hover:not(.booked) { border-color: var(--action); transform: translateY(-3px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .booked { background: #e9ecef!important; color: #adb5bd; cursor: not-allowed; border-style: dashed; text-decoration: line-through; }
+        .selected { background: var(--action)!important; color: white!important; border-color: var(--turf-green); }
+        .nav-pills .nav-link { color: var(--turf-green); font-weight: 600; }
+        .nav-pills .nav-link.active { background-color: var(--action); }
     </style>
 </head>
 
 <body>
 
-    <div class="hero text-center mb-5">
-        <h1 class="fw-bold">TURFIT BOOKINGS</h1>
-    </div>
+<div class="hero text-center mb-5">
+    <h1 class="fw-bold">TURFIT BOOKINGS</h1>
+    <!-- <p class="lead">Book a slot or manage the ground below</p> -->
+</div>
 
-    <div class="container">
+<div class="container">
+    <ul class="nav nav-pills mb-4 justify-content-center bg-white p-2 rounded-pill shadow-sm mx-auto" style="max-width: 350px;">
+        <li class="nav-item">
+            <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-book">Book Slot</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-admin" onclick="loadAdminTable()">Admin View</button>
+        </li>
+    </ul>
 
-        <ul class="nav nav-pills mb-4 justify-content-center bg-white p-2 rounded-pill shadow-sm mx-auto"
-            style="max-width:350px">
-            <li class="nav-item">
-                <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-book">Book Slot</button>
-            </li>
-            <li class="nav-item">
-                <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-admin"
-                    onclick="loadAdminTable()">Admin</button>
-            </li>
-        </ul>
+    <div class="tab-content">
 
-        <div class="tab-content">
-
-            <!-- BOOK TAB -->
-            <div class="tab-pane fade show active" id="tab-book">
-                <div class="row g-4">
-                    <div class="col-md-4">
-                        <div class="card p-4">
-                            <h5 class="fw-bold text-success mb-3">Booking Details</h5>
-                            <input type="date" id="bookDate" class="form-control mb-3" onchange="fetchSlots()">
-                            <input type="text" id="userName" class="form-control mb-2" placeholder="Full Name">
-                            <input type="tel" id="userPhone" class="form-control mb-3" placeholder="Phone Number">
-                            <button class="btn btn-success w-100 py-3 fw-bold" onclick="handleBooking()">BOOK
-                                NOW</button>
-                        </div>
+        <!-- BOOK TAB -->
+        <div class="tab-pane fade show active" id="tab-book">
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="card p-4">
+                        <h5 class="fw-bold mb-3 text-success">1. Details</h5>
+                        <input type="date" id="bookDate" class="form-control mb-3" onchange="fetchSlots()">
+                        <input type="text" id="userName" class="form-control mb-2" placeholder="Full Name">
+                        <input type="tel" id="userPhone" class="form-control mb-3" placeholder="Phone Number">
+                        <button class="btn btn-success w-100 py-3 fw-bold" onclick="handleBooking()">BOOK NOW</button>
                     </div>
+                </div>
 
-                    <div class="col-md-8">
-                        <div class="card p-4">
-                            <h5 class="fw-bold text-success text-center mb-4">Available Times</h5>
-                            <div class="row g-3" id="slotGrid"></div>
-                        </div>
+                <div class="col-md-8">
+                    <div class="card p-4">
+                        <h5 class="fw-bold mb-4 text-success text-center">Available Times</h5>
+                        <div class="row g-3" id="slotGrid"></div>
                     </div>
                 </div>
             </div>
-
-            <!-- ADMIN TAB -->
-            <div class="tab-pane fade" id="tab-admin">
-                <div class="card p-4">
-
-                    <div class="d-flex justify-content-between mb-3">
-                        <h5 class="fw-bold text-success m-0">All Bookings</h5>
-                        <div>
-                            <button class="btn btn-sm btn-outline-success" onclick="adminLogin()">Admin Login</button>
-                            <button class="btn btn-sm btn-outline-danger d-none" id="logoutBtn"
-                                onclick="adminLogout()">Logout</button>
-                        </div>
-                    </div>
-
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Time</th>
-                                    <th>Name</th>
-                                    <th>Phone</th>
-                                    <th class="text-center">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="adminBody"></tbody>
-                        </table>
-                    </div>
-
-                </div>
-            </div>
-
         </div>
+
+        <!-- ADMIN TAB -->
+        <div class="tab-pane fade" id="tab-admin">
+            <div class="card p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="fw-bold m-0 text-success">All Bookings</h5>
+                    <button class="btn btn-sm btn-outline-success" onclick="loadAdminTable()">Refresh</button>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Name</th>
+                                <th>Phone</th>
+                                <th class="text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
     </div>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    <script>
-        let supabaseClient;
-        let selectedSlot = null;
-        let isAdmin = false;
+<script>
+let supabaseClient;
+let selectedSlot = null;
 
-        const SLOTS = ["06:00 AM", "08:00 AM", "10:00 AM", "12:00 PM", "04:00 PM", "06:00 PM", "08:00 PM", "10:00 PM"];
+const SLOTS = ["06:00 AM","08:00 AM","10:00 AM","12:00 PM","04:00 PM","06:00 PM","08:00 PM","10:00 PM"];
 
-        /* INIT */
-        async function initApp() {
-            const res = await fetch('/api/get-public-key');
-            const keys = await res.json();
+/* INIT */
+async function initApp() {
+    const res = await fetch('/api/get-public-key');
+    const keys = await res.json();
 
-            supabaseClient = supabase.createClient(
-                keys.SUPABASE_URL_PUBLIC,
-                keys.SUPABASE_ANON_KEY
-            );
+    supabaseClient = supabase.createClient(
+        keys.SUPABASE_URL_PUBLIC,
+        keys.SUPABASE_ANON_KEY
+    );
 
-            bookDate.valueAsDate = new Date();
-            fetchSlots();
-        }
+    document.getElementById('bookDate').valueAsDate = new Date();
+    fetchSlots();
+}
 
-        /* ADMIN LOGIN (USERNAME + PASSWORD) */
-        /* ADMIN LOGIN (USERNAME + PASSWORD) */
-async function adminLogin() {
-    const { value: form } = await Swal.fire({
-        title: 'Admin Login',
-        html:
-            '<input id="username" class="swal2-input" placeholder="Admin ID">' +
-            '<input id="password" type="password" class="swal2-input" placeholder="Password">',
-        preConfirm: () => ({
-            username: document.getElementById('username').value,
-            password: document.getElementById('password').value
-        })
+/* FETCH SLOTS */
+async function fetchSlots() {
+    const date = document.getElementById('bookDate').value;
+    const { data } = await supabaseClient
+        .from('turf_bookings')
+        .select('time_slot')
+        .eq('booking_date', date);
+
+    const taken = data ? data.map(d => d.time_slot) : [];
+    const grid = document.getElementById('slotGrid');
+    grid.innerHTML = '';
+    selectedSlot = null;
+
+    SLOTS.forEach(slot => {
+        const isTaken = taken.includes(slot);
+        grid.innerHTML += `
+            <div class="col-6 col-lg-4">
+                <div class="p-3 text-center slot-card ${isTaken ? 'booked' : ''}"
+                     onclick="selectSlot(this,'${slot}',${isTaken})">
+                    <div class="fw-bold">${slot}</div>
+                    <small>${isTaken ? 'Full' : 'Select'}</small>
+                </div>
+            </div>`;
     });
+}
 
-    if (!form) return;
+/* SELECT SLOT */
+function selectSlot(el, slot, isTaken) {
+    if (isTaken) return;
+    document.querySelectorAll('.slot-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedSlot = slot;
+}
 
-    // 1. Fetch from Supabase
-    const { data, error } = await supabaseClient
-        .from('admin_users')
-        .select('password_hash')
-        .eq('username', form.username)
-        .maybeSingle();
+/* BOOK */
+async function handleBooking() {
+    const name = userName.value.trim();
+    const phone = userPhone.value.trim();
+    const date = bookDate.value;
 
-    if (error) return Swal.fire("Error", "Database error", "error");
-    if (!data) return Swal.fire("Error", "User not found", "error");
+    if (!name || !phone || !selectedSlot) {
+        return Swal.fire("Required", "Fill all details", "warning");
+    }
 
-    try {
-        // Use the global bcrypt object correctly
-        // Some versions use 'bcrypt', others 'dcodeIO.bcrypt'
-        const hasher = typeof bcrypt !== 'undefined' ? bcrypt : dcodeIO.bcrypt;
-        
-        const match = hasher.compareSync(form.password, data.password_hash);
+    const { error } = await supabaseClient.from('turf_bookings').insert([{
+        customer_name: name,
+        phone_number: phone,
+        booking_date: date,
+        time_slot: selectedSlot
+    }]);
 
-        if (!match) return Swal.fire("Error", "Invalid Password", "error");
-
-        isAdmin = true;
-        document.getElementById('logoutBtn').classList.remove('d-none');
-        Swal.fire("Success", "Admin logged in", "success");
-        loadAdminTable();
-
-    } catch (err) {
-        console.error(err);
-        Swal.fire("Error", "The stored password is not a valid Bcrypt hash", "error");
+    if (error) {
+        Swal.fire("Error", error.message, "error");
+    } else {
+        Swal.fire("Success", "Booking Confirmed", "success");
+        fetchSlots();
     }
 }
-        function adminLogout() {
-            isAdmin = false;
-            logoutBtn.classList.add('d-none');
-            Swal.fire("Logged out", "", "info");
-        }
 
-        /* FETCH SLOTS */
-        async function fetchSlots() {
-            const { data } = await supabaseClient
-                .from('turf_bookings')
-                .select('time_slot')
-                .eq('booking_date', bookDate.value);
+/* ADMIN TABLE */
+async function loadAdminTable() {
+    const { data } = await supabaseClient
+        .from('turf_bookings')
+        .select('*')
+        .order('booking_date', { ascending: false });
 
-            const taken = data ? data.map(d => d.time_slot) : [];
-            slotGrid.innerHTML = '';
-            selectedSlot = null;
+    const body = document.getElementById('adminBody');
+    body.innerHTML = '';
 
-            SLOTS.forEach(s => {
-                const isTaken = taken.includes(s);
-                slotGrid.innerHTML += `
-<div class="col-6 col-lg-4">
-<div class="p-3 text-center slot-card ${isTaken ? 'booked' : ''}"
-onclick="selectSlot(this,'${s}',${isTaken})">
-<div class="fw-bold">${s}</div>
-<small>${isTaken ? 'Full' : 'Select'}</small>
-</div>
-</div>`;
-            });
-        }
+    data.forEach(b => {
+        body.innerHTML += `
+            <tr>
+                <td>${b.booking_date}</td>
+                <td><span class="badge bg-success">${b.time_slot}</span></td>
+                <td>${b.customer_name}</td>
+                <td>${b.phone_number}</td>
+                <td class="text-center">
+                    <button class="btn btn-outline-danger btn-sm" onclick="doDelete('${b.id}')">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            </tr>`;
+    });
+}
 
-        /* SELECT SLOT */
-        function selectSlot(el, slot, isTaken) {
-            if (isTaken) return;
-            document.querySelectorAll('.slot-card').forEach(c => c.classList.remove('selected'));
-            el.classList.add('selected');
-            selectedSlot = slot;
-        }
+/* DELETE */
+async function doDelete(id) {
+    const confirm = await Swal.fire({
+        title: 'Delete Booking?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33'
+    });
 
-        /* BOOK */
-        async function handleBooking() {
-            if (!userName.value || !userPhone.value || !selectedSlot)
-                return Swal.fire("Required", "Fill all details", "warning");
+    if (!confirm.isConfirmed) return;
 
-            const { error } = await supabaseClient.from('turf_bookings').insert([{
-                customer_name: userName.value,
-                phone_number: userPhone.value,
-                booking_date: bookDate.value,
-                time_slot: selectedSlot
-            }]);
+    const { error } = await supabaseClient
+        .from('turf_bookings')
+        .delete()
+        .eq('id', id);
 
-            if (error) Swal.fire("Error", error.message, "error");
-            else {
-                Swal.fire("Booked", "Slot confirmed", "success");
-                fetchSlots();
-            }
-        }
+    if (error) {
+        Swal.fire("Error", error.message, "error");
+    } else {
+        Swal.fire("Deleted", "Booking removed", "success");
+        loadAdminTable();
+        fetchSlots();
+    }
+}
 
-        /* ADMIN TABLE */
-        async function loadAdminTable() {
-            const { data } = await supabaseClient.from('turf_bookings')
-                .select('*')
-                .order('booking_date', { ascending: false });
-
-            adminBody.innerHTML = '';
-            data.forEach(b => {
-                adminBody.innerHTML += `
-<tr>
-<td>${b.booking_date}</td>
-<td><span class="badge bg-success">${b.time_slot}</span></td>
-<td>${b.customer_name}</td>
-<td>${b.phone_number}</td>
-<td class="text-center">
-<button class="btn btn-outline-danger btn-sm" onclick="doDelete('${b.id}')">
-<i class="bi bi-trash"></i>
-</button>
-</td>
-</tr>`;
-            });
-        }
-
-        /* DELETE */
-        async function doDelete(id) {
-            if (!isAdmin)
-                return Swal.fire("Unauthorized", "Admin only", "warning");
-
-            const confirm = await Swal.fire({
-                title: 'Delete Booking?',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33'
-            });
-            if (!confirm.isConfirmed) return;
-
-            const { error } = await supabaseClient
-                .from('turf_bookings')
-                .delete()
-                .eq('id', id);
-
-            if (error) Swal.fire("Error", error.message, "error");
-            else {
-                Swal.fire("Deleted", "Booking removed", "success");
-                loadAdminTable();
-                fetchSlots();
-            }
-        }
-
-        initApp();
-    </script>
+initApp();
+</script>
 
 </body>
-
 </html>
