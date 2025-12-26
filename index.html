@@ -14,10 +14,12 @@
         .card { border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         .btn-primary-custom { background-color: var(--accent); color: white; border: none; }
         .btn-primary-custom:hover { background-color: #1b4332; color: white; }
-        .action-btn { padding: 4px 8px; border-radius: 6px; cursor: pointer; transition: 0.2s; }
-        .btn-resend { color: #2d6a4f; border: 1px solid #2d6a4f; background: transparent; }
+        .action-btn { padding: 4px 8px; border-radius: 6px; cursor: pointer; transition: 0.2s; border: 1px solid transparent; background: transparent; }
+        .btn-resend { color: #2d6a4f; border-color: #2d6a4f; }
         .btn-resend:hover { background: #d8f3dc; }
-        .btn-delete { color: #dc3545; border: 1px solid #dc3545; background: transparent; }
+        .btn-edit { color: #ffc107; border-color: #ffc107; }
+        .btn-edit:hover { background: #fff3cd; }
+        .btn-delete { color: #dc3545; border-color: #dc3545; }
         .btn-delete:hover { background: #f8d7da; }
     </style>
 </head>
@@ -32,8 +34,13 @@
     <div class="row g-4 justify-content-center">
         <div class="col-md-5">
             <div class="card p-4">
-                <h5 class="fw-bold mb-4">Add Slot & Notify</h5>
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="fw-bold mb-0" id="formTitle">Add Slot & Notify</h5>
+                    <button id="cancelEditBtn" class="btn btn-sm btn-outline-secondary d-none" onclick="resetForm()">Cancel Edit</button>
+                </div>
                 
+                <input type="hidden" id="editBookingId">
+
                 <div class="mb-3">
                     <label class="form-label small fw-bold text-muted">DATE</label>
                     <input type="date" id="bookDate" class="form-control" onchange="updateView()">
@@ -67,7 +74,7 @@
                     </div>
                 </div>
 
-                <button class="btn btn-primary-custom w-100 py-3 fw-bold" onclick="saveEntry()">
+                <button id="submitBtn" class="btn btn-primary-custom w-100 py-3 fw-bold" onclick="saveEntry()">
                     <i class="bi bi-send-fill me-2"></i>SAVE & SEND MESSAGE
                 </button>
             </div>
@@ -75,8 +82,39 @@
 
         <div class="col-md-6">
             <div class="card p-4">
-                <h6 class="fw-bold mb-3 text-muted" id="scheduleHeader">Day Schedule</h6>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold mb-0 text-muted" id="scheduleHeader">Day Schedule</h6>
+                    <button class="btn btn-sm btn-dark" data-bs-toggle="modal" data-bs-target="#upcomingModal" onclick="loadUpcoming()">
+                        <i class="bi bi-calendar-event me-1"></i> Upcoming
+                    </button>
+                </div>
                 <div id="dayList"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="upcomingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">All Upcoming Bookings</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Customer</th>
+                                <th>Phone</th>
+                            </tr>
+                        </thead>
+                        <tbody id="upcomingList"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -103,6 +141,7 @@
     }
 
     async function saveEntry() {
+        const id = document.getElementById('editBookingId').value;
         const name = document.getElementById('userName').value;
         const phone = document.getElementById('userPhone').value;
         const date = document.getElementById('bookDate').value;
@@ -110,37 +149,67 @@
         const duration = parseFloat(document.getElementById('duration').value);
 
         if (!name || !phone || !start) {
-            return Swal.fire("Required Fields", "Please enter Name, Phone, and Start Time", "warning");
+            return Swal.fire("Required", "Please fill Name, Phone and Time", "warning");
         }
 
         let [h, m] = start.split(':').map(Number);
         let total = h * 60 + m + (duration * 60);
         let end = `${String(Math.floor(total/60)%24).padStart(2,'0')}:${String(total%60).padStart(2,'0')}:00`;
 
-        const { error } = await supabaseClient.from('turf_bookings').insert([{
+        const bookingData = {
             customer_name: name,
             phone_number: phone,
             booking_date: date,
-            start_time: start + ":00",
+            start_time: start.length === 5 ? start + ":00" : start,
             end_time: end
-        }]);
+        };
+
+        let error;
+        if (id) {
+            const { error: err } = await supabaseClient.from('turf_bookings').update(bookingData).eq('id', id);
+            error = err;
+        } else {
+            const { error: err } = await supabaseClient.from('turf_bookings').insert([bookingData]);
+            error = err;
+        }
 
         if (error) {
             Swal.fire("Error", error.message, "error");
         } else {
             sendWhatsApp(name, phone, date, start, end, 'confirm');
-            document.getElementById('userName').value = '';
-            document.getElementById('userPhone').value = '';
-            document.getElementById('startTime').value = '';
+            resetForm();
             loadDaySlots();
-            Swal.fire({ title: 'Saved!', icon: 'success', timer: 1500, showConfirmButton: false });
+            Swal.fire({ title: id ? 'Updated!' : 'Saved!', icon: 'success', timer: 1500, showConfirmButton: false });
         }
+    }
+
+    function editBooking(id, name, phone, date, start) {
+        document.getElementById('editBookingId').value = id;
+        document.getElementById('userName').value = name;
+        document.getElementById('userPhone').value = phone;
+        document.getElementById('bookDate').value = date;
+        document.getElementById('startTime').value = start.slice(0,5);
+        
+        document.getElementById('formTitle').innerText = "Edit Booking";
+        document.getElementById('submitBtn').innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>UPDATE & NOTIFY';
+        document.getElementById('cancelEditBtn').classList.remove('d-none');
+        window.scrollTo(0,0);
+    }
+
+    function resetForm() {
+        document.getElementById('editBookingId').value = '';
+        document.getElementById('userName').value = '';
+        document.getElementById('userPhone').value = '';
+        document.getElementById('startTime').value = '';
+        document.getElementById('formTitle').innerText = "Add Slot & Notify";
+        document.getElementById('submitBtn').innerHTML = '<i class="bi bi-send-fill me-2"></i>SAVE & SEND MESSAGE';
+        document.getElementById('cancelEditBtn').classList.add('d-none');
     }
 
     async function deleteBooking(id, name, phone, date, start) {
         const result = await Swal.fire({
             title: 'Cancel Booking?',
-            text: `This will remove ${name}'s slot and send a cancellation message.`,
+            text: `Notify ${name} about cancellation?`,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#dc3545',
@@ -149,76 +218,62 @@
 
         if (result.isConfirmed) {
             const { error } = await supabaseClient.from('turf_bookings').delete().eq('id', id);
-            
-            if (error) {
-                Swal.fire("Error", "Could not delete booking", "error");
-            } else {
-                // Send cancellation message
+            if (!error) {
                 sendWhatsApp(name, phone, date, start, '', 'cancel');
                 loadDaySlots();
-                Swal.fire('Deleted!', 'Booking has been cancelled.', 'success');
+                Swal.fire('Deleted!', 'WhatsApp opened.', 'success');
             }
         }
     }
 
     function sendWhatsApp(name, phone, date, start, end, type) {
-        const cleanPhone = phone.replace(/\D/g, '');
-        const finalPhone = "91" + cleanPhone;
-        const formattedDate = new Date(date).toLocaleDateString('en-US', { 
-            weekday: 'long', month: 'short', day: 'numeric' 
-        });
+        const cleanPhone = "91" + phone.replace(/\D/g, '');
+        const formattedDate = new Date(date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
 
-        let message = "";
-        if (type === 'confirm') {
-            message = `*TURFIT BOOKING CONFIRMED*%0A%0A` +
-                      `Hi *${name}*, your booking is successful!%0A%0A` +
-                      `📅 *Date:* ${formattedDate}%0A` +
-                      `⏰ *Time:* ${start.slice(0,5)} to ${end.slice(0,5)}%0A%0A` +
-                      `Please reach 10 mins before your slot. See you!`;
-        } else {
-            message = `*TURFIT BOOKING CANCELLED*%0A%0A` +
-                      `Hi *${name}*, your booking for *${formattedDate}* at *${start.slice(0,5)}* has been cancelled.%0A%0A` +
-                      `If this was a mistake, please contact us.`;
-        }
+        let message = type === 'confirm' 
+            ? `*TURFIT BOOKING CONFIRMED*%0A%0AHi *${name}*, your booking for *${formattedDate}* (${start.slice(0,5)} - ${end.slice(0,5)}) is successful!%0APlease reach 10 mins early.`
+            : `*TURFIT BOOKING CANCELLED*%0A%0AHi *${name}*, your booking for *${formattedDate}* at *${start.slice(0,5)}* has been cancelled.`;
 
-        const url = `https://wa.me/${finalPhone}?text=${message}`;
-        window.open(url, '_blank').focus();
+        window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank').focus();
     }
 
     async function loadDaySlots() {
         const date = document.getElementById('bookDate').value;
-        const { data } = await supabaseClient.from('turf_bookings')
-            .select('*').eq('booking_date', date).order('start_time');
-
+        const { data } = await supabaseClient.from('turf_bookings').select('*').eq('booking_date', date).order('start_time');
         const container = document.getElementById('dayList');
         container.innerHTML = '';
 
         if (data && data.length > 0) {
             data.forEach(b => {
-                // Creating safe strings for JS function calls
-                const safeName = b.customer_name.replace(/'/g, "\\'");
-                
+                const sName = b.customer_name.replace(/'/g, "\\'");
                 container.innerHTML += `
-                    <div class="p-3 bg-light border rounded mb-2 d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="fw-bold text-success">${b.start_time.slice(0,5)} - ${b.end_time.slice(0,5)}</div>
-                            <div class="small text-dark">${b.customer_name} (${b.phone_number})</div>
-                        </div>
-                        <div class="d-flex gap-2">
-                            <button class="action-btn btn-resend" title="Resend Confirmation" 
-                                onclick="sendWhatsApp('${safeName}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}', '${b.end_time}', 'confirm')">
-                                <i class="bi bi-arrow-clockwise"></i>
-                            </button>
-                            <button class="action-btn btn-delete" title="Cancel Booking" 
-                                onclick="deleteBooking('${b.id}', '${safeName}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}')">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </div>
-                    </div>`;
+                <div class="p-3 bg-light border rounded mb-2 d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="fw-bold text-success">${b.start_time.slice(0,5)} - ${b.end_time.slice(0,5)}</div>
+                        <div class="small text-dark">${b.customer_name}</div>
+                    </div>
+                    <div class="d-flex gap-1">
+                        <button class="action-btn btn-resend" onclick="sendWhatsApp('${sName}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}', '${b.end_time}', 'confirm')"><i class="bi bi-whatsapp"></i></button>
+                        <button class="action-btn btn-edit" onclick="editBooking('${b.id}', '${sName}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}')"><i class="bi bi-pencil"></i></button>
+                        <button class="action-btn btn-delete" onclick="deleteBooking('${b.id}', '${sName}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}')"><i class="bi bi-trash"></i></button>
+                    </div>
+                </div>`;
             });
-        } else {
-            container.innerHTML = `<div class="text-center py-4 text-muted small">No slots filled yet.</div>`;
-        }
+        } else { container.innerHTML = `<div class="text-center py-4 text-muted small">No slots.</div>`; }
+    }
+
+    async function loadUpcoming() {
+        const today = new Date().toISOString().split('T')[0];
+        const { data } = await supabaseClient.from('turf_bookings').select('*').gte('booking_date', today).order('booking_date').order('start_time');
+        const list = document.getElementById('upcomingList');
+        list.innerHTML = data.map(b => `
+            <tr>
+                <td class="small fw-bold">${b.booking_date}</td>
+                <td class="small">${b.start_time.slice(0,5)}</td>
+                <td class="small">${b.customer_name}</td>
+                <td class="small text-muted">${b.phone_number}</td>
+            </tr>
+        `).join('');
     }
 
     init();
