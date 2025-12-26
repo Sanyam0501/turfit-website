@@ -2,57 +2,37 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Turf Booking System</title>
+    <title>Admin - Turf Management</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <style>
-        :root { --primary-green: #1b4332; --accent-green: #2d6a4f; }
-        body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; }
-        .hero-header { background: var(--primary-green); color: white; padding: 3rem 0; text-align: center; margin-bottom: 2rem; }
-        .slot-card { cursor: pointer; transition: 0.2s; border: 2px solid #eee; background: white; border-radius: 8px; }
-        .slot-card:hover:not(.booked) { border-color: var(--accent-green); transform: translateY(-3px); }
-        .booked { background-color: #e9ecef !important; color: #adb5bd; cursor: not-allowed; border-style: dashed; }
-        .selected { background-color: var(--accent-green) !important; color: white !important; border-color: var(--primary-green); }
-        .loader-spinner { display: flex; justify-content: center; padding: 3rem; }
-    </style>
 </head>
-<body>
+<body class="bg-light">
 
-<div class="hero-header">
-    <h1 class="fw-bold">🏟️ Arena Turf Booking</h1>
-    <p class="lead">Select a date and reserve your slot instantly</p>
-</div>
+<nav class="navbar navbar-dark bg-dark mb-4">
+    <div class="container">
+        <span class="navbar-brand">🏟️ Turf Admin Panel</span>
+        <a href="index.html" class="btn btn-outline-light btn-sm">Go to Site</a>
+    </div>
+</nav>
 
-<div class="container mb-5">
-    <div class="row g-4">
-        <div class="col-lg-4">
-            <div class="card shadow-sm p-4 border-0">
-                <h5 class="fw-bold mb-3 text-success">Booking Details</h5>
-                <div class="mb-3">
-                    <label class="form-label small text-muted">Select Date</label>
-                    <input type="date" id="bookingDate" class="form-control" onchange="fetchAvailability()">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label small text-muted">Name</label>
-                    <input type="text" id="custName" class="form-control" placeholder="Your Name">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label small text-muted">Phone Number</label>
-                    <input type="tel" id="custPhone" class="form-control" placeholder="Phone Number">
-                </div>
-                <button id="bookBtn" class="btn btn-success w-100 py-2 fw-bold" onclick="processBooking()">CONFIRM BOOKING</button>
-            </div>
-        </div>
-
-        <div class="col-lg-8">
-            <div class="card shadow-sm p-4 border-0">
-                <h5 class="fw-bold mb-4 text-success">Available Slots</h5>
-                <div id="slots-loader" class="loader-spinner">
-                    <div class="spinner-border text-success" role="status"></div>
-                </div>
-                <div class="row g-3" id="slotsContainer" style="display: none;">
-                    </div>
+<div class="container">
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            <h4 class="mb-4">All Bookings</h4>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Customer</th>
+                            <th>Phone</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminTableBody">
+                        </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -60,115 +40,63 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-    let supabaseClient = null;
-    let selectedSlot = null;
-    const TIME_SLOTS = [
-        "06:00 AM", "07:30 AM", "09:00 AM", "10:30 AM",
-        "04:00 PM", "05:30 PM", "07:00 PM", "08:30 PM", "10:00 PM"
-    ];
+    let supabaseAdmin = null;
 
-    // Initialize: Fetch keys from your Vercel Env Variables via API
-    async function init() {
-        try {
-            const response = await fetch('/api/get-public-key');
-            const keys = await response.json();
-
-            if (!keys.SUPABASE_URL_PUBLIC || !keys.SUPABASE_ANON_KEY) {
-                throw new Error("Public keys not found in Environment Variables.");
-            }
-
-            supabaseClient = supabase.createClient(keys.SUPABASE_URL_PUBLIC, keys.SUPABASE_ANON_KEY);
-            
-            // Set default date to today
-            document.getElementById('bookingDate').valueAsDate = new Date();
-            fetchAvailability();
-        } catch (error) {
-            Swal.fire("Config Error", "Database connection failed. Check Vercel Environment Variables.", "error");
-        }
+    async function initAdmin() {
+        const response = await fetch('/api/get-public-key');
+        const keys = await response.json();
+        supabaseAdmin = supabase.createClient(keys.SUPABASE_URL_PUBLIC, keys.SUPABASE_ANON_KEY);
+        loadAllBookings();
     }
 
-    async function fetchAvailability() {
-        if (!supabaseClient) return;
-        
-        const date = document.getElementById('bookingDate').value;
-        const loader = document.getElementById('slots-loader');
-        const container = document.getElementById('slotsContainer');
-
-        loader.style.display = 'flex';
-        container.style.display = 'none';
-
-        const { data, error } = await supabaseClient
+    async function loadAllBookings() {
+        const { data, error } = await supabaseAdmin
             .from('turf_bookings')
-            .select('time_slot')
-            .eq('booking_date', date);
+            .select('*')
+            .order('booking_date', { ascending: true });
 
-        const booked = data ? data.map(b => b.time_slot) : [];
-        renderSlots(booked);
+        const tbody = document.getElementById('adminTableBody');
+        tbody.innerHTML = '';
+
+        data.forEach(booking => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${booking.booking_date}</td>
+                <td><span class="badge bg-info text-dark">${booking.time_slot}</span></td>
+                <td>${booking.customer_name}</td>
+                <td>${booking.phone_number}</td>
+                <td>
+                    <button class="btn btn-danger btn-sm" onclick="deleteBooking('${booking.id}')">
+                        🗑️ Delete
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
     }
 
-    function renderSlots(booked) {
-        const container = document.getElementById('slotsContainer');
-        const loader = document.getElementById('slots-loader');
-        container.innerHTML = '';
-        selectedSlot = null;
-
-        TIME_SLOTS.forEach(slot => {
-            const isBooked = booked.includes(slot);
-            const div = document.createElement('div');
-            div.className = 'col-md-4 col-6';
-            div.innerHTML = `
-                <div class="card p-3 text-center slot-card ${isBooked ? 'booked' : ''}" 
-                     onclick="selectSlot(this, '${slot}', ${isBooked})">
-                    <div class="fw-bold">${slot}</div>
-                    <small>${isBooked ? 'Reserved' : 'Available'}</small>
-                </div>
-            `;
-            container.appendChild(div);
+    async function deleteBooking(id) {
+        const result = await Swal.fire({
+            title: 'Are you sure?',
+            text: "This will cancel the user's booking!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            confirmButtonText: 'Yes, delete it!'
         });
 
-        loader.style.display = 'none';
-        container.style.display = 'flex';
-    }
-
-    function selectSlot(el, slot, isBooked) {
-        if (isBooked) return;
-        document.querySelectorAll('.slot-card').forEach(c => c.classList.remove('selected'));
-        el.classList.add('selected');
-        selectedSlot = slot;
-    }
-
-    async function processBooking() {
-        const name = document.getElementById('custName').value.trim();
-        const phone = document.getElementById('custPhone').value.trim();
-        const date = document.getElementById('bookingDate').value;
-
-        if (!selectedSlot || !name || !phone) {
-            return Swal.fire("Incomplete", "Please select a slot and fill in your details.", "warning");
-        }
-
-        const btn = document.getElementById('bookBtn');
-        btn.disabled = true;
-        btn.innerText = "Processing...";
-
-        const { error } = await supabaseClient.from('turf_bookings').insert([{
-            customer_name: name,
-            phone_number: phone,
-            booking_date: date,
-            time_slot: selectedSlot
-        }]);
-
-        btn.disabled = false;
-        btn.innerText = "CONFIRM BOOKING";
-
-        if (error) {
-            Swal.fire("Booking Failed", "This slot was just taken. Please try another.", "error");
-        } else {
-            Swal.fire("Success!", `Your slot for ${selectedSlot} is confirmed.`, "success");
-            fetchAvailability(); // Refresh list
+        if (result.isConfirmed) {
+            const res = await fetch(`/api/delete-booking?id=${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                Swal.fire('Deleted!', 'Booking has been removed.', 'success');
+                loadAllBookings();
+            } else {
+                Swal.fire('Error', 'Could not delete booking.', 'error');
+            }
         }
     }
 
-    init();
+    initAdmin();
 </script>
 </body>
 </html>
