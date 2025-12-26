@@ -21,7 +21,6 @@
         .btn-edit:hover { background: #fff3cd; }
         .btn-delete { color: #dc3545; border-color: #dc3545; }
         .btn-delete:hover { background: #f8d7da; }
-        .table-sm td { vertical-align: middle; font-size: 0.9rem; }
     </style>
 </head>
 <body>
@@ -128,11 +127,9 @@
     let supabaseClient;
 
     async function init() {
-        // Replace this with your actual public keys or keep the fetch if you have the API endpoint set up
         const res = await fetch('/api/get-public-key');
         const keys = await res.json();
         supabaseClient = supabase.createClient(keys.SUPABASE_URL_PUBLIC, keys.SUPABASE_ANON_KEY);
-        
         document.getElementById('bookDate').valueAsDate = new Date();
         updateView();
     }
@@ -185,6 +182,29 @@
         }
     }
 
+    function sendWhatsApp(name, phone, date, start, end, type) {
+        const cleanPhone = "91" + phone.replace(/\D/g, '');
+        const formattedDate = new Date(date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+        const timeRange = end ? `${start.slice(0,5)} - ${end.slice(0,5)}` : start.slice(0,5);
+
+        // FORMAL RULES SECTION
+        const rules = `%0A%0A*RULES %26 REGULATIONS:*%0A` +
+                      `1. Spitting and Smoking is strictly prohibited inside the turf premises, pathway (outside turf) and the ramp. If caught doing the same, then a fine of ₹300 shall be charged from the booking team.%0A` +
+                      `2. Cricket bat or ball, football, stumps etc. are the property of the turf and shall not be carried outside the turf without the permission of the owner. If caught carrying outside then it will be treated as theft, fine of ₹500 shall be taken from the booking team%0A` +
+                      `3. *Early Arrival:* Kindly wait outside the turf if you arrive before your slot. Accessing the turf early will be counted in your booking and charged extra.`;
+
+        let message = "";
+        if (type === 'confirm') {
+            message = `*TURFIT BOOKING CONFIRMED*%0A%0AHi *${name}*, your booking for *${formattedDate}* (${timeRange}) is successful!${rules}`;
+        } else if (type === 'modify') {
+            message = `*TURFIT BOOKING MODIFIED*%0A%0AHi *${name}*, your booking details have been updated to *${formattedDate}* (${timeRange}).${rules}`;
+        } else if (type === 'cancel') {
+            message = `*TURFIT BOOKING CANCELLED*%0A%0AHi *${name}*, your booking for *${formattedDate}* at *${start.slice(0,5)}* has been cancelled.`;
+        }
+
+        window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank').focus();
+    }
+
     function editBooking(id, name, phone, date, start) {
         document.getElementById('editBookingId').value = id;
         document.getElementById('userName').value = name;
@@ -211,7 +231,7 @@
     async function deleteBooking(id, name, phone, date, start) {
         const result = await Swal.fire({
             title: 'Cancel Booking?',
-            text: `Notify ${name} that the booking is cancelled?`,
+            text: `Remove ${name}'s slot and notify them?`,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#dc3545',
@@ -223,26 +243,9 @@
             if (!error) {
                 sendWhatsApp(name, phone, date, start, '', 'cancel');
                 loadDaySlots();
-                Swal.fire('Deleted!', 'Booking removed and WhatsApp opened.', 'success');
+                Swal.fire('Deleted!', 'Booking cancelled.', 'success');
             }
         }
-    }
-
-    function sendWhatsApp(name, phone, date, start, end, type) {
-        const cleanPhone = "91" + phone.replace(/\D/g, '');
-        const formattedDate = new Date(date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
-        const timeRange = end ? `${start.slice(0,5)} - ${end.slice(0,5)}` : start.slice(0,5);
-
-        let message = "";
-        if (type === 'confirm') {
-            message = `*TURFIT BOOKING CONFIRMED*%0A%0AHi *${name}*, your booking for *${formattedDate}* (${timeRange}) is successful!%0APlease reach 10 mins early.`;
-        } else if (type === 'modify') {
-            message = `*TURFIT BOOKING MODIFIED*%0A%0AHi *${name}*, your booking has been updated.%0A%0A📅 *New Date:* ${formattedDate}%0A⏰ *New Time:* ${timeRange}%0A%0ASee you there!`;
-        } else if (type === 'cancel') {
-            message = `*TURFIT BOOKING CANCELLED*%0A%0AHi *${name}*, your booking for *${formattedDate}* at *${start.slice(0,5)}* has been cancelled.`;
-        }
-
-        window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank').focus();
     }
 
     async function loadDaySlots() {
@@ -267,25 +270,17 @@
                     </div>
                 </div>`;
             });
-        } else { container.innerHTML = `<div class="text-center py-4 text-muted small">No slots booked for this date.</div>`; }
+        } else { container.innerHTML = `<div class="text-center py-4 text-muted small">No slots booked.</div>`; }
     }
 
     async function loadUpcoming() {
         const today = new Date().toISOString().split('T')[0];
         const { data } = await supabaseClient.from('turf_bookings').select('*').gte('booking_date', today).order('booking_date').order('start_time');
         const list = document.getElementById('upcomingList');
-        
         if (data && data.length > 0) {
-            list.innerHTML = data.map(b => `
-                <tr>
-                    <td><span class="badge bg-secondary">${b.booking_date}</span></td>
-                    <td>${b.start_time.slice(0,5)}</td>
-                    <td>${b.customer_name}</td>
-                    <td>${b.phone_number}</td>
-                </tr>
-            `).join('');
+            list.innerHTML = data.map(b => `<tr><td>${b.booking_date}</td><td>${b.start_time.slice(0,5)}</td><td>${b.customer_name}</td><td>${b.phone_number}</td></tr>`).join('');
         } else {
-            list.innerHTML = '<tr><td colspan="4" class="text-center py-3 text-muted">No upcoming bookings found.</td></tr>';
+            list.innerHTML = '<tr><td colspan="4" class="text-center py-3 text-muted">No upcoming bookings.</td></tr>';
         }
     }
 
