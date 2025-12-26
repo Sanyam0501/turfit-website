@@ -10,6 +10,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcrypt.min.js"></script>
 
     <style>
         :root {
@@ -167,54 +168,54 @@
                 keys.SUPABASE_ANON_KEY
             );
 
-            document.getElementById('bookDate').valueAsDate = new Date();
-            await checkAuth();
+            bookDate.valueAsDate = new Date();
             fetchSlots();
         }
 
-        /* AUTH CHECK */
-        async function checkAuth() {
-            const { data } = await supabaseClient.auth.getSession();
-            isAdmin = !!data.session;
-            document.getElementById('logoutBtn').classList.toggle('d-none', !isAdmin);
-        }
-
-        /* LOGIN */
+        /* ADMIN LOGIN (USERNAME + PASSWORD) */
         async function adminLogin() {
             const { value: form } = await Swal.fire({
                 title: 'Admin Login',
-                html: '<input id="email" class="swal2-input" placeholder="Email">' +
+                html:
+                    '<input id="username" class="swal2-input" placeholder="Admin ID">' +
                     '<input id="password" type="password" class="swal2-input" placeholder="Password">',
                 preConfirm: () => ({
-                    email: document.getElementById('email').value,
+                    username: document.getElementById('username').value,
                     password: document.getElementById('password').value
                 })
             });
-
             if (!form) return;
 
-            const { error } = await supabaseClient.auth.signInWithPassword(form);
-            if (error) Swal.fire("Error", error.message, "error");
-            else {
-                Swal.fire("Success", "Logged in", "success");
-                checkAuth();
-                loadAdminTable();
-            }
+            const { data } = await supabaseClient
+                .from('admin_users')
+                .select('password_hash')
+                .eq('username', form.username)
+                .single();
+
+            if (!data) return Swal.fire("Error", "Invalid ID or Password", "error");
+
+            const match = bcrypt.compareSync(form.password, data.password_hash);
+            if (!match) return Swal.fire("Error", "Invalid ID or Password", "error");
+
+            isAdmin = true;
+            logoutBtn.classList.remove('d-none');
+            Swal.fire("Success", "Admin logged in", "success");
+            loadAdminTable();
         }
 
         /* LOGOUT */
-        async function adminLogout() {
-            await supabaseClient.auth.signOut();
+        function adminLogout() {
             isAdmin = false;
-            checkAuth();
+            logoutBtn.classList.add('d-none');
             Swal.fire("Logged out", "", "info");
         }
 
         /* FETCH SLOTS */
         async function fetchSlots() {
-            const date = bookDate.value;
-            const { data } = await supabaseClient.from('turf_bookings')
-                .select('time_slot').eq('booking_date', date);
+            const { data } = await supabaseClient
+                .from('turf_bookings')
+                .select('time_slot')
+                .eq('booking_date', bookDate.value);
 
             const taken = data ? data.map(d => d.time_slot) : [];
             slotGrid.innerHTML = '';
@@ -263,7 +264,8 @@ onclick="selectSlot(this,'${s}',${isTaken})">
         /* ADMIN TABLE */
         async function loadAdminTable() {
             const { data } = await supabaseClient.from('turf_bookings')
-                .select('*').order('booking_date', { ascending: false });
+                .select('*')
+                .order('booking_date', { ascending: false });
 
             adminBody.innerHTML = '';
             data.forEach(b => {
@@ -282,10 +284,10 @@ onclick="selectSlot(this,'${s}',${isTaken})">
             });
         }
 
-        /* DELETE (AUTH REQUIRED) */
+        /* DELETE */
         async function doDelete(id) {
             if (!isAdmin)
-                return Swal.fire("Unauthorized", "Admin login required", "warning");
+                return Swal.fire("Unauthorized", "Admin only", "warning");
 
             const confirm = await Swal.fire({
                 title: 'Delete Booking?',
@@ -293,10 +295,12 @@ onclick="selectSlot(this,'${s}',${isTaken})">
                 showCancelButton: true,
                 confirmButtonColor: '#d33'
             });
-
             if (!confirm.isConfirmed) return;
 
-            const { error } = await supabaseClient.from('turf_bookings').delete().eq('id', id);
+            const { error } = await supabaseClient
+                .from('turf_bookings')
+                .delete()
+                .eq('id', id);
 
             if (error) Swal.fire("Error", error.message, "error");
             else {
