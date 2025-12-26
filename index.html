@@ -174,34 +174,42 @@
 
         /* ADMIN LOGIN (USERNAME + PASSWORD) */
         async function adminLogin() {
-            const { value: form } = await Swal.fire({
-                title: 'Admin Login',
-                html:
-                    '<input id="username" class="swal2-input" placeholder="Admin ID">' +
-                    '<input id="password" type="password" class="swal2-input" placeholder="Password">',
-                preConfirm: () => ({
-                    username: document.getElementById('username').value,
-                    password: document.getElementById('password').value
-                })
-            });
-            if (!form) return;
+    const { value: form } = await Swal.fire({
+        title: 'Admin Login',
+        html:
+            '<input id="username" class="swal2-input" placeholder="Admin ID">' +
+            '<input id="password" type="password" class="swal2-input" placeholder="Password">',
+        preConfirm: () => ({
+            username: document.getElementById('username').value,
+            password: document.getElementById('password').value
+        })
+    });
+    
+    if (!form || !form.username || !form.password) return;
 
-            const { data } = await supabaseClient
-                .from('admin_users')
-                .select('password_hash')
-                .eq('username', form.username)
-                .single();
+    // Fetch the user record
+    const { data, error } = await supabaseClient
+        .from('admin_users')
+        .select('password_hash')
+        .eq('username', form.username)
+        .maybeSingle(); // Better for checking existence
 
-            if (!data) return Swal.fire("Error", "Invalid ID or Password", "error");
+    if (error || !data) {
+        return Swal.fire("Error", "Invalid ID or Password", "error");
+    }
 
-            const match = bcrypt.compareSync(form.password, data.password_hash);
-            if (!match) return Swal.fire("Error", "Invalid ID or Password", "error");
+    // Compare plain text password from form with hash from DB
+    const match = await dcodeIO.bcrypt.compareSync(form.password, data.password_hash);
 
-            isAdmin = true;
-            logoutBtn.classList.remove('d-none');
-            Swal.fire("Success", "Admin logged in", "success");
-            loadAdminTable();
-        }
+    if (match) {
+        isAdmin = true;
+        document.getElementById('logoutBtn').classList.remove('d-none');
+        Swal.fire("Success", "Admin logged in", "success");
+        loadAdminTable();
+    } else {
+        Swal.fire("Error", "Invalid ID or Password", "error");
+    }
+}
 
         /* LOGOUT */
         function adminLogout() {
