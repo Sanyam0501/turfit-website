@@ -3,103 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TURFIT - Dynamic Bookings</title>
+    <title>TURF ADMIN - Daily Logs</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        :root { --turf-green: #1b4332; --action: #2d6a4f; }
-        body { background: #f8f9fa; font-family: 'Segoe UI', sans-serif; }
-        .hero { background: var(--turf-green); color: #fff; padding: 40px 0; }
-        .card { border-radius: 15px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,.05); }
-        .day-badge { font-size: 0.8rem; background: #e9ecef; padding: 2px 8px; border-radius: 5px; color: #495057; font-weight: bold; }
-        .nav-pills .nav-link.active { background-color: var(--action); }
-        .btn-success { background-color: var(--action); border: none; }
-        .btn-success:hover { background-color: #1b4332; }
+        :root { --admin-green: #1b4332; --accent: #2d6a4f; }
+        body { background: #f0f2f5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .hero { background: var(--admin-green); color: #fff; padding: 30px 0; border-bottom: 5px solid #d8f3dc; }
+        .card { border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .slot-card { transition: transform 0.2s; border-left: 5px solid var(--accent) !important; }
+        .slot-card:hover { transform: translateX(5px); }
+        .nav-pills .nav-link.active { background-color: var(--accent); }
+        .btn-primary-custom { background-color: var(--accent); color: white; border: none; }
+        .btn-primary-custom:hover { background-color: #1b4332; color: white; }
     </style>
 </head>
 <body>
 
-<div class="hero text-center mb-5">
-    <h1 class="fw-bold">TURFIT BOOKINGS</h1>
-    <p class="opacity-75" id="currentDisplayDate"></p>
+<div class="hero text-center mb-4">
+    <h2 class="fw-bold"><i class="bi bi-calendar-check-fill me-2"></i>TURF MANAGER</h2>
+    <p class="mb-0 opacity-75" id="currentDisplayDate"></p>
 </div>
 
 <div class="container">
-    <ul class="nav nav-pills mb-4 justify-content-center bg-white p-2 rounded-pill shadow-sm mx-auto" style="max-width:350px">
-        <li class="nav-item">
-            <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-book">New Booking</button>
-        </li>
-        <li class="nav-item">
-            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-admin" onclick="loadBookings()">Manage All</button>
-        </li>
+    <ul class="nav nav-pills mb-4 justify-content-center bg-white p-2 rounded-pill shadow-sm mx-auto" style="max-width:400px">
+        <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-entry">Entry Form</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-history" onclick="loadAllHistory()">All Records</button></li>
     </ul>
 
     <div class="tab-content">
-        <div class="tab-pane fade show active" id="tab-book">
-            <div class="row g-4 justify-content-center">
+        <div class="tab-pane fade show active" id="tab-entry">
+            <div class="row g-4">
                 <div class="col-md-5">
                     <div class="card p-4">
-                        <h5 class="fw-bold text-success mb-4 text-center">Book the Turf</h5>
+                        <h5 class="fw-bold mb-4"><i class="bi bi-plus-circle me-2"></i>Add New Slot</h5>
                         
-                        <form id="bookingForm">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Select Date</label>
-                                <input type="date" id="bookDate" class="form-control" onchange="updateDayDisplay(); loadBookingsForDay();">
-                            </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted">DATE</label>
+                            <input type="date" id="bookDate" class="form-control form-control-lg" onchange="updateView()">
+                        </div>
 
-                            <div class="row">
-                                <div class="col-6 mb-3">
-                                    <label class="form-label fw-bold">Start Time</label>
-                                    <input type="time" id="startTime" class="form-control">
-                                </div>
-                                <div class="col-6 mb-3">
-                                    <label class="form-label fw-bold">Duration</label>
-                                    <select id="duration" class="form-select">
-                                        <option value="1">1 Hour</option>
-                                        <option value="1.5">1.5 Hours</option>
-                                        <option value="2">2 Hours</option>
-                                        <option value="3">3 Hours</option>
-                                    </select>
-                                </div>
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <label class="form-label small fw-bold text-muted">START TIME</label>
+                                <input type="time" id="startTime" class="form-control">
                             </div>
+                            <div class="col-6 mb-3">
+                                <label class="form-label small fw-bold text-muted">DURATION</label>
+                                <select id="duration" class="form-select">
+                                    <option value="1">1 Hour</option>
+                                    <option value="1.5">1.5 Hours</option>
+                                    <option value="2">2 Hours</option>
+                                </select>
+                            </div>
+                        </div>
 
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Customer Name</label>
-                                <input type="text" id="userName" class="form-control" placeholder="Full Name">
-                            </div>
-                            <div class="mb-4">
-                                <label class="form-label fw-bold">Phone Number</label>
-                                <input type="tel" id="userPhone" class="form-control" placeholder="Contact number">
-                            </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted">CUSTOMER NAME</label>
+                            <input type="text" id="userName" class="form-control" placeholder="Enter name">
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="form-label small fw-bold text-muted">PHONE (OPTIONAL)</label>
+                            <input type="tel" id="userPhone" class="form-control" placeholder="Phone number">
+                        </div>
 
-                            <button type="button" class="btn btn-success w-100 py-3 fw-bold" onclick="handleBooking()">CONFIRM BOOKING</button>
-                        </form>
+                        <button class="btn btn-primary-custom w-100 py-3 fw-bold" onclick="saveEntry()">SAVE RECORD</button>
                     </div>
                 </div>
 
-                <div class="col-md-5">
-                    <div class="card p-4 h-100">
-                        <h6 class="fw-bold mb-3 text-muted" id="scheduleHeader">Schedule</h6>
-                        <div id="dayList"></div>
+                <div class="col-md-7">
+                    <div class="card p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold mb-0 text-muted" id="scheduleHeader">Day Schedule</h6>
+                            <span class="badge bg-dark" id="countBadge">0 Slots</span>
+                        </div>
+                        <div id="dayList" style="max-height: 500px; overflow-y: auto;"></div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="tab-pane fade" id="tab-admin">
+        <div class="tab-pane fade" id="tab-history">
             <div class="card p-4">
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle">
+                    <table class="table table-hover">
                         <thead class="table-light">
                             <tr>
-                                <th>Date & Day</th>
-                                <th>Time Window</th>
+                                <th>Date</th>
+                                <th>Time</th>
                                 <th>Customer</th>
+                                <th>Phone</th>
                                 <th class="text-center">Action</th>
                             </tr>
                         </thead>
-                        <tbody id="adminBody"></tbody>
+                        <tbody id="historyBody"></tbody>
                     </table>
                 </div>
             </div>
@@ -113,65 +112,39 @@
 <script>
     let supabaseClient;
 
-    async function initApp() {
-        try {
-            const res = await fetch('/api/get-public-key');
-            const keys = await res.json();
-            supabaseClient = supabase.createClient(keys.SUPABASE_URL_PUBLIC, keys.SUPABASE_ANON_KEY);
-            
-            // Set default date to today
-            document.getElementById('bookDate').valueAsDate = new Date();
-            updateDayDisplay();
-            loadBookingsForDay();
-        } catch (err) {
-            console.error("Initialization failed", err);
-        }
+    async function init() {
+        // Fetch your keys from your local API
+        const res = await fetch('/api/get-public-key');
+        const keys = await res.json();
+        supabaseClient = supabase.createClient(keys.SUPABASE_URL_PUBLIC, keys.SUPABASE_ANON_KEY);
+        
+        document.getElementById('bookDate').valueAsDate = new Date();
+        updateView();
     }
 
-    function getDayName(dateString) {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+    function updateView() {
+        const d = document.getElementById('bookDate').value;
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        const dateObj = new Date(d);
+        
+        document.getElementById('currentDisplayDate').innerText = dateObj.toLocaleDateString(undefined, options);
+        document.getElementById('scheduleHeader').innerText = "Bookings for " + dateObj.toLocaleDateString(undefined, {month:'short', day:'numeric'});
+        loadDaySlots();
     }
 
-    function updateDayDisplay() {
-        const dateVal = document.getElementById('bookDate').value;
-        const display = getDayName(dateVal);
-        document.getElementById('currentDisplayDate').innerText = display;
-        document.getElementById('scheduleHeader').innerText = `Schedule for ${display}`;
-    }
-
-    function calculateEndTime(startTime, durationHours) {
-        let [hours, minutes] = startTime.split(':').map(Number);
-        let totalMinutes = hours * 60 + minutes + (durationHours * 60);
-        let endH = Math.floor(totalMinutes / 60) % 24;
-        let endM = totalMinutes % 60;
-        return `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}:00`;
-    }
-
-    async function handleBooking() {
-        const name = document.getElementById('userName').value;
-        const phone = document.getElementById('userPhone').value;
+    async function saveEntry() {
+        const name = document.getElementById('userName').value || "Walk-in Customer";
+        const phone = document.getElementById('userPhone').value || "N/A";
         const date = document.getElementById('bookDate').value;
         const start = document.getElementById('startTime').value;
         const duration = parseFloat(document.getElementById('duration').value);
 
-        if (!name || !phone || !date || !start) {
-            return Swal.fire("Incomplete", "Please fill all fields", "warning");
-        }
+        if (!start) return Swal.fire("Required", "Please select a start time", "warning");
 
-        const end = calculateEndTime(start, duration);
-
-        // Check for overlaps
-        const { data: overlaps } = await supabaseClient
-            .from('turf_bookings')
-            .select('*')
-            .eq('booking_date', date)
-            .lt('start_time', end)
-            .gt('end_time', start + ":00");
-
-        if (overlaps && overlaps.length > 0) {
-            return Swal.fire("Slot Taken", "This time range overlaps with another booking.", "error");
-        }
+        // Calculate End Time
+        let [h, m] = start.split(':').map(Number);
+        let total = h * 60 + m + (duration * 60);
+        let end = `${String(Math.floor(total/60)%24).padStart(2,'0')}:${String(total%60).padStart(2,'0')}:00`;
 
         const { error } = await supabaseClient.from('turf_bookings').insert([{
             customer_name: name,
@@ -184,95 +157,76 @@
         if (error) {
             Swal.fire("Error", error.message, "error");
         } else {
-            Swal.fire("Confirmed", "Booking successful!", "success");
-            
-            // RELOAD/RESET FORM LOGIC HERE
+            // Success Toast (Less intrusive than a big pop-up)
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 2000
+            });
+            Toast.fire({ icon: 'success', title: 'Record Saved' });
+
+            // CLEAR FORM FOR NEXT ENTRY
             document.getElementById('userName').value = '';
             document.getElementById('userPhone').value = '';
             document.getElementById('startTime').value = '';
-            document.getElementById('duration').value = '1';
             
-            // Refresh visuals
-            loadBookingsForDay();
-            if(document.getElementById('tab-admin').classList.contains('active')) loadBookings();
+            loadDaySlots();
         }
     }
 
-    async function loadBookingsForDay() {
+    async function loadDaySlots() {
         const date = document.getElementById('bookDate').value;
-        const { data } = await supabaseClient
-            .from('turf_bookings')
-            .select('start_time, end_time, customer_name')
-            .eq('booking_date', date)
-            .order('start_time');
+        const { data } = await supabaseClient.from('turf_bookings')
+            .select('*').eq('booking_date', date).order('start_time');
 
         const container = document.getElementById('dayList');
+        document.getElementById('countBadge').innerText = `${data ? data.length : 0} Slots`;
         container.innerHTML = '';
 
         if (data && data.length > 0) {
             data.forEach(b => {
                 container.innerHTML += `
-                    <div class="p-3 border-start border-4 border-success bg-light mb-2 rounded shadow-sm">
-                        <div class="fw-bold text-success">${b.start_time.slice(0,5)} - ${b.end_time.slice(0,5)}</div>
-                        <div class="small text-dark">${b.customer_name}</div>
+                    <div class="p-3 bg-white border rounded shadow-sm mb-2 slot-card d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="fw-bold text-success">${b.start_time.slice(0,5)} - ${b.end_time.slice(0,5)}</div>
+                            <div class="text-dark small">${b.customer_name}</div>
+                        </div>
+                        <button class="btn btn-sm text-danger" onclick="deleteRecord('${b.id}')"><i class="bi bi-trash"></i></button>
                     </div>`;
             });
         } else {
-            container.innerHTML = `<div class="text-center py-5 text-muted">No bookings for this date.</div>`;
+            container.innerHTML = `<div class="text-center py-5 text-muted">No records for this date.</div>`;
         }
     }
 
-    async function loadBookings() {
+    async function loadAllHistory() {
         const { data } = await supabaseClient.from('turf_bookings')
-            .select('*')
-            .order('booking_date', { ascending: false })
-            .order('start_time', { ascending: true });
-
-        const body = document.getElementById('adminBody');
-        body.innerHTML = '';
-        if (data) {
-            data.forEach(b => {
-                body.innerHTML += `
-                    <tr>
-                        <td>
-                            <div class="fw-bold">${b.booking_date}</div>
-                            <div class="day-badge">${getDayName(b.booking_date).split(',')[0]}</div>
-                        </td>
-                        <td><span class="badge bg-success">${b.start_time.slice(0,5)} - ${b.end_time.slice(0,5)}</span></td>
-                        <td>${b.customer_name} <br> <small class="text-muted">${b.phone_number}</small></td>
-                        <td class="text-center">
-                            <button class="btn btn-outline-danger btn-sm" onclick="doDelete('${b.id}')">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </td>
-                    </tr>`;
-            });
-        }
-    }
-
-    async function doDelete(id) {
-        const res = await Swal.fire({ 
-            title: 'Delete Booking?', 
-            text: "This action cannot be undone.",
-            icon: 'warning',
-            showCancelButton: true, 
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#3085d6',
-            confirmButtonText: 'Yes, delete it!'
-        });
+            .select('*').order('booking_date', {ascending: false}).order('start_time');
         
-        if (!res.isConfirmed) return;
-
-        const { error } = await supabaseClient.from('turf_bookings').delete().eq('id', id);
-        if(error) {
-            Swal.fire("Error", "Could not delete booking", "error");
-        } else {
-            loadBookings();
-            loadBookingsForDay();
-        }
+        const body = document.getElementById('historyBody');
+        body.innerHTML = data.map(b => `
+            <tr>
+                <td>${b.booking_date}</td>
+                <td><span class="badge bg-success">${b.start_time.slice(0,5)} - ${b.end_time.slice(0,5)}</span></td>
+                <td>${b.customer_name}</td>
+                <td>${b.phone_number}</td>
+                <td class="text-center">
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteRecord('${b.id}', true)">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
     }
 
-    initApp();
+    async function deleteRecord(id, isHistory = false) {
+        if(!(await Swal.fire({title: 'Delete?', showCancelButton: true})).isConfirmed) return;
+        await supabaseClient.from('turf_bookings').delete().eq('id', id);
+        isHistory ? loadAllHistory() : loadDaySlots();
+    }
+
+    init();
 </script>
 </body>
 </html>
