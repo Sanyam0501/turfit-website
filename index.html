@@ -3,18 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TURF ADMIN - Daily Logs</title>
+    <title>TURF ADMIN - WhatsApp Booking</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         :root { --admin-green: #1b4332; --accent: #2d6a4f; }
-        body { background: #f0f2f5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: #f0f2f5; font-family: 'Segoe UI', sans-serif; }
         .hero { background: var(--admin-green); color: #fff; padding: 30px 0; border-bottom: 5px solid #d8f3dc; }
         .card { border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .slot-card { transition: transform 0.2s; border-left: 5px solid var(--accent) !important; }
-        .slot-card:hover { transform: translateX(5px); }
-        .nav-pills .nav-link.active { background-color: var(--accent); }
         .btn-primary-custom { background-color: var(--accent); color: white; border: none; }
         .btn-primary-custom:hover { background-color: #1b4332; color: white; }
     </style>
@@ -22,85 +19,60 @@
 <body>
 
 <div class="hero text-center mb-4">
-    <h2 class="fw-bold"><i class="bi bi-calendar-check-fill me-2"></i>TURF MANAGER</h2>
+    <h2 class="fw-bold"><i class="bi bi-whatsapp me-2"></i>TURF MANAGER</h2>
     <p class="mb-0 opacity-75" id="currentDisplayDate"></p>
 </div>
 
 <div class="container">
-    <ul class="nav nav-pills mb-4 justify-content-center bg-white p-2 rounded-pill shadow-sm mx-auto" style="max-width:400px">
-        <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-entry">Entry Form</button></li>
-        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-history" onclick="loadAllHistory()">All Records</button></li>
-    </ul>
+    <div class="row g-4 justify-content-center">
+        <div class="col-md-5">
+            <div class="card p-4">
+                <h5 class="fw-bold mb-4">Add Slot & Notify</h5>
+                
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-muted">DATE</label>
+                    <input type="date" id="bookDate" class="form-control" onchange="updateView()">
+                </div>
 
-    <div class="tab-content">
-        <div class="tab-pane fade show active" id="tab-entry">
-            <div class="row g-4">
-                <div class="col-md-5">
-                    <div class="card p-4">
-                        <h5 class="fw-bold mb-4"><i class="bi bi-plus-circle me-2"></i>Add New Slot</h5>
-                        
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold text-muted">DATE</label>
-                            <input type="date" id="bookDate" class="form-control form-control-lg" onchange="updateView()">
-                        </div>
-
-                        <div class="row">
-                            <div class="col-6 mb-3">
-                                <label class="form-label small fw-bold text-muted">START TIME</label>
-                                <input type="time" id="startTime" class="form-control">
-                            </div>
-                            <div class="col-6 mb-3">
-                                <label class="form-label small fw-bold text-muted">DURATION</label>
-                                <select id="duration" class="form-select">
-                                    <option value="1">1 Hour</option>
-                                    <option value="1.5">1.5 Hours</option>
-                                    <option value="2">2 Hours</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold text-muted">CUSTOMER NAME</label>
-                            <input type="text" id="userName" class="form-control" placeholder="Enter name">
-                        </div>
-                        
-                        <div class="mb-4">
-                            <label class="form-label small fw-bold text-muted">PHONE (OPTIONAL)</label>
-                            <input type="tel" id="userPhone" class="form-control" placeholder="Phone number">
-                        </div>
-
-                        <button class="btn btn-primary-custom w-100 py-3 fw-bold" onclick="saveEntry()">SAVE RECORD</button>
+                <div class="row">
+                    <div class="col-6 mb-3">
+                        <label class="form-label small fw-bold text-muted">START TIME</label>
+                        <input type="time" id="startTime" class="form-control">
+                    </div>
+                    <div class="col-6 mb-3">
+                        <label class="form-label small fw-bold text-muted">DURATION</label>
+                        <select id="duration" class="form-select">
+                            <option value="1">1 Hour</option>
+                            <option value="1.5">1.5 Hours</option>
+                            <option value="2">2 Hours</option>
+                        </select>
                     </div>
                 </div>
 
-                <div class="col-md-7">
-                    <div class="card p-4">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h6 class="fw-bold mb-0 text-muted" id="scheduleHeader">Day Schedule</h6>
-                            <span class="badge bg-dark" id="countBadge">0 Slots</span>
-                        </div>
-                        <div id="dayList" style="max-height: 500px; overflow-y: auto;"></div>
-                    </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-muted">CUSTOMER NAME *</label>
+                    <input type="text" id="userName" class="form-control" placeholder="Enter name">
                 </div>
+                
+                <div class="mb-4">
+                    <label class="form-label small fw-bold text-muted">WHATSAPP NUMBER *</label>
+                    <div class="input-group">
+                        <span class="input-group-text">+91</span>
+                        <input type="tel" id="userPhone" class="form-control" placeholder="10-digit number">
+                    </div>
+                    <small class="text-muted">Required for confirmation message.</small>
+                </div>
+
+                <button class="btn btn-primary-custom w-100 py-3 fw-bold" onclick="saveEntry()">
+                    <i class="bi bi-send-fill me-2"></i>SAVE & SEND MESSAGE
+                </button>
             </div>
         </div>
 
-        <div class="tab-pane fade" id="tab-history">
+        <div class="col-md-5">
             <div class="card p-4">
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Date</th>
-                                <th>Time</th>
-                                <th>Customer</th>
-                                <th>Phone</th>
-                                <th class="text-center">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="historyBody"></tbody>
-                    </table>
-                </div>
+                <h6 class="fw-bold mb-3 text-muted" id="scheduleHeader">Day Schedule</h6>
+                <div id="dayList"></div>
             </div>
         </div>
     </div>
@@ -113,39 +85,41 @@
     let supabaseClient;
 
     async function init() {
-        // Fetch your keys from your local API
         const res = await fetch('/api/get-public-key');
         const keys = await res.json();
         supabaseClient = supabase.createClient(keys.SUPABASE_URL_PUBLIC, keys.SUPABASE_ANON_KEY);
-        
         document.getElementById('bookDate').valueAsDate = new Date();
         updateView();
     }
 
     function updateView() {
-        const d = document.getElementById('bookDate').value;
-        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        const dateObj = new Date(d);
-        
-        document.getElementById('currentDisplayDate').innerText = dateObj.toLocaleDateString(undefined, options);
-        document.getElementById('scheduleHeader').innerText = "Bookings for " + dateObj.toLocaleDateString(undefined, {month:'short', day:'numeric'});
         loadDaySlots();
+        const d = new Date(document.getElementById('bookDate').value);
+        document.getElementById('currentDisplayDate').innerText = d.toDateString();
     }
 
     async function saveEntry() {
-        const name = document.getElementById('userName').value || "Walk-in Customer";
-        const phone = document.getElementById('userPhone').value || "N/A";
+        const name = document.getElementById('userName').value;
+        const phone = document.getElementById('userPhone').value;
         const date = document.getElementById('bookDate').value;
         const start = document.getElementById('startTime').value;
         const duration = parseFloat(document.getElementById('duration').value);
 
-        if (!start) return Swal.fire("Required", "Please select a start time", "warning");
+        // Validation: All fields are now strictly required
+        if (!name || !phone || !start) {
+            return Swal.fire("Required Fields", "Please enter Name, Phone, and Start Time", "warning");
+        }
+
+        if (phone.length < 10) {
+            return Swal.fire("Invalid Phone", "Please enter a valid 10-digit phone number", "warning");
+        }
 
         // Calculate End Time
         let [h, m] = start.split(':').map(Number);
         let total = h * 60 + m + (duration * 60);
         let end = `${String(Math.floor(total/60)%24).padStart(2,'0')}:${String(total%60).padStart(2,'0')}:00`;
 
+        // 1. Save to Supabase
         const { error } = await supabaseClient.from('turf_bookings').insert([{
             customer_name: name,
             phone_number: phone,
@@ -157,22 +131,45 @@
         if (error) {
             Swal.fire("Error", error.message, "error");
         } else {
-            // Success Toast (Less intrusive than a big pop-up)
-            const Toast = Swal.mixin({
-                toast: true,
-                position: 'top-end',
-                showConfirmButton: false,
-                timer: 2000
-            });
-            Toast.fire({ icon: 'success', title: 'Record Saved' });
+            // 2. Trigger WhatsApp Message
+            sendWhatsApp(name, phone, date, start, end);
 
-            // CLEAR FORM FOR NEXT ENTRY
+            // 3. Reset Form
             document.getElementById('userName').value = '';
             document.getElementById('userPhone').value = '';
             document.getElementById('startTime').value = '';
-            
             loadDaySlots();
+            
+            Swal.fire({
+                title: 'Saved!',
+                text: 'Record added and WhatsApp triggered.',
+                icon: 'success',
+                timer: 2000,
+                showConfirmButton: false
+            });
         }
+    }
+
+    function sendWhatsApp(name, phone, date, start, end) {
+        // Clean phone number (removes any spaces or dashes)
+        const cleanPhone = phone.replace(/\D/g, '');
+        const finalPhone = "91" + cleanPhone; // Adding India Country Code
+
+        // Format Date for message
+        const formattedDate = new Date(date).toLocaleDateString('en-US', { 
+            weekday: 'long', month: 'short', day: 'numeric' 
+        });
+
+        // The Message Content
+        const message = `*TURFIT BOOKING CONFIRMED*%0A%0A` +
+                        `Hi *${name}*, your booking is successful!%0A%0A` +
+                        `📅 *Date:* ${formattedDate}%0A` +
+                        `⏰ *Time:* ${start} to ${end.slice(0,5)}%0A%0A` +
+                        `Please reach 10 mins before your slot. See you!`;
+
+        // Open WhatsApp in a new tab
+        const url = `https://wa.me/${finalPhone}?text=${message}`;
+        window.open(url, '_blank').focus();
     }
 
     async function loadDaySlots() {
@@ -181,49 +178,21 @@
             .select('*').eq('booking_date', date).order('start_time');
 
         const container = document.getElementById('dayList');
-        document.getElementById('countBadge').innerText = `${data ? data.length : 0} Slots`;
         container.innerHTML = '';
 
         if (data && data.length > 0) {
             data.forEach(b => {
                 container.innerHTML += `
-                    <div class="p-3 bg-white border rounded shadow-sm mb-2 slot-card d-flex justify-content-between align-items-center">
+                    <div class="p-3 bg-light border rounded mb-2 d-flex justify-content-between align-items-center">
                         <div>
                             <div class="fw-bold text-success">${b.start_time.slice(0,5)} - ${b.end_time.slice(0,5)}</div>
-                            <div class="text-dark small">${b.customer_name}</div>
+                            <div class="small text-dark">${b.customer_name} (${b.phone_number})</div>
                         </div>
-                        <button class="btn btn-sm text-danger" onclick="deleteRecord('${b.id}')"><i class="bi bi-trash"></i></button>
                     </div>`;
             });
         } else {
-            container.innerHTML = `<div class="text-center py-5 text-muted">No records for this date.</div>`;
+            container.innerHTML = `<div class="text-center py-4 text-muted small">No slots filled yet.</div>`;
         }
-    }
-
-    async function loadAllHistory() {
-        const { data } = await supabaseClient.from('turf_bookings')
-            .select('*').order('booking_date', {ascending: false}).order('start_time');
-        
-        const body = document.getElementById('historyBody');
-        body.innerHTML = data.map(b => `
-            <tr>
-                <td>${b.booking_date}</td>
-                <td><span class="badge bg-success">${b.start_time.slice(0,5)} - ${b.end_time.slice(0,5)}</span></td>
-                <td>${b.customer_name}</td>
-                <td>${b.phone_number}</td>
-                <td class="text-center">
-                    <button class="btn btn-sm btn-outline-danger" onclick="deleteRecord('${b.id}', true)">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                </td>
-            </tr>
-        `).join('');
-    }
-
-    async function deleteRecord(id, isHistory = false) {
-        if(!(await Swal.fire({title: 'Delete?', showCancelButton: true})).isConfirmed) return;
-        await supabaseClient.from('turf_bookings').delete().eq('id', id);
-        isHistory ? loadAllHistory() : loadDaySlots();
     }
 
     init();
