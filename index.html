@@ -99,7 +99,7 @@
                             </div>
                         </div>
                         <button class="btn btn-primary-custom w-100 py-3 fw-bold" onclick="saveEntry(false)">
-                            SAVE & SEND MESSAGE
+                            SAVE BOOKING
                         </button>
                     </div>
                 </div>
@@ -180,16 +180,15 @@
                         <div class="col-4 mb-3"><label class="small fw-bold">PAID AMOUNT</label><input type="number" id="edit_paid" class="form-control"></div>
                         <div class="col-4 mb-3">
                             <button class="btn btn-success btn-sm w-100" style="height: 38px;" onclick="setFullPayment()">
-                                <i class="bi bi-check-all"></i> FULL PAYMENT RECEIVED
+                                <i class="bi bi-check-all"></i> FULL
                             </button>
                         </div>
                     </div>
-                    <hr>
-                    <button class="btn btn-outline-success w-100 mb-2" onclick="manualWhatsAppSend()">
-                        <i class="bi bi-whatsapp me-2"></i>SEND WHATSAPP MESSAGE
-                    </button>
                 </div>
-                <div class="modal-footer"><button class="btn btn-primary-custom w-100" onclick="saveEntry(true)">UPDATE BOOKING</button></div>
+                <div class="modal-footer d-flex justify-content-between">
+                    <button class="btn btn-danger" onclick="deleteBooking()">DELETE</button>
+                    <button class="btn btn-primary-custom px-4" onclick="saveEntry(true)">UPDATE</button>
+                </div>
             </div>
         </div>
     </div>
@@ -240,66 +239,6 @@
             if(total) document.getElementById('edit_paid').value = total;
         }
 
-        function manualWhatsAppSend() {
-            const name = document.getElementById('edit_name').value;
-            const phone = document.getElementById('edit_phone').value;
-            const date = document.getElementById('edit_date').value;
-            const price = document.getElementById('edit_price').value;
-            const paid = document.getElementById('edit_paid').value || 0;
-            const h = document.getElementById('edit_h').value;
-            const m = document.getElementById('edit_m').value;
-            const ampm = document.getElementById('edit_ampm').value;
-            const duration = parseFloat(document.getElementById('edit_duration').value);
-
-            const start24 = get24hFromSelectors(h, m, ampm);
-            let [hour, min] = start24.split(':').map(Number);
-            let totalMinutes = hour * 60 + min + (duration * 60);
-            let endTimeStr = `${String(Math.floor(totalMinutes / 60) % 24).padStart(2, '0')}:${String(totalMinutes % 60).padStart(2, '0')}:00`;
-
-            sendWhatsApp(name, phone, date, start24, endTimeStr, 'confirm', price, paid);
-        }
-
-        async function checkPin() {
-            const val = document.getElementById('pinEntry').value;
-            if (val.length >= 4) {
-                const { data } = await supabaseClient.from('site_access').select('pin').eq('id', 1).single();
-                if (data && data.pin === val) {
-                    localStorage.setItem('turf_session', 'active');
-                    document.getElementById('lockScreen').style.display = 'none';
-                    document.getElementById('appContent').style.display = 'block';
-                } else if (val.length === 6) {
-                    document.getElementById('pinEntry').value = '';
-                    Swal.fire("Error", "Wrong PIN", "error");
-                }
-            }
-        }
-
-        function logout() { localStorage.removeItem('turf_session'); location.reload(); }
-
-        function formatTo12H(timeStr) {
-            if (!timeStr) return "";
-            let [h, m] = timeStr.split(':');
-            h = parseInt(h);
-            const ampm = h >= 12 ? 'PM' : 'AM';
-            h = h % 12 || 12;
-            return `${h}:${m} ${ampm}`;
-        }
-
-        function updateView() {
-            loadDaySlots();
-            document.getElementById('currentDisplayDate').innerText = new Date(document.getElementById('bookDate').value).toDateString();
-        }
-
-        function updateStats(data) {
-            let received = 0, pending = 0;
-            data.forEach(b => {
-                received += parseFloat(b.paid_amount || 0);
-                pending += (parseFloat(b.price || 0) - parseFloat(b.paid_amount || 0));
-            });
-            document.getElementById('statReceived').innerText = received.toLocaleString();
-            document.getElementById('statPending').innerText = pending.toLocaleString();
-        }
-
         async function saveEntry(isEdit) {
             const id = isEdit ? document.getElementById('edit_id').value : null;
             const name = document.getElementById(isEdit ? 'edit_name' : 'userName').value;
@@ -327,11 +266,47 @@
             if (res.error) Swal.fire("Error", res.error.message, "error");
             else {
                 if (isEdit) bsEditModal.hide();
-                Swal.fire("Success", "Booking Saved", "success").then(() => {
-                    sendWhatsApp(name, phone, date, start24, endTimeStr, 'confirm', price, paid);
+                
+                // SHOW SUCCESS POPUP WITH CUSTOM BUTTONS
+                Swal.fire({
+                    title: isEdit ? "Updated!" : "Saved!",
+                    text: "Booking has been recorded successfully.",
+                    icon: "success",
+                    showCancelButton: true,
+                    confirmButtonText: '<i class="bi bi-whatsapp"></i> SEND MESSAGE',
+                    cancelButtonText: 'DONE',
+                    confirmButtonColor: '#25D366',
+                    cancelButtonColor: '#6c757d'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        sendWhatsApp(name, phone, date, start24, endTimeStr, 'confirm', price, paid);
+                    }
                 });
+
                 if(!isEdit) resetForm();
                 updateView();
+            }
+        }
+
+        async function deleteBooking() {
+            const id = document.getElementById('edit_id').value;
+            const res = await Swal.fire({
+                title: 'Delete Booking?',
+                text: "This action cannot be undone!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                confirmButtonText: 'Yes, Delete it!'
+            });
+
+            if (res.isConfirmed) {
+                const { error } = await supabaseClient.from('turf_bookings').delete().eq('id', id);
+                if (error) Swal.fire("Error", error.message, "error");
+                else {
+                    bsEditModal.hide();
+                    Swal.fire("Deleted!", "Booking removed.", "success");
+                    updateView();
+                }
             }
         }
 
@@ -346,7 +321,6 @@
             if (t === 'confirm') {
                 const bal = price - paid;
                 const adv = paid > 0 ? "" : "\n\n*Kindly Pay Advance ₹200 for Booking Confirmation.*";
-                
                 msg = `*TURFIT BOOKING CONFIRMED*\n\nHi *${n}*\nYour booking for *${monthDay}*\n${s12} - ${e12}\n\n*Total:* ₹${price}\n*Paid:* ₹${paid}\n*Balance:* ₹${bal}${adv}\n\n*RULES & REGULATIONS:*\n\n1. Spitting and Smoking is strictly prohibited inside the turf premises, pathway (outside turf) and the ramp. If caught doing the same, then a fine of ₹300 shall be charged from the booking team.\n\n2. Cricket bat or ball, football, stumps etc. are the property of the turf and shall not be carried outside the turf without the permission of the owner. If caught carrying outside then it will be treated as theft, fine of ₹500 shall be taken from the booking team.\n\n3. Early Arrival: Kindly wait outside the turf if you arrive before your slot. Accessing the turf early will be counted in your booking and charged extra.\n\nThank you for choosing *TURFIT* !!`;
             } else if (t === 'remind') {
                 msg = `*PAYMENT REMINDER - TURFIT*\n\nHi *${n}*\nYour slot on *${monthDay}* (${s12}) is completed.\n\n*Pending Amount:* ₹${paid}\n\nKindly clear payment. Thank you!`;
@@ -354,6 +328,43 @@
             window.open(`https://wa.me/${cp}?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
+        // --- Rest of logic (checkPin, logout, format, loadDaySlots, loadHistory, openEditModal, resetForm, init) remains same ---
+        async function checkPin() {
+            const val = document.getElementById('pinEntry').value;
+            if (val.length >= 4) {
+                const { data } = await supabaseClient.from('site_access').select('pin').eq('id', 1).single();
+                if (data && data.pin === val) {
+                    localStorage.setItem('turf_session', 'active');
+                    document.getElementById('lockScreen').style.display = 'none';
+                    document.getElementById('appContent').style.display = 'block';
+                } else if (val.length === 6) {
+                    document.getElementById('pinEntry').value = '';
+                    Swal.fire("Error", "Wrong PIN", "error");
+                }
+            }
+        }
+        function logout() { localStorage.removeItem('turf_session'); location.reload(); }
+        function formatTo12H(timeStr) {
+            if (!timeStr) return "";
+            let [h, m] = timeStr.split(':');
+            h = parseInt(h);
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            h = h % 12 || 12;
+            return `${h}:${m} ${ampm}`;
+        }
+        function updateView() {
+            loadDaySlots();
+            document.getElementById('currentDisplayDate').innerText = new Date(document.getElementById('bookDate').value).toDateString();
+        }
+        function updateStats(data) {
+            let received = 0, pending = 0;
+            data.forEach(b => {
+                received += parseFloat(b.paid_amount || 0);
+                pending += (parseFloat(b.price || 0) - parseFloat(b.paid_amount || 0));
+            });
+            document.getElementById('statReceived').innerText = received.toLocaleString();
+            document.getElementById('statPending').innerText = pending.toLocaleString();
+        }
         async function loadDaySlots() {
             const date = document.getElementById('bookDate').value;
             const { data } = await supabaseClient.from('turf_bookings').select('*').eq('booking_date', date).order('start_time');
@@ -369,7 +380,6 @@
                     </div></div>`;
             }).join('') : '<div class="text-center py-4 text-muted small">No bookings for this date.</div>';
         }
-
         async function loadHistory(type) {
             const now = new Date();
             const todayStr = now.toISOString().split('T')[0];
@@ -395,7 +405,6 @@
                 }).join('');
             }
         }
-
         function openEditModal(id, n, p, d, s, e, price, paid) {
             document.getElementById('edit_id').value = id;
             document.getElementById('edit_name').value = n;
@@ -403,28 +412,23 @@
             document.getElementById('edit_date').value = d;
             document.getElementById('edit_price').value = price;
             document.getElementById('edit_paid').value = paid;
-            
             let [hh, mm] = s.split(':');
             let h = parseInt(hh);
             let ampm = h >= 12 ? "PM" : "AM";
             h = h % 12 || 12;
-            
             document.getElementById('edit_h').value = h;
             document.getElementById('edit_m').value = mm;
             document.getElementById('edit_ampm').value = ampm;
-
             const startMin = parseInt(hh) * 60 + parseInt(mm);
             let [ehh, emm] = e.split(':');
             const endMin = parseInt(ehh) * 60 + parseInt(emm);
             document.getElementById('edit_duration').value = (endMin - startMin) / 60;
             bsEditModal.show();
         }
-
         function resetForm() {
             ['userName', 'userPhone', 'bookingPrice'].forEach(id => document.getElementById(id).value = '');
             document.getElementById('paidAmount').value = '0';
         }
-
         init();
     </script>
 </body>
