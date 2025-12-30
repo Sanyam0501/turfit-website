@@ -89,17 +89,9 @@
         }
 
         @keyframes pulse {
-            0% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0.6;
-            }
-
-            100% {
-                opacity: 1;
-            }
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
         }
     </style>
 </head>
@@ -226,7 +218,7 @@
                                             <th>Date</th>
                                             <th>Time</th>
                                             <th>Customer</th>
-                                            <th>Status</th>
+                                            <th>Action</th>
                                         </tr>
                                     </thead>
                                     <tbody id="completedList"></tbody>
@@ -271,14 +263,11 @@
                 return Swal.fire("Required", "Please fill all details", "warning");
             }
 
-            // Calculate End Time
             let [h, m] = start.split(':').map(Number);
             let totalMinutes = h * 60 + m + (duration * 60);
             let endTimeStr = `${String(Math.floor(totalMinutes / 60) % 24).padStart(2, '0')}:${String(totalMinutes % 60).padStart(2, '0')}:00`;
             let startTimeWithSec = start + ":00";
 
-            // --- OVERLAP CHECK LOGIC START ---
-            // Query all bookings for that specific date
             const { data: existingBookings, error: fetchError } = await supabaseClient
                 .from('turf_bookings')
                 .select('id, start_time, end_time')
@@ -287,10 +276,7 @@
             if (fetchError) return Swal.fire("Error", "Could not verify availability", "error");
 
             const isOverlap = existingBookings.some(b => {
-                // Skip comparing with itself if we are editing an existing booking
                 if (id && b.id == id) return false;
-
-                // Overlap Condition: (StartA < EndB) AND (EndA > StartB)
                 return (startTimeWithSec < b.end_time && endTimeStr > b.start_time);
             });
 
@@ -301,7 +287,6 @@
                     icon: "error"
                 });
             }
-            // --- OVERLAP CHECK LOGIC END ---
 
             const bookingData = {
                 customer_name: name,
@@ -335,34 +320,31 @@
         }
 
         function sendWhatsApp(n, p, d, s, e, t, price = 0) {
-    const cp = "91" + p.replace(/\D/g, '');
-    const dateObj = new Date(d);
+            const cp = "91" + p.replace(/\D/g, '');
+            const dateObj = new Date(d);
+            const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
+            const monthDay = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
-    const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
-    const monthDay = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            let message = "";
 
-    let message = "";
-
-    if (t === 'cancel') {
-        message = `*CANCELLED*
+            if (t === 'cancel') {
+                message = `*CANCELLED*
 Hi ${n},
 Your slot on ${monthDay} (${s.slice(0, 5)}) has been cancelled.`;
-    } 
-    else if (t === 'remind') {
-        // --- NEW REMINDER MESSAGE ---
-        message = `*PAYMENT REMINDER - TURFIT*
+            } 
+            else if (t === 'remind') {
+                message = `*PAYMENT REMINDER - TURFIT*
 
 Hi *${n}*
-This is a reminder for your booking on *${dayName}, ${monthDay}* (${s.slice(0, 5)}).
+Your slot on *${dayName}, ${monthDay}* (${s.slice(0, 5)} - ${e.slice(0, 5)}) is completed.
 
 *Pending Amount:* ₹${price}
 
-Please ignore if already paid.
-Thank you!`;
-    }
-    else {
-        // --- YOUR ORIGINAL CONFIRMATION MESSAGE (UNCHANGED) ---
-        message = `*TURFIT BOOKING CONFIRMED*
+Kindly clear the payment if not already done. 
+Thank you for choosing *TURFIT* !!`;
+            }
+            else {
+                message = `*TURFIT BOOKING CONFIRMED*
 
 Hi *${n}*
 Your booking for *${dayName}, ${monthDay}*
@@ -379,37 +361,26 @@ ${s.slice(0, 5)} - ${e.slice(0, 5)}
 3. Early Arrival: Kindly wait outside the turf if you arrive before your slot. Accessing the turf early will be counted in your booking and charged extra.
 
 Thank you for choosing *TURFIT* !!`;
-    }
+            }
 
-    const encodedMessage = encodeURIComponent(message);
-    window.open(`https://wa.me/${cp}?text=${encodedMessage}`, '_blank');
-}
-
+            const encodedMessage = encodeURIComponent(message);
+            window.open(`https://wa.me/${cp}?text=${encodedMessage}`, '_blank');
+        }
 
         async function loadDaySlots() {
-    const date = document.getElementById('bookDate').value;
-    const { data } = await supabaseClient.from('turf_bookings').select('*').eq('booking_date', date).order('start_time');
-    const container = document.getElementById('dayList');
-    container.innerHTML = data && data.length ? data.map(b => `
-    <div class="p-3 bg-light border rounded mb-2 d-flex justify-content-between align-items-center">
-        <div><span class="fw-bold text-success">${b.start_time.slice(0, 5)} - ${b.end_time.slice(0, 5)}</span><br><small>${b.customer_name} (₹${b.price || 0})</small></div>
-        <div class="d-flex gap-1">
-            <button class="action-btn" style="color: #fd7e14; border-color: #fd7e14;" onclick="sendWhatsApp('${b.customer_name}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}', '${b.end_time}', 'remind', '${b.price}')">
-                <i class="bi bi-bell"></i>
-            </button>
-            
-            <button class="action-btn btn-resend" onclick="sendWhatsApp('${b.customer_name}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}', '${b.end_time}', 'confirm', '${b.price}')">
-                <i class="bi bi-whatsapp"></i>
-            </button>
-            <button class="action-btn btn-edit" onclick="editBooking('${b.id}', '${b.customer_name}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}', '${b.price}')">
-                <i class="bi bi-pencil"></i>
-            </button>
-            <button class="action-btn btn-delete" onclick="deleteBooking('${b.id}', '${b.customer_name}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}')">
-                <i class="bi bi-trash"></i>
-            </button>
-        </div>
-    </div>`).join('') : '<div class="text-center py-4 text-muted small">No slots for this date.</div>';
-}
+            const date = document.getElementById('bookDate').value;
+            const { data } = await supabaseClient.from('turf_bookings').select('*').eq('booking_date', date).order('start_time');
+            const container = document.getElementById('dayList');
+            container.innerHTML = data && data.length ? data.map(b => `
+            <div class="p-3 bg-light border rounded mb-2 d-flex justify-content-between align-items-center">
+                <div><span class="fw-bold text-success">${b.start_time.slice(0, 5)} - ${b.end_time.slice(0, 5)}</span><br><small>${b.customer_name} (₹${b.price || 0})</small></div>
+                <div class="d-flex gap-1">
+                    <button class="action-btn btn-resend" onclick="sendWhatsApp('${b.customer_name}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}', '${b.end_time}', 'confirm', '${b.price}')"><i class="bi bi-whatsapp"></i></button>
+                    <button class="action-btn btn-edit" onclick="editBooking('${b.id}', '${b.customer_name}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}', '${b.price}')"><i class="bi bi-pencil"></i></button>
+                    <button class="action-btn btn-delete" onclick="deleteBooking('${b.id}', '${b.customer_name}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}')"><i class="bi bi-trash"></i></button>
+                </div>
+            </div>`).join('') : '<div class="text-center py-4 text-muted small">No slots for this date.</div>';
+        }
 
         async function loadHistory(type) {
             const now = new Date();
@@ -432,7 +403,17 @@ Thank you for choosing *TURFIT* !!`;
                     <td>${b.booking_date.slice(5)}</td>
                     <td>${b.start_time.slice(0, 5)}</td>
                     <td>${b.customer_name}</td>
-                    <td>${type === 'upcoming' ? `<button class='btn btn-sm btn-outline-success' onclick="sendWhatsApp('${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','confirm','${b.price}')"><i class='bi bi-whatsapp'></i></button>` : `<span class="badge ${type === 'ongoing' ? 'badge-ongoing' : 'bg-light text-dark border'}">${type.toUpperCase()}</span>`}</td>
+                    <td>
+                        ${type === 'upcoming' ? `<button class='btn btn-sm btn-outline-success' onclick="sendWhatsApp('${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','confirm','${b.price}')"><i class='bi bi-whatsapp'></i></button>` : 
+                          type === 'completed' ? `
+                          <div class="d-flex gap-2 align-items-center">
+                            <span class="badge bg-light text-dark border">COMPLETED</span>
+                            <button class="btn btn-sm btn-outline-warning" onclick="sendWhatsApp('${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','remind','${b.price}')">
+                                <i class="bi bi-bell"></i>
+                            </button>
+                          </div>` : 
+                          `<span class="badge badge-ongoing">ONGOING</span>`}
+                    </td>
                 </tr>`).join('') : `<tr><td colspan="4" class="text-center py-3 text-muted">No records.</td></tr>`;
             }
         }
