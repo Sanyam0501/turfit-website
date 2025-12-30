@@ -267,12 +267,41 @@
             const price = document.getElementById('bookingPrice').value;
             const duration = parseFloat(document.getElementById('duration').value);
 
-            if (!name || !phone || !start || !price) return Swal.fire("Required", "Please fill all details", "warning");
+            if (!name || !phone || !start || !price) {
+                return Swal.fire("Required", "Please fill all details", "warning");
+            }
 
+            // Calculate End Time
             let [h, m] = start.split(':').map(Number);
             let totalMinutes = h * 60 + m + (duration * 60);
             let endTimeStr = `${String(Math.floor(totalMinutes / 60) % 24).padStart(2, '0')}:${String(totalMinutes % 60).padStart(2, '0')}:00`;
             let startTimeWithSec = start + ":00";
+
+            // --- OVERLAP CHECK LOGIC START ---
+            // Query all bookings for that specific date
+            const { data: existingBookings, error: fetchError } = await supabaseClient
+                .from('turf_bookings')
+                .select('id, start_time, end_time')
+                .eq('booking_date', date);
+
+            if (fetchError) return Swal.fire("Error", "Could not verify availability", "error");
+
+            const isOverlap = existingBookings.some(b => {
+                // Skip comparing with itself if we are editing an existing booking
+                if (id && b.id == id) return false;
+
+                // Overlap Condition: (StartA < EndB) AND (EndA > StartB)
+                return (startTimeWithSec < b.end_time && endTimeStr > b.start_time);
+            });
+
+            if (isOverlap) {
+                return Swal.fire({
+                    title: "Slot Unavailable",
+                    text: "This time overlaps with an existing booking. Please choose another time.",
+                    icon: "error"
+                });
+            }
+            // --- OVERLAP CHECK LOGIC END ---
 
             const bookingData = {
                 customer_name: name,
@@ -283,10 +312,13 @@
                 price: price
             };
 
-            let res = id ? await supabaseClient.from('turf_bookings').update(bookingData).eq('id', id) : await supabaseClient.from('turf_bookings').insert([bookingData]);
+            let res = id
+                ? await supabaseClient.from('turf_bookings').update(bookingData).eq('id', id)
+                : await supabaseClient.from('turf_bookings').insert([bookingData]);
 
-            if (res.error) Swal.fire("Error", res.error.message, "error");
-            else {
+            if (res.error) {
+                Swal.fire("Error", res.error.message, "error");
+            } else {
                 Swal.fire({
                     title: 'Booking Saved!',
                     text: "Send WhatsApp confirmation now?",
@@ -297,7 +329,8 @@
                 }).then(s => {
                     if (s.isConfirmed) sendWhatsApp(name, phone, date, start, endTimeStr, 'confirm', price);
                 });
-                resetForm(); updateView();
+                resetForm();
+                updateView();
             }
         }
 
