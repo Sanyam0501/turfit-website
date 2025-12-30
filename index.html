@@ -27,6 +27,10 @@
         .btn-delete { color: #dc3545; border-color: #dc3545; }
         .badge-ongoing { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; animation: pulse 2s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+        
+        /* New Summary Styles */
+        .summary-box { background: #fff; border-radius: 12px; padding: 15px; margin-bottom: 20px; border-left: 5px solid var(--accent); }
+        .summary-val { font-size: 1.25rem; font-weight: bold; color: var(--admin-green); }
     </style>
 </head>
 
@@ -74,16 +78,12 @@
                     <div class="row">
                         <div class="col-6 mb-3">
                             <label class="form-label small fw-bold text-muted">TOTAL PRICE (₹)</label>
-                            <input type="number" id="bookingPrice" class="form-control" oninput="toggleFullPay('new')">
+                            <input type="number" id="bookingPrice" class="form-control">
                         </div>
                         <div class="col-6 mb-3">
                             <label class="form-label small fw-bold text-muted">PAID AMOUNT (₹)</label>
                             <input type="number" id="paidAmount" class="form-control" value="0">
                         </div>
-                    </div>
-                    <div class="mb-4 form-check">
-                        <input type="checkbox" class="form-check-input" id="fullPayCheck" onchange="handleFullPayCheck('new')">
-                        <label class="form-check-label small fw-bold text-muted" for="fullPayCheck">FULL PAYMENT RECEIVED</label>
                     </div>
                     <button class="btn btn-primary-custom w-100 py-3 fw-bold" onclick="saveEntry(false)">
                         <i class="bi bi-check-circle-fill me-2"></i>SAVE & SEND MESSAGE
@@ -92,6 +92,21 @@
             </div>
 
             <div class="col-lg-8">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <div class="summary-box shadow-sm">
+                            <div class="small fw-bold text-muted text-uppercase">Total Received (This View)</div>
+                            <div class="summary-val">₹<span id="statReceived">0</span></div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="summary-box shadow-sm" style="border-left-color: #dc3545;">
+                            <div class="small fw-bold text-muted text-uppercase">Total Pending (This View)</div>
+                            <div class="summary-val text-danger">₹<span id="statPending">0</span></div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="card p-0 overflow-hidden">
                     <ul class="nav nav-tabs px-3 bg-white" id="bookingTabs" role="tablist">
                         <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#todayPanel" onclick="loadDaySlots()">Today</button></li>
@@ -149,16 +164,12 @@
                     <div class="row">
                         <div class="col-6 mb-3">
                             <label class="form-label small fw-bold">TOTAL PRICE</label>
-                            <input type="number" id="edit_price" class="form-control" oninput="toggleFullPay('edit')">
+                            <input type="number" id="edit_price" class="form-control">
                         </div>
                         <div class="col-6 mb-3">
                             <label class="form-label small fw-bold">PAID AMOUNT</label>
                             <input type="number" id="edit_paid" class="form-control">
                         </div>
-                    </div>
-                    <div class="mb-3 form-check">
-                        <input type="checkbox" class="form-check-input" id="edit_fullPayCheck" onchange="handleFullPayCheck('edit')">
-                        <label class="form-check-label small fw-bold" for="edit_fullPayCheck">FULL PAYMENT RECEIVED</label>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -190,17 +201,15 @@
             document.getElementById('currentDisplayDate').innerText = new Date(document.getElementById('bookDate').value).toDateString();
         }
 
-        function handleFullPayCheck(mode) {
-            const prefix = mode === 'new' ? '' : 'edit_';
-            const check = document.getElementById(prefix + 'fullPayCheck');
-            const price = document.getElementById(mode === 'new' ? 'bookingPrice' : 'edit_price').value;
-            const paidInput = document.getElementById(mode === 'new' ? 'paidAmount' : 'edit_paid');
-            paidInput.value = check.checked ? price : 0;
-        }
-
-        function toggleFullPay(mode) {
-            const prefix = mode === 'new' ? '' : 'edit_';
-            if (document.getElementById(prefix + 'fullPayCheck').checked) handleFullPayCheck(mode);
+        function updateStats(data) {
+            let totalPaid = 0;
+            let totalPending = 0;
+            data.forEach(b => {
+                totalPaid += parseFloat(b.paid_amount || 0);
+                totalPending += (parseFloat(b.price || 0) - parseFloat(b.paid_amount || 0));
+            });
+            document.getElementById('statReceived').innerText = totalPaid.toLocaleString();
+            document.getElementById('statPending').innerText = totalPending.toLocaleString();
         }
 
         async function saveEntry(isEdit) {
@@ -241,8 +250,7 @@
                 }).then(s => { if (s.isConfirmed) sendWhatsApp(name, phone, date, start, endTimeStr, 'confirm', price, paid); });
                 if(!isEdit) resetForm();
                 updateView();
-                // Refresh all history tabs
-                ['upcoming', 'ongoing', 'completed'].forEach(h => loadHistory(h));
+                loadHistory('upcoming'); loadHistory('ongoing'); loadHistory('completed');
             }
         }
 
@@ -260,15 +268,15 @@
             } else {
                 const balance = price - amountPaidOrReq;
                 const advanceText = amountPaidOrReq > 0 ? "" : "\n\n*Kindly Pay Advance ₹200 for Booking Confirmation.*";
-                message = `*TURFIT BOOKING CONFIRMED*\n\nHi *${n}*\nYour booking for *${dayName}, ${monthDay}*\n${s.slice(0, 5)} - ${e.slice(0, 5)}\n\n*Total Amount:* ₹${price}\n*Amount Paid:* ₹${amountPaidOrReq}\n*Balance to Pay:* ₹${balance}${advanceText}\n\n*RULES & REGULATIONS:*\n\n1. Spitting and Smoking is strictly prohibited inside the turf premises, pathway (outside turf) and the ramp. If caught doing the same, then a fine of ₹300 shall be charged from the booking team.\n\n2. Cricket bat or ball, football, stumps etc. are the property of the turf and shall not be carried outside the turf without the permission of the owner. If caught carrying outside then it will be treated as theft, fine of ₹500 shall be taken from the booking team\n\n3. Early Arrival: Kindly wait outside the turf if you arrive before your slot. Accessing the turf early will be counted in your booking and charged extra.\n\nThank you for choosing *TURFIT* !!`;
+                message = `*TURFIT BOOKING CONFIRMED*\n\nHi *${n}*\nYour booking for *${dayName}, ${monthDay}*\n${s.slice(0, 5)} - ${e.slice(0, 5)}\n\n*Total Amount:* ₹${price}\n*Amount Paid:* ₹${amountPaidOrReq}\n*Balance to Pay:* ₹${balance}${advanceText}\n\n*RULES & REGULATIONS:*\n\n1. Spitting and Smoking prohibited.\n2. Fines apply for damage or theft.\n3. Wait outside if early.\n\nThank you for choosing *TURFIT* !!`;
             }
-            const url = `https://wa.me/${cp}?text=${encodeURIComponent(message)}`;
-            window.open(url, '_blank');
+            window.open(`https://wa.me/${cp}?text=${encodeURIComponent(message)}`, '_blank');
         }
 
         async function loadDaySlots() {
             const date = document.getElementById('bookDate').value;
             const { data } = await supabaseClient.from('turf_bookings').select('*').eq('booking_date', date).order('start_time');
+            updateStats(data || []);
             const container = document.getElementById('dayList');
             container.innerHTML = data && data.length ? data.map(b => {
                 const balance = (b.price || 0) - (b.paid_amount || 0);
@@ -296,6 +304,7 @@
                     if (type === 'ongoing') return isToday && b.start_time <= currentTime && b.end_time > currentTime;
                     return b.booking_date < todayStr || (isToday && b.end_time <= currentTime);
                 });
+                updateStats(filtered);
                 list.innerHTML = filtered.map(b => {
                     const balance = (b.price || 0) - (b.paid_amount || 0);
                     const balClass = balance <= 0 ? 'text-success' : 'text-danger';
@@ -316,19 +325,15 @@
             document.getElementById('edit_start').value = s.slice(0, 5);
             document.getElementById('edit_price').value = price;
             document.getElementById('edit_paid').value = paid;
-            document.getElementById('edit_fullPayCheck').checked = (parseFloat(price) === parseFloat(paid));
-            
             const startMin = parseInt(s.slice(0, 2)) * 60 + parseInt(s.slice(3, 5));
             const endMin = parseInt(e.slice(0, 2)) * 60 + parseInt(e.slice(3, 5));
             document.getElementById('edit_duration').value = (endMin - startMin) / 60;
-            
             bsEditModal.show();
         }
 
         function resetForm() {
             ['userName', 'userPhone', 'startTime', 'bookingPrice'].forEach(id => document.getElementById(id).value = '');
             document.getElementById('paidAmount').value = '0';
-            document.getElementById('fullPayCheck').checked = false;
         }
 
         async function deleteBooking(id, n, p, d, s) {
