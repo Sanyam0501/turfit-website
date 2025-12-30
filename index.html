@@ -180,10 +180,14 @@
                         <div class="col-4 mb-3"><label class="small fw-bold">PAID AMOUNT</label><input type="number" id="edit_paid" class="form-control"></div>
                         <div class="col-4 mb-3">
                             <button class="btn btn-success btn-sm w-100" style="height: 38px;" onclick="setFullPayment()">
-                                <i class="bi bi-check-all"></i> FULL
+                                <i class="bi bi-check-all"></i> FULL PAYMENT RECEIVED
                             </button>
                         </div>
                     </div>
+                    <hr>
+                    <button class="btn btn-outline-success w-100 mb-2" onclick="manualWhatsAppSend()">
+                        <i class="bi bi-whatsapp me-2"></i>SEND WHATSAPP MESSAGE
+                    </button>
                 </div>
                 <div class="modal-footer"><button class="btn btn-primary-custom w-100" onclick="saveEntry(true)">UPDATE BOOKING</button></div>
             </div>
@@ -217,11 +221,9 @@
         function populateSelectors() {
             const hPickers = [document.getElementById('h_start'), document.getElementById('edit_h')];
             const mPickers = [document.getElementById('m_start'), document.getElementById('edit_m')];
-            
             let hOpts = "", mOpts = "";
             for (let i = 1; i <= 12; i++) hOpts += `<option value="${i}">${i}</option>`;
             for (let i = 0; i < 60; i += 5) mOpts += `<option value="${String(i).padStart(2, '0')}">${String(i).padStart(2, '0')}</option>`;
-            
             hPickers.forEach(p => p.innerHTML = hOpts);
             mPickers.forEach(p => p.innerHTML = mOpts);
         }
@@ -236,6 +238,25 @@
         function setFullPayment() {
             const total = document.getElementById('edit_price').value;
             if(total) document.getElementById('edit_paid').value = total;
+        }
+
+        function manualWhatsAppSend() {
+            const name = document.getElementById('edit_name').value;
+            const phone = document.getElementById('edit_phone').value;
+            const date = document.getElementById('edit_date').value;
+            const price = document.getElementById('edit_price').value;
+            const paid = document.getElementById('edit_paid').value || 0;
+            const h = document.getElementById('edit_h').value;
+            const m = document.getElementById('edit_m').value;
+            const ampm = document.getElementById('edit_ampm').value;
+            const duration = parseFloat(document.getElementById('edit_duration').value);
+
+            const start24 = get24hFromSelectors(h, m, ampm);
+            let [hour, min] = start24.split(':').map(Number);
+            let totalMinutes = hour * 60 + min + (duration * 60);
+            let endTimeStr = `${String(Math.floor(totalMinutes / 60) % 24).padStart(2, '0')}:${String(totalMinutes % 60).padStart(2, '0')}:00`;
+
+            sendWhatsApp(name, phone, date, start24, endTimeStr, 'confirm', price, paid);
         }
 
         async function checkPin() {
