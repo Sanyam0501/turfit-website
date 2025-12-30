@@ -14,13 +14,14 @@
         .card { border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         .btn-primary-custom { background-color: var(--accent); color: white; border: none; }
         .btn-primary-custom:hover { background-color: #1b4332; color: white; }
-        .nav-tabs .nav-link { color: #6c757d; font-weight: 600; border: none; padding: 12px 20px; }
+        .nav-tabs .nav-link { color: #6c757d; font-weight: 600; border: none; padding: 12px 15px; font-size: 0.9rem; }
         .nav-tabs .nav-link.active { color: var(--accent); border-bottom: 3px solid var(--accent); background: transparent; }
         .action-btn { padding: 4px 8px; border-radius: 6px; cursor: pointer; transition: 0.2s; border: 1px solid transparent; background: transparent; }
         .btn-resend { color: #2d6a4f; border-color: #2d6a4f; }
         .btn-edit { color: #ffc107; border-color: #ffc107; }
         .btn-delete { color: #dc3545; border-color: #dc3545; }
-        .badge-completed { background-color: #e9ecef; color: #495057; border: 1px solid #dee2e6; }
+        .badge-ongoing { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
@@ -78,10 +79,13 @@
             <div class="card p-0 overflow-hidden">
                 <ul class="nav nav-tabs px-3 bg-white" id="bookingTabs" role="tablist">
                     <li class="nav-item">
-                        <button class="nav-link active" id="today-tab" data-bs-toggle="tab" data-bs-target="#todayPanel" type="button" onclick="loadDaySlots()">Today's View</button>
+                        <button class="nav-link active" id="today-tab" data-bs-toggle="tab" data-bs-target="#todayPanel" type="button" onclick="loadDaySlots()">Today</button>
                     </li>
                     <li class="nav-item">
                         <button class="nav-link" id="upcoming-tab" data-bs-toggle="tab" data-bs-target="#upcomingPanel" type="button" onclick="loadHistory('upcoming')">Upcoming</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" id="ongoing-tab" data-bs-toggle="tab" data-bs-target="#ongoingPanel" type="button" onclick="loadHistory('ongoing')">Ongoing</button>
                     </li>
                     <li class="nav-item">
                         <button class="nav-link" id="completed-tab" data-bs-toggle="tab" data-bs-target="#completedPanel" type="button" onclick="loadHistory('completed')">Completed</button>
@@ -92,21 +96,15 @@
                     <div class="tab-pane fade show active" id="todayPanel"><div id="dayList"></div></div>
                     
                     <div class="tab-pane fade" id="upcomingPanel">
-                        <div class="table-responsive">
-                            <table class="table align-middle">
-                                <thead class="table-light"><tr><th>Date</th><th>Time</th><th>Customer</th><th>Action</th></tr></thead>
-                                <tbody id="upcomingList"></tbody>
-                            </table>
-                        </div>
+                        <div class="table-responsive"><table class="table align-middle"><thead class="table-light"><tr><th>Date</th><th>Time</th><th>Customer</th><th>Action</th></tr></thead><tbody id="upcomingList"></tbody></table></div>
+                    </div>
+
+                    <div class="tab-pane fade" id="ongoingPanel">
+                        <div class="table-responsive"><table class="table align-middle"><thead class="table-light"><tr><th>Date</th><th>Time</th><th>Customer</th><th>Status</th></tr></thead><tbody id="ongoingList"></tbody></table></div>
                     </div>
 
                     <div class="tab-pane fade" id="completedPanel">
-                        <div class="table-responsive">
-                            <table class="table align-middle">
-                                <thead class="table-light"><tr><th>Date</th><th>Time</th><th>Customer</th><th>Status</th></tr></thead>
-                                <tbody id="completedList"></tbody>
-                            </table>
-                        </div>
+                        <div class="table-responsive"><table class="table align-middle"><thead class="table-light"><tr><th>Date</th><th>Time</th><th>Customer</th><th>Status</th></tr></thead><tbody id="completedList"></tbody></table></div>
                     </div>
                 </div>
             </div>
@@ -141,7 +139,7 @@
         const start = document.getElementById('startTime').value;
         const duration = parseFloat(document.getElementById('duration').value);
 
-        if (!name || !phone || !start) return Swal.fire("Required", "Please fill all fields", "warning");
+        if (!name || !phone || !start) return Swal.fire("Required", "Fill all fields", "warning");
 
         let [h, m] = start.split(':').map(Number);
         let totalMinutes = h * 60 + m + (duration * 60);
@@ -155,7 +153,7 @@
         if (id) conflicts = conflicts.filter(c => c.id !== id);
         
         if (conflicts && conflicts.length > 0) {
-            return Swal.fire("Overlap!", `Slot busy: ${conflicts[0].customer_name} (${conflicts[0].start_time.slice(0,5)})`, "error");
+            return Swal.fire("Overlap!", `Slot busy: ${conflicts[0].customer_name}`, "error");
         }
 
         const bookingData = { customer_name: name, phone_number: phone, booking_date: date, start_time: startWithSec, end_time: end };
@@ -172,34 +170,39 @@
     async function loadHistory(type) {
         const now = new Date();
         const todayStr = now.toISOString().split('T')[0];
-        const currentTimeStr = now.toTimeString().split(' ')[0]; // HH:MM:SS
+        const currentTime = now.toTimeString().split(' ')[0];
 
-        const { data } = await supabaseClient.from('turf_bookings').select('*').order('booking_date', { ascending: type === 'upcoming' }).order('start_time', { ascending: type === 'upcoming' });
+        const { data } = await supabaseClient.from('turf_bookings').select('*').order('booking_date').order('start_time');
         
-        const list = document.getElementById(type === 'upcoming' ? 'upcomingList' : 'completedList');
+        const list = document.getElementById(`${type}List`);
         list.innerHTML = '';
 
         if (data) {
             const filtered = data.filter(b => {
+                const isToday = b.booking_date === todayStr;
                 const isFutureDate = b.booking_date > todayStr;
                 const isPastDate = b.booking_date < todayStr;
-                const isToday = b.booking_date === todayStr;
-                const isFutureTime = b.start_time >= currentTimeStr;
 
                 if (type === 'upcoming') {
-                    return isFutureDate || (isToday && isFutureTime);
-                } else {
-                    return isPastDate || (isToday && !isFutureTime);
+                    return isFutureDate || (isToday && b.start_time > currentTime);
+                } else if (type === 'ongoing') {
+                    return isToday && b.start_time <= currentTime && b.end_time > currentTime;
+                } else if (type === 'completed') {
+                    return isPastDate || (isToday && b.end_time <= currentTime);
                 }
             });
 
             list.innerHTML = filtered.length ? filtered.map(b => `
                 <tr>
                     <td>${b.booking_date.slice(5)}</td>
-                    <td>${b.start_time.slice(0,5)}</td>
+                    <td>${b.start_time.slice(0,5)} - ${b.end_time.slice(0,5)}</td>
                     <td>${b.customer_name}</td>
-                    <td>${type === 'upcoming' ? `<button class='btn btn-sm btn-outline-success' onclick="sendWhatsApp('${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','confirm')"><i class='bi bi-whatsapp'></i></button>` : '<span class="badge badge-completed">Finished</span>'}</td>
-                </tr>`).join('') : `<tr><td colspan="4" class="text-center py-3 text-muted">No ${type} bookings.</td></tr>`;
+                    <td>
+                        ${type === 'upcoming' ? `<button class='btn btn-sm btn-outline-success' onclick="sendWhatsApp('${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','confirm')"><i class='bi bi-whatsapp'></i></button>` : 
+                          type === 'ongoing' ? `<span class="badge badge-ongoing">LIVE</span>` : 
+                          `<span class="badge bg-light text-dark border">Done</span>`}
+                    </td>
+                </tr>`).join('') : `<tr><td colspan="4" class="text-center py-3 text-muted">No records.</td></tr>`;
         }
     }
 
@@ -215,7 +218,7 @@
                     <button class="action-btn btn-edit" onclick="editBooking('${b.id}', '${b.customer_name}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}')"><i class="bi bi-pencil"></i></button>
                     <button class="action-btn btn-delete" onclick="deleteBooking('${b.id}', '${b.customer_name}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}')"><i class="bi bi-trash"></i></button>
                 </div>
-            </div>`).join('') : '<div class="text-center py-4 text-muted small">No slots for this date.</div>';
+            </div>`).join('') : '<div class="text-center py-4 text-muted small">No slots.</div>';
     }
 
     function sendWhatsApp(n, p, d, s, e, t) {
