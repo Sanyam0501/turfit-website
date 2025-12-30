@@ -175,9 +175,14 @@
                     </div>
                     <div class="mb-3"><label class="small fw-bold">CUSTOMER</label><input type="text" id="edit_name" class="form-control"></div>
                     <div class="mb-3"><label class="small fw-bold">PHONE</label><input type="tel" id="edit_phone" class="form-control"></div>
-                    <div class="row">
-                        <div class="col-6 mb-3"><label class="small fw-bold">TOTAL PRICE</label><input type="number" id="edit_price" class="form-control"></div>
-                        <div class="col-6 mb-3"><label class="small fw-bold">PAID AMOUNT</label><input type="number" id="edit_paid" class="form-control"></div>
+                    <div class="row align-items-end">
+                        <div class="col-4 mb-3"><label class="small fw-bold">TOTAL PRICE</label><input type="number" id="edit_price" class="form-control"></div>
+                        <div class="col-4 mb-3"><label class="small fw-bold">PAID AMOUNT</label><input type="number" id="edit_paid" class="form-control"></div>
+                        <div class="col-4 mb-3">
+                            <button class="btn btn-success btn-sm w-100" style="height: 38px;" onclick="setFullPayment()">
+                                <i class="bi bi-check-all"></i> FULL
+                            </button>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer"><button class="btn btn-primary-custom w-100" onclick="saveEntry(true)">UPDATE BOOKING</button></div>
@@ -221,12 +226,16 @@
             mPickers.forEach(p => p.innerHTML = mOpts);
         }
 
-        // --- Helper: Convert 12h Selectors to 24h String ---
         function get24hFromSelectors(h, m, ampm) {
             let hour = parseInt(h);
             if (ampm === "PM" && hour < 12) hour += 12;
             if (ampm === "AM" && hour === 12) hour = 0;
             return `${String(hour).padStart(2, '0')}:${m}:00`;
+        }
+
+        function setFullPayment() {
+            const total = document.getElementById('edit_price').value;
+            if(total) document.getElementById('edit_paid').value = total;
         }
 
         async function checkPin() {
@@ -279,7 +288,6 @@
             const paid = document.getElementById(isEdit ? 'edit_paid' : 'paidAmount').value || 0;
             const duration = parseFloat(document.getElementById(isEdit ? 'edit_duration' : 'duration').value);
 
-            // Get Time from 3 selectors
             const h = document.getElementById(isEdit ? 'edit_h' : 'h_start').value;
             const m = document.getElementById(isEdit ? 'edit_m' : 'm_start').value;
             const ampm = document.getElementById(isEdit ? 'edit_ampm' : 'ampm_start').value;
@@ -312,12 +320,15 @@
             const monthDay = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
             const s12 = formatTo12H(s);
             const e12 = formatTo12H(e);
+            
             let msg = "";
             if (t === 'confirm') {
                 const bal = price - paid;
-                msg = `*TURFIT BOOKING CONFIRMED*\n\nHi *${n}*\nDate: *${monthDay}*\nTime: ${s12} - ${e12}\n\n*Total:* ₹${price}\n*Paid:* ₹${paid}\n*Balance:* ₹${bal}\n\nThank you for choosing *TURFIT* !!`;
+                const adv = paid > 0 ? "" : "\n\n*Kindly Pay Advance ₹200 for Booking Confirmation.*";
+                
+                msg = `*TURFIT BOOKING CONFIRMED*\n\nHi *${n}*\nYour booking for *${monthDay}*\n${s12} - ${e12}\n\n*Total:* ₹${price}\n*Paid:* ₹${paid}\n*Balance:* ₹${bal}${adv}\n\n*RULES & REGULATIONS:*\n\n1. Spitting and Smoking is strictly prohibited inside the turf premises, pathway (outside turf) and the ramp. If caught doing the same, then a fine of ₹300 shall be charged from the booking team.\n\n2. Cricket bat or ball, football, stumps etc. are the property of the turf and shall not be carried outside the turf without the permission of the owner. If caught carrying outside then it will be treated as theft, fine of ₹500 shall be taken from the booking team.\n\n3. Early Arrival: Kindly wait outside the turf if you arrive before your slot. Accessing the turf early will be counted in your booking and charged extra.\n\nThank you for choosing *TURFIT* !!`;
             } else if (t === 'remind') {
-                msg = `*PAYMENT REMINDER*\n\nHi *${n}*\nSlot: *${monthDay}* (${s12})\n*Pending:* ₹${paid}\n\nKindly clear payment.`;
+                msg = `*PAYMENT REMINDER - TURFIT*\n\nHi *${n}*\nYour slot on *${monthDay}* (${s12}) is completed.\n\n*Pending Amount:* ₹${paid}\n\nKindly clear payment. Thank you!`;
             }
             window.open(`https://wa.me/${cp}?text=${encodeURIComponent(msg)}`, '_blank');
         }
@@ -372,7 +383,6 @@
             document.getElementById('edit_price').value = price;
             document.getElementById('edit_paid').value = paid;
             
-            // Split 24h back to 12h selectors
             let [hh, mm] = s.split(':');
             let h = parseInt(hh);
             let ampm = h >= 12 ? "PM" : "AM";
