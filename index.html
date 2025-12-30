@@ -264,19 +264,14 @@
             let endTimeStr = `${String(Math.floor(totalMinutes / 60) % 24).padStart(2, '0')}:${String(totalMinutes % 60).padStart(2, '0')}:00`;
             let startTimeWithSec = start.length === 5 ? start + ":00" : start;
 
-            const { data: existingBookings, error: fetchError } = await supabaseClient
-                .from('turf_bookings')
-                .select('id, start_time, end_time')
-                .eq('booking_date', date);
-
-            if (fetchError) return Swal.fire("Error", "Could not verify availability", "error");
+            const { data: existingBookings } = await supabaseClient.from('turf_bookings').select('id, start_time, end_time').eq('booking_date', date);
 
             const isOverlap = existingBookings.some(b => {
                 if (id && String(b.id) === String(id)) return false;
                 return (startTimeWithSec < b.end_time && endTimeStr > b.start_time);
             });
 
-            if (isOverlap) return Swal.fire("Slot Unavailable", "This time overlaps with another booking.", "error");
+            if (isOverlap) return Swal.fire("Slot Unavailable", "Overlap detected.", "error");
 
             const bookingData = {
                 customer_name: name,
@@ -288,19 +283,13 @@
                 paid_amount: parseFloat(paid)
             };
 
-            let result;
-            if (id) {
-                result = await supabaseClient.from('turf_bookings').update(bookingData).eq('id', id).select();
-            } else {
-                result = await supabaseClient.from('turf_bookings').insert([bookingData]).select();
-            }
+            let result = id ? await supabaseClient.from('turf_bookings').update(bookingData).eq('id', id).select() : await supabaseClient.from('turf_bookings').insert([bookingData]).select();
 
-            if (result.error) {
-                Swal.fire("Error", result.error.message, "error");
-            } else {
+            if (result.error) Swal.fire("Error", result.error.message, "error");
+            else {
                 Swal.fire({
                     title: 'Success!',
-                    text: id ? "Booking updated successfully." : "New booking saved.",
+                    text: id ? "Booking updated." : "New booking saved.",
                     icon: 'success',
                     showCancelButton: true,
                     confirmButtonColor: '#25D366',
@@ -308,18 +297,35 @@
                 }).then(s => {
                     if (s.isConfirmed) sendWhatsApp(name, phone, date, start, endTimeStr, 'confirm', price, paid);
                 });
-
                 resetForm();
                 updateView();
             }
         }
 
-        function sendWhatsApp(n, p, d, s, e, t, price = 0, paid = 0) {
+        // New helper for entering amount manually for reminders
+        async function promptReminder(n, p, d, s, e, price, currentPaid) {
+            const balance = price - currentPaid;
+            const { value: amountToRequest } = await Swal.fire({
+                title: 'Payment Reminder',
+                input: 'number',
+                inputLabel: `Remaining balance is ₹${balance}. Enter amount to request:`,
+                inputValue: balance,
+                showCancelButton: true,
+                inputValidator: (value) => {
+                    if (!value) return 'Please enter an amount'
+                }
+            });
+
+            if (amountToRequest) {
+                sendWhatsApp(n, p, d, s, e, 'remind', price, amountToRequest);
+            }
+        }
+
+        function sendWhatsApp(n, p, d, s, e, t, price = 0, amountToRequestOrPaid = 0) {
             const cp = "91" + p.replace(/\D/g, '');
             const dateObj = new Date(d);
             const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
             const monthDay = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-            const balance = price - paid;
 
             let message = "";
 
@@ -327,20 +333,19 @@
                 message = `*CANCELLED*\nHi ${n},\nYour slot on ${monthDay} (${s.slice(0, 5)}) has been cancelled.`;
             }
             else if (t === 'remind') {
-                message = `*PAYMENT REMINDER - TURFIT*\n\nHi *${n}*\nYour slot on *${dayName}, ${monthDay}* (${s.slice(0, 5)} - ${e.slice(0, 5)}) is completed.\n\n*Total Amount:* ₹${price}\n*Amount Paid:* ₹${paid}\n*Pending Balance:* ₹${balance}\n\nKindly clear the payment if not already done. \nThank you for choosing *TURFIT* !!`;
+                // Here amountToRequestOrPaid is the SPECIFIC amount entered in the popup
+                message = `*PAYMENT REMINDER - TURFIT*\n\nHi *${n}*\nYour slot on *${dayName}, ${monthDay}* (${s.slice(0, 5)} - ${e.slice(0, 5)}) is completed.\n\n*Pending Amount:* ₹${amountToRequestOrPaid}\n\nKindly clear the payment if not already done. \nThank you for choosing *TURFIT* !!`;
             } 
             else {
-                message = `*TURFIT BOOKING CONFIRMED*\n\nHi *${n}*\nYour booking for *${dayName}, ${monthDay}*\n${s.slice(0, 5)} - ${e.slice(0, 5)}\n\n*Total Amount:* ₹${price}\n*Advance Paid:* ₹${paid}\n*Balance to Pay:* ₹${balance}\n\n*Kindly Pay Advance ₹200 for Booking Confirmation.*\n\n*RULES & REGULATIONS:*\n\n1. Spitting and Smoking is strictly prohibited inside the turf premises, pathway (outside turf) and the ramp. If caught doing the same, then a fine of ₹300 shall be charged from the booking team.\n\n2. Cricket bat or ball, football, stumps etc. are the property of the turf and shall not be carried outside the turf without the permission of the owner. If caught carrying outside then it will be treated as theft, fine of ₹500 shall be taken from the booking team\n\n3. Early Arrival: Kindly wait outside the turf if you arrive before your slot. Accessing the turf early will be counted in your booking and charged extra.\n\nThank you for choosing *TURFIT* !!`;
+                // Here amountToRequestOrPaid is the PAID amount from the form
+                const balance = price - amountToRequestOrPaid;
+                message = `*TURFIT BOOKING CONFIRMED*\n\nHi *${n}*\nYour booking for *${dayName}, ${monthDay}*\n${s.slice(0, 5)} - ${e.slice(0, 5)}\n\n*Total Amount:* ₹${price}\n*Advance Paid:* ₹${amountToRequestOrPaid}\n*Balance to Pay:* ₹${balance}\n\n*Kindly Pay Advance ₹200 for Booking Confirmation.*\n\n*RULES & REGULATIONS:*\n\n1. Spitting and Smoking is strictly prohibited inside the turf premises, pathway (outside turf) and the ramp. If caught doing the same, then a fine of ₹300 shall be charged from the booking team.\n\n2. Cricket bat or ball, football, stumps etc. are the property of the turf and shall not be carried outside the turf without the permission of the owner. If caught carrying outside then it will be treated as theft, fine of ₹500 shall be taken from the booking team\n\n3. Early Arrival: Kindly wait outside the turf if you arrive before your slot. Accessing the turf early will be counted in your booking and charged extra.\n\nThank you for choosing *TURFIT* !!`;
             }
 
             const encodedMessage = encodeURIComponent(message);
             const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-            if (isMobile) {
-                window.location.href = `whatsapp://send?phone=${cp}&text=${encodedMessage}`;
-            } else {
-                window.open(`https://wa.me/${cp}?text=${encodedMessage}`, '_blank');
-            }
+            if (isMobile) window.location.href = `whatsapp://send?phone=${cp}&text=${encodedMessage}`;
+            else window.open(`https://wa.me/${cp}?text=${encodedMessage}`, '_blank');
         }
 
         async function loadDaySlots() {
@@ -349,13 +354,11 @@
             const container = document.getElementById('dayList');
             container.innerHTML = data && data.length ? data.map(b => {
                 const balance = (b.price || 0) - (b.paid_amount || 0);
-                const payStatus = balance <= 0 ? '<span class="text-success small fw-bold">Paid</span>' : `<span class="text-danger small fw-bold">Bal: ₹${balance}</span>`;
-                
                 return `
                 <div class="p-3 bg-light border rounded mb-2 d-flex justify-content-between align-items-center">
                     <div>
                         <span class="fw-bold text-success">${b.start_time.slice(0, 5)} - ${b.end_time.slice(0, 5)}</span><br>
-                        <small>${b.customer_name} (₹${b.price || 0})</small>  |  ${payStatus}
+                        <small>${b.customer_name} (Total: ₹${b.price || 0} | Paid: ₹${b.paid_amount || 0})</small>
                     </div>
                     <div class="d-flex gap-1">
                         <button class="action-btn btn-resend" onclick="sendWhatsApp('${b.customer_name}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}', '${b.end_time}', 'confirm', '${b.price}', '${b.paid_amount}')"><i class="bi bi-whatsapp"></i></button>
@@ -363,7 +366,7 @@
                         <button class="action-btn btn-delete" onclick="deleteBooking('${b.id}', '${b.customer_name}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}')"><i class="bi bi-trash"></i></button>
                     </div>
                 </div>`;
-            }).join('') : '<div class="text-center py-4 text-muted small">No slots for this date.</div>';
+            }).join('') : '<div class="text-center py-4 text-muted small">No slots.</div>';
         }
 
         async function loadHistory(type) {
@@ -389,8 +392,8 @@
                         ${type === 'upcoming' ? `<button class='btn btn-sm btn-outline-success' onclick="sendWhatsApp('${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','confirm','${b.price}','${b.paid_amount}')"><i class='bi bi-whatsapp'></i></button>` :
                         type === 'completed' ? `
                           <div class="d-flex gap-2 align-items-center">
-                            <span class="badge bg-light text-dark border">${(b.price - b.paid_amount) <= 0 ? 'PAID' : 'PENDING'}</span>
-                            <button class="btn btn-sm btn-outline-warning" onclick="sendWhatsApp('${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','remind','${b.price}','${b.paid_amount}')">
+                            <span class="badge bg-light text-dark border">Bal: ₹${(b.price || 0) - (b.paid_amount || 0)}</span>
+                            <button class="btn btn-sm btn-outline-warning" onclick="promptReminder('${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','${b.price}','${b.paid_amount}')">
                                 <i class="bi bi-bell"></i>
                             </button>
                           </div>` :
@@ -406,13 +409,11 @@
             document.getElementById('userPhone').value = p;
             document.getElementById('bookDate').value = d;
             document.getElementById('startTime').value = s.slice(0, 5);
-            document.getElementById('bookingPrice').value = price || '';
-            document.getElementById('paidAmount').value = paid || 0;
-
+            document.getElementById('bookingPrice').value = price;
+            document.getElementById('paidAmount').value = paid;
             const startMin = parseInt(s.slice(0, 2)) * 60 + parseInt(s.slice(3, 5));
             const endMin = parseInt(e.slice(0, 2)) * 60 + parseInt(e.slice(3, 5));
             document.getElementById('duration').value = (endMin - startMin) / 60;
-
             document.getElementById('formTitle').innerText = "Edit Booking";
             document.getElementById('cancelEditBtn').classList.remove('d-none');
             window.scrollTo({ top: 0, behavior: 'smooth' });
