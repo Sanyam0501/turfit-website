@@ -271,11 +271,13 @@
                 return Swal.fire("Required", "Please fill all details", "warning");
             }
 
+            // Time Calculation
             let [h, m] = start.split(':').map(Number);
             let totalMinutes = h * 60 + m + (duration * 60);
             let endTimeStr = `${String(Math.floor(totalMinutes / 60) % 24).padStart(2, '0')}:${String(totalMinutes % 60).padStart(2, '0')}:00`;
-            let startTimeWithSec = start + ":00";
+            let startTimeWithSec = start.length === 5 ? start + ":00" : start;
 
+            // 1. Check for Overlaps (excluding current booking if editing)
             const { data: existingBookings, error: fetchError } = await supabaseClient
                 .from('turf_bookings')
                 .select('id, start_time, end_time')
@@ -284,41 +286,57 @@
             if (fetchError) return Swal.fire("Error", "Could not verify availability", "error");
 
             const isOverlap = existingBookings.some(b => {
-                if (id && b.id == id) return false;
-                return (
-                    startTimeWithSec.localeCompare(b.end_time) < 0 &&
-                    endTimeStr.localeCompare(b.start_time) > 0
-                );
+                // If editing, don't collide with itself
+                if (id && String(b.id) === String(id)) return false;
 
+                return (
+                    startTimeWithSec < b.end_time &&
+                    endTimeStr > b.start_time
+                );
             });
 
             if (isOverlap) {
-                return Swal.fire({
-                    title: "Slot Unavailable",
-                    text: "This time overlaps with an existing booking. Please choose another time.",
-                    icon: "error"
-                });
+                return Swal.fire("Slot Unavailable", "This time overlaps with another booking.", "error");
             }
 
+            // 2. Prepare Data Object
             const bookingData = {
                 customer_name: name,
                 phone_number: phone,
                 booking_date: date,
                 start_time: startTimeWithSec,
                 end_time: endTimeStr,
-                price: price
+                price: parseFloat(price) // Ensure price is a number
             };
 
-            let res = id
-                ? await supabaseClient.from('turf_bookings').update(bookingData).eq('id', id)
-                : await supabaseClient.from('turf_bookings').insert([bookingData]);
+            // 3. Execute Update or Insert
+            let result;
+            if (id) {
+                // UPDATE
+                result = await supabaseClient
+                    .from('turf_bookings')
+                    .update(bookingData)
+                    .eq('id', id)
+                    .select(); // Adding .select() ensures we see if a row was actually affected
+            } else {
+                // INSERT
+                result = await supabaseClient
+                    .from('turf_bookings')
+                    .insert([bookingData])
+                    .select();
+            }
 
-            if (res.error) {
-                Swal.fire("Error", res.error.message, "error");
+            // 4. Handle Response
+            if (result.error) {
+                console.error("Supabase Error:", result.error);
+                Swal.fire("Error", result.error.message, "error");
+            } else if (result.data && result.data.length === 0 && id) {
+                // Case where .eq('id', id) didn't match anything
+                Swal.fire("Error", "Booking not found or no changes made.", "error");
             } else {
                 Swal.fire({
-                    title: 'Booking Saved!',
-                    text: "Send WhatsApp confirmation now?",
+                    title: 'Success!',
+                    text: id ? "Booking updated successfully." : "New booking saved.",
                     icon: 'success',
                     showCancelButton: true,
                     confirmButtonColor: '#25D366',
@@ -326,6 +344,7 @@
                 }).then(s => {
                     if (s.isConfirmed) sendWhatsApp(name, phone, date, start, endTimeStr, 'confirm', price);
                 });
+
                 resetForm();
                 updateView();
             }
