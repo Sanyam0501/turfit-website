@@ -249,7 +249,6 @@
             document.getElementById('currentDisplayDate').innerText = new Date(document.getElementById('bookDate').value).toDateString();
         }
 
-        // --- NEW PAYMENT UI LOGIC ---
         function handleFullPayCheck() {
             const check = document.getElementById('fullPayCheck');
             const price = document.getElementById('bookingPrice').value;
@@ -265,7 +264,6 @@
             const check = document.getElementById('fullPayCheck');
             if (check.checked) handleFullPayCheck();
         }
-        // ----------------------------
 
         async function saveEntry() {
             const id = document.getElementById('editBookingId').value;
@@ -321,6 +319,22 @@
                 });
                 resetForm();
                 updateView();
+            }
+        }
+
+        // --- NEW FUNCTION: MARK AS FULLY PAID ---
+        async function markAsPaid(id, price) {
+            const { error } = await supabaseClient
+                .from('turf_bookings')
+                .update({ paid_amount: parseFloat(price) })
+                .eq('id', id);
+
+            if (error) {
+                Swal.fire("Error", "Could not update payment", "error");
+            } else {
+                Swal.fire("Success", "Payment marked as full", "success");
+                loadHistory('completed');
+                loadDaySlots();
             }
         }
 
@@ -412,6 +426,11 @@
                             type === 'completed' ? `
                               <div class="d-flex gap-2 align-items-center">
                                 <span class="badge ${balance <= 0 ? 'bg-success' : 'bg-danger'}">${balance <= 0 ? 'PAID' : 'Bal: ₹' + balance}</span>
+                                ${balance > 0 ? `
+                                    <button class="btn btn-sm btn-outline-success" onclick="markAsPaid('${b.id}', '${b.price}')" title="Mark Fully Paid">
+                                        <i class="bi bi-check-lg"></i>
+                                    </button>
+                                ` : ''}
                                 <button class="btn btn-sm btn-outline-warning" onclick="promptReminder('${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','${b.price}','${b.paid_amount}')">
                                     <i class="bi bi-bell"></i>
                                 </button>
