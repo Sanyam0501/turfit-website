@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TURFIT BOOKING</title>
+    <title>TURFIT BOOKING MANAGER</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -22,143 +22,149 @@
         .nav-tabs .nav-link { color: #6c757d; font-weight: 600; border: none; padding: 12px 15px; font-size: 0.9rem; }
         .nav-tabs .nav-link.active { color: var(--accent); border-bottom: 3px solid var(--accent); background: transparent; }
         .action-btn { padding: 4px 8px; border-radius: 6px; cursor: pointer; transition: 0.2s; border: 1px solid transparent; background: transparent; }
-        .btn-resend { color: #2d6a4f; border-color: #2d6a4f; }
         .btn-edit { color: #ffc107; border-color: #ffc107; }
         .btn-delete { color: #dc3545; border-color: #dc3545; }
         .summary-box { background: #fff; border-radius: 12px; padding: 15px; margin-bottom: 20px; border-left: 5px solid var(--accent); }
         .summary-val { font-size: 1.25rem; font-weight: bold; color: var(--admin-green); }
         
-        /* Time Toggle Switch Style */
-        .time-toggle-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-            margin-top: 10px;
+        /* PIN Lock Styles */
+        #lockScreen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--admin-green); z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center; color: white;
+        }
+        .pin-input {
+            width: 220px; text-align: center; font-size: 2.5rem; letter-spacing: 8px;
+            background: transparent; border: none; border-bottom: 2px solid white; color: white; outline: none;
         }
     </style>
 </head>
 
 <body>
 
-    <div class="hero text-center">
-        <h2 class="fw-bold"><i class="bi bi-whatsapp me-2"></i>TURFIT BOOKING MANAGER</h2>
-        <p class="mb-0 opacity-75" id="currentDisplayDate"></p>
-        
-        <div class="time-toggle-container">
-            <span class="small fw-bold opacity-75">24H</span>
-            <div class="form-check form-switch m-0">
-                <input class="form-check-input" type="checkbox" id="timeFormatToggle" onchange="toggleTimeFormat()">
+    <div id="lockScreen">
+        <i class="bi bi-shield-lock-fill mb-3" style="font-size: 3rem;"></i>
+        <h4 class="fw-bold mb-4">TURFIT ACCESS</h4>
+        <input type="password" id="pinEntry" class="pin-input" maxlength="6" autofocus placeholder="••••••">
+        <p class="mt-4 opacity-50 small">Enter Security PIN</p>
+    </div>
+
+    <div id="appContent" style="display: none;">
+        <div class="hero text-center">
+            <div class="container d-flex justify-content-between align-items-center">
+                <div style="width: 40px;"></div>
+                <h2 class="fw-bold m-0"><i class="bi bi-whatsapp me-2"></i>TURFIT MANAGER</h2>
+                <button class="btn btn-sm btn-outline-light" onclick="logout()">Logout</button>
             </div>
-            <span class="small fw-bold opacity-75">12H</span>
+            <p class="mb-0 mt-2 opacity-75" id="currentDisplayDate"></p>
+        </div>
+
+        <div class="container mt-4 mb-5">
+            <div class="row g-4">
+                <div class="col-lg-4">
+                    <div class="card p-4">
+                        <h5 class="fw-bold mb-4">New Booking</h5>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted">DATE</label>
+                            <input type="date" id="bookDate" class="form-control" onchange="updateView()">
+                        </div>
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <label class="form-label small fw-bold text-muted">START TIME</label>
+                                <input type="time" id="startTime" class="form-control">
+                            </div>
+                            <div class="col-6 mb-3">
+                                <label class="form-label small fw-bold text-muted">DURATION</label>
+                                <select id="duration" class="form-select">
+                                    <option value="1">1 Hour</option>
+                                    <option value="1.5">1.5 Hours</option>
+                                    <option value="2">2 Hours</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted">CUSTOMER NAME</label>
+                            <input type="text" id="userName" class="form-control">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted">WHATSAPP NUMBER</label>
+                            <div class="input-group">
+                                <span class="input-group-text">+91</span>
+                                <input type="tel" id="userPhone" class="form-control">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <label class="form-label small fw-bold text-muted">TOTAL PRICE</label>
+                                <input type="number" id="bookingPrice" class="form-control">
+                            </div>
+                            <div class="col-6 mb-3">
+                                <label class="form-label small fw-bold text-muted">PAID AMOUNT</label>
+                                <input type="number" id="paidAmount" class="form-control" value="0">
+                            </div>
+                        </div>
+                        <button class="btn btn-primary-custom w-100 py-3 fw-bold" onclick="saveEntry(false)">
+                            SAVE & SEND MESSAGE
+                        </button>
+                    </div>
+                </div>
+
+                <div class="col-lg-8">
+                    <div class="row g-3 mb-3 text-center">
+                        <div class="col-6">
+                            <div class="summary-box shadow-sm">
+                                <div class="small fw-bold text-muted text-uppercase">Received</div>
+                                <div class="summary-val">₹<span id="statReceived">0</span></div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="summary-box shadow-sm" style="border-left-color: #dc3545;">
+                                <div class="small fw-bold text-muted text-uppercase">Pending</div>
+                                <div class="summary-val text-danger">₹<span id="statPending">0</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card p-0 overflow-hidden shadow-sm">
+                        <ul class="nav nav-tabs px-3 bg-white" id="bookingTabs" role="tablist">
+                            <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#todayPanel" onclick="loadDaySlots()">Today</button></li>
+                            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#upcomingPanel" onclick="loadHistory('upcoming')">Upcoming</button></li>
+                            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#ongoingPanel" onclick="loadHistory('ongoing')">Ongoing</button></li>
+                            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#completedPanel" onclick="loadHistory('completed')">Completed</button></li>
+                        </ul>
+
+                        <div class="tab-content p-4 bg-white">
+                            <div class="tab-pane fade show active" id="todayPanel"><div id="dayList"></div></div>
+                            <div class="tab-pane fade" id="upcomingPanel"><div class="table-responsive"><table class="table"><thead><tr><th>Date</th><th>Time</th><th>Customer</th><th>Total</th><th>Paid</th><th>Bal</th><th>Action</th></tr></thead><tbody id="upcomingList"></tbody></table></div></div>
+                            <div class="tab-pane fade" id="ongoingPanel"><div class="table-responsive"><table class="table"><thead><tr><th>Date</th><th>Time</th><th>Customer</th><th>Total</th><th>Paid</th><th>Bal</th><th>Status</th></tr></thead><tbody id="ongoingList"></tbody></table></div></div>
+                            <div class="tab-pane fade" id="completedPanel"><div class="table-responsive"><table class="table"><thead><tr><th>Date</th><th>Time</th><th>Customer</th><th>Total</th><th>Paid</th><th>Bal</th><th>Action</th></tr></thead><tbody id="completedList"></tbody></table></div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="container mt-4 mb-5">
-        <div class="row g-4">
-            <div class="col-lg-4">
-                <div class="card p-4">
-                    <h5 class="fw-bold mb-4">New Booking</h5>
-                    <div class="mb-3">
-                        <label class="form-label small fw-bold text-muted">DATE</label>
-                        <input type="date" id="bookDate" class="form-control" onchange="updateView()">
-                    </div>
-                    <div class="row">
-                        <div class="col-6 mb-3">
-                            <label class="form-label small fw-bold text-muted">START TIME</label>
-                            <input type="time" id="startTime" class="form-control">
-                        </div>
-                        <div class="col-6 mb-3">
-                            <label class="form-label small fw-bold text-muted">DURATION</label>
-                            <select id="duration" class="form-select">
-                                <option value="1">1 Hour</option>
-                                <option value="1.5">1.5 Hours</option>
-                                <option value="2">2 Hours</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label small fw-bold text-muted">CUSTOMER NAME</label>
-                        <input type="text" id="userName" class="form-control" placeholder="Enter name">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label small fw-bold text-muted">WHATSAPP NUMBER</label>
-                        <div class="input-group">
-                            <span class="input-group-text">+91</span>
-                            <input type="tel" id="userPhone" class="form-control" placeholder="10-digit number">
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-6 mb-3">
-                            <label class="form-label small fw-bold text-muted">TOTAL PRICE (₹)</label>
-                            <input type="number" id="bookingPrice" class="form-control">
-                        </div>
-                        <div class="col-6 mb-3">
-                            <label class="form-label small fw-bold text-muted">PAID AMOUNT (₹)</label>
-                            <input type="number" id="paidAmount" class="form-control" value="0">
-                        </div>
-                    </div>
-                    <button class="btn btn-primary-custom w-100 py-3 fw-bold" onclick="saveEntry(false)">
-                        <i class="bi bi-check-circle-fill me-2"></i>SAVE & SEND MESSAGE
-                    </button>
-                </div>
-            </div>
-
-            <div class="col-lg-8">
-                <div class="row g-3 mb-3">
-                    <div class="col-6">
-                        <div class="summary-box shadow-sm">
-                            <div class="small fw-bold text-muted text-uppercase">Total Received</div>
-                            <div class="summary-val">₹<span id="statReceived">0</span></div>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="summary-box shadow-sm" style="border-left-color: #dc3545;">
-                            <div class="small fw-bold text-muted text-uppercase">Total Pending</div>
-                            <div class="summary-val text-danger">₹<span id="statPending">0</span></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card p-0 overflow-hidden">
-                    <ul class="nav nav-tabs px-3 bg-white" id="bookingTabs" role="tablist">
-                        <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#todayPanel" onclick="loadDaySlots()">Today</button></li>
-                        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#upcomingPanel" onclick="loadHistory('upcoming')">Upcoming</button></li>
-                        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#ongoingPanel" onclick="loadHistory('ongoing')">Ongoing</button></li>
-                        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#completedPanel" onclick="loadHistory('completed')">Completed</button></li>
-                    </ul>
-
-                    <div class="tab-content p-4 bg-white">
-                        <div class="tab-pane fade show active" id="todayPanel"><div id="dayList"></div></div>
-                        <div class="tab-pane fade" id="upcomingPanel"><div class="table-responsive"><table class="table align-middle"><thead><tr><th>Date</th><th>Time</th><th>Customer</th><th>Total</th><th>Paid</th><th>Bal</th><th>Action</th></tr></thead><tbody id="upcomingList"></tbody></table></div></div>
-                        <div class="tab-pane fade" id="ongoingPanel"><div class="table-responsive"><table class="table align-middle"><thead><tr><th>Date</th><th>Time</th><th>Customer</th><th>Total</th><th>Paid</th><th>Bal</th><th>Status</th></tr></thead><tbody id="ongoingList"></tbody></table></div></div>
-                        <div class="tab-pane fade" id="completedPanel"><div class="table-responsive"><table class="table align-middle"><thead><tr><th>Date</th><th>Time</th><th>Customer</th><th>Total</th><th>Paid</th><th>Bal</th><th>Action</th></tr></thead><tbody id="completedList"></tbody></table></div></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="editModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title fw-bold">Edit Booking</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <input type="hidden" id="edit_id">
                     <div class="mb-3">
-                        <label class="form-label small fw-bold">DATE</label>
+                        <label class="small fw-bold">DATE</label>
                         <input type="date" id="edit_date" class="form-control">
                     </div>
                     <div class="row">
                         <div class="col-6 mb-3">
-                            <label class="form-label small fw-bold">START TIME</label>
+                            <label class="small fw-bold">START TIME</label>
                             <input type="time" id="edit_start" class="form-control">
                         </div>
                         <div class="col-6 mb-3">
-                            <label class="form-label small fw-bold">DURATION</label>
+                            <label class="small fw-bold">DURATION</label>
                             <select id="edit_duration" class="form-select">
                                 <option value="1">1 Hour</option>
                                 <option value="1.5">1.5 Hours</option>
@@ -166,28 +172,15 @@
                             </select>
                         </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label small fw-bold">CUSTOMER NAME</label>
-                        <input type="text" id="edit_name" class="form-control">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label small fw-bold">WHATSAPP NUMBER</label>
-                        <input type="tel" id="edit_phone" class="form-control">
-                    </div>
+                    <div class="mb-3"><label class="small fw-bold">CUSTOMER</label><input type="text" id="edit_name" class="form-control"></div>
+                    <div class="mb-3"><label class="small fw-bold">PHONE</label><input type="tel" id="edit_phone" class="form-control"></div>
                     <div class="row">
-                        <div class="col-6 mb-3">
-                            <label class="form-label small fw-bold">TOTAL PRICE</label>
-                            <input type="number" id="edit_price" class="form-control">
-                        </div>
-                        <div class="col-6 mb-3">
-                            <label class="form-label small fw-bold">PAID AMOUNT</label>
-                            <input type="number" id="edit_paid" class="form-control">
-                        </div>
+                        <div class="col-6 mb-3"><label class="small fw-bold">TOTAL PRICE</label><input type="number" id="edit_price" class="form-control"></div>
+                        <div class="col-6 mb-3"><label class="small fw-bold">PAID AMOUNT</label><input type="number" id="edit_paid" class="form-control"></div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary-custom" onclick="saveEntry(true)">Update Booking</button>
+                    <button class="btn btn-primary-custom w-100" onclick="saveEntry(true)">UPDATE BOOKING</button>
                 </div>
             </div>
         </div>
@@ -199,39 +192,54 @@
     <script>
         let supabaseClient;
         let bsEditModal;
-        let use12HourFormat = false; // Global toggle state
 
         async function init() {
             const res = await fetch('/api/get-public-key');
             const keys = await res.json();
             supabaseClient = supabase.createClient(keys.SUPABASE_URL_PUBLIC, keys.SUPABASE_ANON_KEY);
             bsEditModal = new bootstrap.Modal(document.getElementById('editModal'));
+            
+            document.getElementById('pinEntry').addEventListener('input', checkPin);
+            
+            if (localStorage.getItem('turf_session') === 'active') {
+                document.getElementById('lockScreen').style.display = 'none';
+                document.getElementById('appContent').style.display = 'block';
+            }
+
             document.getElementById('bookDate').valueAsDate = new Date();
             updateView();
         }
 
-        // --- NEW TIME FORMATTING FUNCTIONS ---
-        function toggleTimeFormat() {
-            use12HourFormat = document.getElementById('timeFormatToggle').checked;
-            updateView();
-            // Refresh whatever history tab is active
-            const activeTab = document.querySelector('#bookingTabs .nav-link.active');
-            if (activeTab.innerText !== 'Today') {
-                loadHistory(activeTab.innerText.toLowerCase());
+        // --- PIN LOGIC ---
+        async function checkPin() {
+            const val = document.getElementById('pinEntry').value;
+            if (val.length >= 4) {
+                const { data } = await supabaseClient.from('site_access').select('pin').eq('id', 1).single();
+                if (data && data.pin === val) {
+                    localStorage.setItem('turf_session', 'active');
+                    document.getElementById('lockScreen').style.display = 'none';
+                    document.getElementById('appContent').style.display = 'block';
+                } else if (val.length === 6) {
+                    document.getElementById('pinEntry').value = '';
+                    Swal.fire("Error", "Wrong PIN", "error");
+                }
             }
         }
 
-        function formatTime(timeStr) {
-            if (!timeStr) return "";
-            if (!use12HourFormat) return timeStr.slice(0, 5); // Return 24H (HH:mm)
+        function logout() {
+            localStorage.removeItem('turf_session');
+            location.reload();
+        }
 
+        // --- TIME FORMATTING (STRICT 12H) ---
+        function formatTo12H(timeStr) {
+            if (!timeStr) return "";
             let [h, m] = timeStr.split(':');
             h = parseInt(h);
-            const period = h >= 12 ? 'PM' : 'AM';
-            h = h % 12 || 12; // Convert 0 to 12
-            return `${h}:${m} ${period}`;
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            h = h % 12 || 12;
+            return `${h}:${m} ${ampm}`;
         }
-        // -------------------------------------
 
         function updateView() {
             loadDaySlots();
@@ -239,17 +247,17 @@
         }
 
         function updateStats(data) {
-            let totalPaid = 0, totalPending = 0;
+            let received = 0, pending = 0;
             data.forEach(b => {
-                totalPaid += parseFloat(b.paid_amount || 0);
-                totalPending += (parseFloat(b.price || 0) - parseFloat(b.paid_amount || 0));
+                received += parseFloat(b.paid_amount || 0);
+                pending += (parseFloat(b.price || 0) - parseFloat(b.paid_amount || 0));
             });
-            document.getElementById('statReceived').innerText = totalPaid.toLocaleString();
-            document.getElementById('statPending').innerText = totalPending.toLocaleString();
+            document.getElementById('statReceived').innerText = received.toLocaleString();
+            document.getElementById('statPending').innerText = pending.toLocaleString();
         }
 
         async function saveEntry(isEdit) {
-            const prefix = isEdit ? 'edit_' : '';
+            const pre = isEdit ? 'edit_' : '';
             const id = isEdit ? document.getElementById('edit_id').value : null;
             const name = document.getElementById(isEdit ? 'edit_name' : 'userName').value;
             const phone = document.getElementById(isEdit ? 'edit_phone' : 'userPhone').value;
@@ -259,56 +267,44 @@
             const paid = document.getElementById(isEdit ? 'edit_paid' : 'paidAmount').value || 0;
             const duration = parseFloat(document.getElementById(isEdit ? 'edit_duration' : 'duration').value);
 
-            if (!name || !phone || !start || !price) return Swal.fire("Required", "Fill all details", "warning");
+            if (!name || !phone || !start || !price) return Swal.fire("Required", "Please fill all fields", "warning");
 
             let [h, m] = start.split(':').map(Number);
             let totalMinutes = h * 60 + m + (duration * 60);
             let endTimeStr = `${String(Math.floor(totalMinutes / 60) % 24).padStart(2, '0')}:${String(totalMinutes % 60).padStart(2, '0')}:00`;
             let startTimeWithSec = start.length === 5 ? start + ":00" : start;
 
-            const { data: existing } = await supabaseClient.from('turf_bookings').select('id, start_time, end_time').eq('booking_date', date);
-            const isOverlap = existing.some(b => (id && String(b.id) === String(id)) ? false : (startTimeWithSec < b.end_time && endTimeStr > b.start_time));
-            if (isOverlap) return Swal.fire("Slot Unavailable", "Overlap detected.", "error");
-
             const bookingData = { customer_name: name, phone_number: phone, booking_date: date, start_time: startTimeWithSec, end_time: endTimeStr, price: parseFloat(price), paid_amount: parseFloat(paid) };
-            let result = id ? await supabaseClient.from('turf_bookings').update(bookingData).eq('id', id).select() : await supabaseClient.from('turf_bookings').insert([bookingData]).select();
+            
+            let res = id ? await supabaseClient.from('turf_bookings').update(bookingData).eq('id', id) : await supabaseClient.from('turf_bookings').insert([bookingData]);
 
-            if (result.error) Swal.fire("Error", result.error.message, "error");
+            if (res.error) Swal.fire("Error", res.error.message, "error");
             else {
                 if (isEdit) bsEditModal.hide();
-                Swal.fire({
-                    title: 'Success!',
-                    text: id ? "Booking updated." : "New booking saved.",
-                    icon: 'success',
-                    showCancelButton: true,
-                    confirmButtonColor: '#25D366',
-                    confirmButtonText: '<i class="bi bi-whatsapp"></i> Send Message'
-                }).then(s => { if (s.isConfirmed) sendWhatsApp(name, phone, date, start, endTimeStr, 'confirm', price, paid); });
+                Swal.fire("Success", "Booking Saved", "success").then(() => {
+                    sendWhatsApp(name, phone, date, start, endTimeStr, 'confirm', price, paid);
+                });
                 if(!isEdit) resetForm();
                 updateView();
             }
         }
 
-        function sendWhatsApp(n, p, d, s, e, t, price = 0, amountPaidOrReq = 0) {
+        function sendWhatsApp(n, p, d, s, e, t, price = 0, paid = 0) {
             const cp = "91" + p.replace(/\D/g, '');
             const dateObj = new Date(d);
             const monthDay = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-            
-            // Format times for message specifically
-            const displayStart = formatTime(s);
-            const displayEnd = formatTime(e);
+            const s12 = formatTo12H(s);
+            const e12 = formatTo12H(e);
 
-            let message = "";
-            if (t === 'cancel') {
-                message = `*CANCELLED*\nHi ${n},\nYour slot on ${monthDay} (${displayStart}) has been cancelled.`;
+            let msg = "";
+            if (t === 'confirm') {
+                const bal = price - paid;
+                const adv = paid > 0 ? "" : "\n\n*Kindly Pay Advance ₹200 for Booking Confirmation.*";
+                msg = `*TURFIT BOOKING CONFIRMED*\n\nHi *${n}*\nYour booking for *${monthDay}*\n${s12} - ${e12}\n\n*Total:* ₹${price}\n*Paid:* ₹${paid}\n*Balance:* ₹${bal}${adv}\n\n*RULES:*\n1. No Spitting/Smoking.\n2. Damage fines apply.\n3. Arrive on time.\n\nThank you for choosing *TURFIT* !!`;
             } else if (t === 'remind') {
-                message = `*PAYMENT REMINDER - TURFIT*\n\nHi *${n}*\nYour slot on *${monthDay}* (${displayStart} - ${displayEnd}) is completed.\n\n*Pending Amount:* ₹${amountPaidOrReq}\n\nKindly clear payment. Thank you!`;
-            } else {
-                const balance = price - amountPaidOrReq;
-                const advanceText = amountPaidOrReq > 0 ? "" : "\n\n*Kindly Pay Advance ₹200 for Booking Confirmation.*";
-                message = `*TURFIT BOOKING CONFIRMED*\n\nHi *${n}*\nYour booking for *${monthDay}*\n${displayStart} - ${displayEnd}\n\n*Total:* ₹${price}\n*Paid:* ₹${amountPaidOrReq}\n*Balance:* ₹${balance}${advanceText}\n\n*RULES:*\n1. No Spitting/Smoking.\n2. Damage fines apply.\n3. Arrive on time.\n\nThank you for choosing *TURFIT* !!`;
+                msg = `*PAYMENT REMINDER - TURFIT*\n\nHi *${n}*\nYour slot on *${monthDay}* (${s12}) is completed.\n\n*Pending Amount:* ₹${paid}\n\nKindly clear payment. Thank you!`;
             }
-            window.open(`https://wa.me/${cp}?text=${encodeURIComponent(message)}`, '_blank');
+            window.open(`https://wa.me/${cp}?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
         async function loadDaySlots() {
@@ -317,15 +313,14 @@
             updateStats(data || []);
             const container = document.getElementById('dayList');
             container.innerHTML = data && data.length ? data.map(b => {
-                const balance = (b.price || 0) - (b.paid_amount || 0);
-                return `<div class="p-3 bg-light border rounded mb-2 d-flex justify-content-between align-items-center">
-                    <div><span class="fw-bold text-success">${formatTime(b.start_time)} - ${formatTime(b.end_time)}</span><br><small>${b.customer_name} (Bal: ₹${balance})</small></div>
+                const bal = (b.price || 0) - (b.paid_amount || 0);
+                return `<div class="p-3 bg-light border rounded mb-2 d-flex justify-content-between align-items-center shadow-sm">
+                    <div><span class="fw-bold text-success">${formatTo12H(b.start_time)} - ${formatTo12H(b.end_time)}</span><br><small>${b.customer_name} (Bal: ₹${bal})</small></div>
                     <div class="d-flex gap-1">
-                        <button class="action-btn btn-resend" onclick="sendWhatsApp('${b.customer_name}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}', '${b.end_time}', 'confirm', '${b.price}', '${b.paid_amount}')"><i class="bi bi-whatsapp"></i></button>
+                        <button class="action-btn" onclick="sendWhatsApp('${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','confirm',${b.price},${b.paid_amount})"><i class="bi bi-whatsapp text-success"></i></button>
                         <button class="action-btn btn-edit" onclick="openEditModal('${b.id}','${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','${b.price}','${b.paid_amount}')"><i class="bi bi-pencil"></i></button>
-                        <button class="action-btn btn-delete" onclick="deleteBooking('${b.id}', '${b.customer_name}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}')"><i class="bi bi-trash"></i></button>
                     </div></div>`;
-            }).join('') : '<div class="text-center py-4 text-muted small">No slots.</div>';
+            }).join('') : '<div class="text-center py-4 text-muted small">No bookings for this date.</div>';
         }
 
         async function loadHistory(type) {
@@ -344,12 +339,11 @@
                 });
                 updateStats(filtered);
                 list.innerHTML = filtered.map(b => {
-                    const balance = (b.price || 0) - (b.paid_amount || 0);
-                    const balClass = balance <= 0 ? 'text-success' : 'text-danger';
-                    return `<tr><td>${b.booking_date.slice(5)}</td><td>${formatTime(b.start_time)}</td><td>${b.customer_name}</td><td>₹${b.price}</td><td>₹${b.paid_amount}</td><td class="${balClass} fw-bold">₹${balance}</td>
+                    const bal = (b.price || 0) - (b.paid_amount || 0);
+                    return `<tr><td>${b.booking_date.slice(5)}</td><td>${formatTo12H(b.start_time)}</td><td>${b.customer_name}</td><td>₹${b.price}</td><td>₹${b.paid_amount}</td><td class="text-danger fw-bold">₹${bal}</td>
                         <td><div class="d-flex gap-2">
                             <button class="btn btn-sm btn-outline-warning" onclick="openEditModal('${b.id}','${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','${b.price}','${b.paid_amount}')"><i class="bi bi-pencil"></i></button>
-                            ${type === 'completed' && balance > 0 ? `<button class="btn btn-sm btn-outline-info" onclick="sendWhatsApp('${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','remind',${b.price},${balance})"><i class="bi bi-bell"></i></button>` : ''}
+                            ${bal > 0 ? `<button class="btn btn-sm btn-outline-info" onclick="sendWhatsApp('${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','remind',${b.price},${bal})"><i class="bi bi-bell"></i></button>` : ''}
                         </div></td></tr>`
                 }).join('');
             }
@@ -372,14 +366,6 @@
         function resetForm() {
             ['userName', 'userPhone', 'startTime', 'bookingPrice'].forEach(id => document.getElementById(id).value = '');
             document.getElementById('paidAmount').value = '0';
-        }
-
-        async function deleteBooking(id, n, p, d, s) {
-            if (confirm(`Delete ${n}'s slot?`)) {
-                await supabaseClient.from('turf_bookings').delete().eq('id', id);
-                sendWhatsApp(n, p, d, s, '', 'cancel');
-                updateView();
-            }
         }
 
         init();
