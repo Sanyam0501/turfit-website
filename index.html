@@ -335,22 +335,34 @@
         }
 
         function sendWhatsApp(n, p, d, s, e, t, price = 0) {
-            const cp = "91" + p.replace(/\D/g, '');
-            const dateObj = new Date(d);
+    const cp = "91" + p.replace(/\D/g, '');
+    const dateObj = new Date(d);
 
-            const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
-            const monthDay = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
+    const monthDay = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
-            let message = "";
+    let message = "";
 
-            if (t === 'cancel') {
-                message =
-                    `*CANCELLED*
+    if (t === 'cancel') {
+        message = `*CANCELLED*
 Hi ${n},
 Your slot on ${monthDay} (${s.slice(0, 5)}) has been cancelled.`;
-            } else {
-                message =
-                    `*TURFIT BOOKING CONFIRMED*
+    } 
+    else if (t === 'remind') {
+        // --- NEW REMINDER MESSAGE ---
+        message = `*PAYMENT REMINDER - TURFIT*
+
+Hi *${n}*
+This is a reminder for your booking on *${dayName}, ${monthDay}* (${s.slice(0, 5)}).
+
+*Pending Amount:* ₹${price}
+
+Please ignore if already paid.
+Thank you!`;
+    }
+    else {
+        // --- YOUR ORIGINAL CONFIRMATION MESSAGE (UNCHANGED) ---
+        message = `*TURFIT BOOKING CONFIRMED*
 
 Hi *${n}*
 Your booking for *${dayName}, ${monthDay}*
@@ -367,27 +379,37 @@ ${s.slice(0, 5)} - ${e.slice(0, 5)}
 3. Early Arrival: Kindly wait outside the turf if you arrive before your slot. Accessing the turf early will be counted in your booking and charged extra.
 
 Thank you for choosing *TURFIT* !!`;
-            }
+    }
 
-            const encodedMessage = encodeURIComponent(message);
-            window.open(`https://wa.me/${cp}?text=${encodedMessage}`, '_blank');
-        }
+    const encodedMessage = encodeURIComponent(message);
+    window.open(`https://wa.me/${cp}?text=${encodedMessage}`, '_blank');
+}
 
 
         async function loadDaySlots() {
-            const date = document.getElementById('bookDate').value;
-            const { data } = await supabaseClient.from('turf_bookings').select('*').eq('booking_date', date).order('start_time');
-            const container = document.getElementById('dayList');
-            container.innerHTML = data && data.length ? data.map(b => `
-            <div class="p-3 bg-light border rounded mb-2 d-flex justify-content-between align-items-center">
-                <div><span class="fw-bold text-success">${b.start_time.slice(0, 5)} - ${b.end_time.slice(0, 5)}</span><br><small>${b.customer_name} (₹${b.price || 0})</small></div>
-                <div class="d-flex gap-1">
-                    <button class="action-btn btn-resend" onclick="sendWhatsApp('${b.customer_name}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}', '${b.end_time}', 'confirm', '${b.price}')"><i class="bi bi-whatsapp"></i></button>
-                    <button class="action-btn btn-edit" onclick="editBooking('${b.id}', '${b.customer_name}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}', '${b.price}')"><i class="bi bi-pencil"></i></button>
-                    <button class="action-btn btn-delete" onclick="deleteBooking('${b.id}', '${b.customer_name}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}')"><i class="bi bi-trash"></i></button>
-                </div>
-            </div>`).join('') : '<div class="text-center py-4 text-muted small">No slots for this date.</div>';
-        }
+    const date = document.getElementById('bookDate').value;
+    const { data } = await supabaseClient.from('turf_bookings').select('*').eq('booking_date', date).order('start_time');
+    const container = document.getElementById('dayList');
+    container.innerHTML = data && data.length ? data.map(b => `
+    <div class="p-3 bg-light border rounded mb-2 d-flex justify-content-between align-items-center">
+        <div><span class="fw-bold text-success">${b.start_time.slice(0, 5)} - ${b.end_time.slice(0, 5)}</span><br><small>${b.customer_name} (₹${b.price || 0})</small></div>
+        <div class="d-flex gap-1">
+            <button class="action-btn" style="color: #fd7e14; border-color: #fd7e14;" onclick="sendWhatsApp('${b.customer_name}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}', '${b.end_time}', 'remind', '${b.price}')">
+                <i class="bi bi-bell"></i>
+            </button>
+            
+            <button class="action-btn btn-resend" onclick="sendWhatsApp('${b.customer_name}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}', '${b.end_time}', 'confirm', '${b.price}')">
+                <i class="bi bi-whatsapp"></i>
+            </button>
+            <button class="action-btn btn-edit" onclick="editBooking('${b.id}', '${b.customer_name}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}', '${b.price}')">
+                <i class="bi bi-pencil"></i>
+            </button>
+            <button class="action-btn btn-delete" onclick="deleteBooking('${b.id}', '${b.customer_name}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}')">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+    </div>`).join('') : '<div class="text-center py-4 text-muted small">No slots for this date.</div>';
+}
 
         async function loadHistory(type) {
             const now = new Date();
