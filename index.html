@@ -263,11 +263,12 @@
             
             let res = id ? await supabaseClient.from('turf_bookings').update(bookingData).eq('id', id) : await supabaseClient.from('turf_bookings').insert([bookingData]);
 
-            if (res.error) Swal.fire("Error", res.error.message, "error");
-            else {
+            if (res.error) {
+                Swal.fire("Error", res.error.message, "error");
+            } else {
                 if (isEdit) bsEditModal.hide();
                 
-                // SHOW SUCCESS POPUP WITH CUSTOM BUTTONS
+                // POPUP WITH BUTTONS
                 Swal.fire({
                     title: isEdit ? "Updated!" : "Saved!",
                     text: "Booking has been recorded successfully.",
@@ -290,22 +291,43 @@
 
         async function deleteBooking() {
             const id = document.getElementById('edit_id').value;
-            const res = await Swal.fire({
+            const name = document.getElementById('edit_name').value;
+            const phone = document.getElementById('edit_phone').value;
+
+            const confirmDel = await Swal.fire({
                 title: 'Delete Booking?',
                 text: "This action cannot be undone!",
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#dc3545',
-                confirmButtonText: 'Yes, Delete it!'
+                confirmButtonText: 'Yes, Delete it!',
+                cancelButtonText: 'CANCEL'
             });
 
-            if (res.isConfirmed) {
+            if (confirmDel.isConfirmed) {
                 const { error } = await supabaseClient.from('turf_bookings').delete().eq('id', id);
-                if (error) Swal.fire("Error", error.message, "error");
-                else {
+                if (error) {
+                    Swal.fire("Error", error.message, "error");
+                } else {
                     bsEditModal.hide();
-                    Swal.fire("Deleted!", "Booking removed.", "success");
                     updateView();
+                    
+                    Swal.fire({
+                        title: "Deleted!",
+                        text: "Booking removed successfully.",
+                        icon: "success",
+                        showCancelButton: true,
+                        confirmButtonText: '<i class="bi bi-whatsapp"></i> SEND MESSAGE',
+                        cancelButtonText: 'DONE',
+                        confirmButtonColor: '#25D366',
+                        cancelButtonColor: '#6c757d'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            const cp = "91" + phone.replace(/\D/g, '');
+                            const msg = `*BOOKING CANCELLED - TURFIT*\n\nHi *${name}*,\nYour booking has been cancelled. Please contact us for more information.`;
+                            window.open(`https://wa.me/${cp}?text=${encodeURIComponent(msg)}`, '_blank');
+                        }
+                    });
                 }
             }
         }
@@ -321,14 +343,13 @@
             if (t === 'confirm') {
                 const bal = price - paid;
                 const adv = paid > 0 ? "" : "\n\n*Kindly Pay Advance ₹200 for Booking Confirmation.*";
-                msg = `*TURFIT BOOKING CONFIRMED*\n\nHi *${n}*\nYour booking for *${monthDay}*\n${s12} - ${e12}\n\n*Total:* ₹${price}\n*Paid:* ₹${paid}\n*Balance:* ₹${bal}${adv}\n\n*RULES & REGULATIONS:*\n\n1. Spitting and Smoking is strictly prohibited inside the turf premises, pathway (outside turf) and the ramp. If caught doing the same, then a fine of ₹300 shall be charged from the booking team.\n\n2. Cricket bat or ball, football, stumps etc. are the property of the turf and shall not be carried outside the turf without the permission of the owner. If caught carrying outside then it will be treated as theft, fine of ₹500 shall be taken from the booking team.\n\n3. Early Arrival: Kindly wait outside the turf if you arrive before your slot. Accessing the turf early will be counted in your booking and charged extra.\n\nThank you for choosing *TURFIT* !!`;
+                msg = `*TURFIT BOOKING CONFIRMED*\n\nHi *${n}*\nYour booking for *${monthDay}*\n${s12} - ${e12}\n\n*Total:* ₹${price}\n*Paid:* ₹${paid}\n*Balance:* ₹${bal}${adv}\n\n*RULES & REGULATIONS:*\n\n1. Spitting and Smoking is strictly prohibited inside the turf premises.\n2. Cricket/Football equipment are turf property.\n3. Early Arrival: Kindly wait outside if you arrive early.\n\nThank you for choosing *TURFIT* !!`;
             } else if (t === 'remind') {
                 msg = `*PAYMENT REMINDER - TURFIT*\n\nHi *${n}*\nYour slot on *${monthDay}* (${s12}) is completed.\n\n*Pending Amount:* ₹${paid}\n\nKindly clear payment. Thank you!`;
             }
             window.open(`https://wa.me/${cp}?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
-        // --- Rest of logic (checkPin, logout, format, loadDaySlots, loadHistory, openEditModal, resetForm, init) remains same ---
         async function checkPin() {
             const val = document.getElementById('pinEntry').value;
             if (val.length >= 4) {
@@ -343,7 +364,9 @@
                 }
             }
         }
+
         function logout() { localStorage.removeItem('turf_session'); location.reload(); }
+
         function formatTo12H(timeStr) {
             if (!timeStr) return "";
             let [h, m] = timeStr.split(':');
@@ -352,10 +375,12 @@
             h = h % 12 || 12;
             return `${h}:${m} ${ampm}`;
         }
+
         function updateView() {
             loadDaySlots();
             document.getElementById('currentDisplayDate').innerText = new Date(document.getElementById('bookDate').value).toDateString();
         }
+
         function updateStats(data) {
             let received = 0, pending = 0;
             data.forEach(b => {
@@ -365,6 +390,7 @@
             document.getElementById('statReceived').innerText = received.toLocaleString();
             document.getElementById('statPending').innerText = pending.toLocaleString();
         }
+
         async function loadDaySlots() {
             const date = document.getElementById('bookDate').value;
             const { data } = await supabaseClient.from('turf_bookings').select('*').eq('booking_date', date).order('start_time');
@@ -380,6 +406,7 @@
                     </div></div>`;
             }).join('') : '<div class="text-center py-4 text-muted small">No bookings for this date.</div>';
         }
+
         async function loadHistory(type) {
             const now = new Date();
             const todayStr = now.toISOString().split('T')[0];
@@ -405,6 +432,7 @@
                 }).join('');
             }
         }
+
         function openEditModal(id, n, p, d, s, e, price, paid) {
             document.getElementById('edit_id').value = id;
             document.getElementById('edit_name').value = n;
@@ -425,10 +453,12 @@
             document.getElementById('edit_duration').value = (endMin - startMin) / 60;
             bsEditModal.show();
         }
+
         function resetForm() {
             ['userName', 'userPhone', 'bookingPrice'].forEach(id => document.getElementById(id).value = '');
             document.getElementById('paidAmount').value = '0';
         }
+
         init();
     </script>
 </body>
