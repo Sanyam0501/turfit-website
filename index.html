@@ -46,7 +46,7 @@
                 </div>
                 <div class="row">
                     <div class="col-6 mb-3">
-                        <label class="form-label small fw-bold text-muted">START TIME (5m)</label>
+                        <label class="form-label small fw-bold text-muted">START TIME</label>
                         <input type="time" id="startTime" class="form-control" step="300">
                     </div>
                     <div class="col-6 mb-3">
@@ -62,12 +62,16 @@
                     <label class="form-label small fw-bold text-muted">CUSTOMER NAME</label>
                     <input type="text" id="userName" class="form-control" placeholder="Enter name">
                 </div>
-                <div class="mb-4">
+                <div class="mb-3">
                     <label class="form-label small fw-bold text-muted">WHATSAPP NUMBER</label>
                     <div class="input-group">
                         <span class="input-group-text">+91</span>
                         <input type="tel" id="userPhone" class="form-control" placeholder="10-digit number">
                     </div>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label small fw-bold text-muted">PRICE (₹)</label>
+                    <input type="number" id="bookingPrice" class="form-control" placeholder="Enter amount">
                 </div>
                 <button id="submitBtn" class="btn btn-primary-custom w-100 py-3 fw-bold" onclick="saveEntry()">
                     <i class="bi bi-check-circle-fill me-2"></i>SAVE & SEND MESSAGE
@@ -137,84 +141,67 @@
         const phone = document.getElementById('userPhone').value;
         const date = document.getElementById('bookDate').value;
         const start = document.getElementById('startTime').value;
+        const price = document.getElementById('bookingPrice').value;
         const duration = parseFloat(document.getElementById('duration').value);
 
-        if (!name || !phone || !start) return Swal.fire("Required", "Please fill all details", "warning");
+        if (!name || !phone || !start || !price) return Swal.fire("Required", "Please fill all details including price", "warning");
 
-        // 5-Minute Interval Enforcement
         let [h, m] = start.split(':').map(Number);
-        if (m % 5 !== 0) {
-            m = Math.round(m / 5) * 5;
-            if (m === 60) { m = 0; h = (h + 1) % 24; }
-            const fixed = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
-            document.getElementById('startTime').value = fixed;
-            return Swal.fire("Interval Error", `Please use 5-minute intervals. Adjusted to ${fixed}`, "info");
-        }
-
         let totalMinutes = h * 60 + m + (duration * 60);
         let endTimeStr = `${String(Math.floor(totalMinutes / 60) % 24).padStart(2,'0')}:${String(totalMinutes % 60).padStart(2,'0')}:00`;
         let startTimeWithSec = start + ":00";
 
-        // OVERLAP CHECK
-        let { data: conflicts } = await supabaseClient.from('turf_bookings').select('id, customer_name, start_time, end_time')
-            .eq('booking_date', date).lt('start_time', endTimeStr).gt('end_time', startTimeWithSec);
-        
+        // Overlap Check
+        let { data: conflicts } = await supabaseClient.from('turf_bookings').select('id, customer_name').eq('booking_date', date).lt('start_time', endTimeStr).gt('end_time', startTimeWithSec);
         if (id) conflicts = conflicts.filter(c => c.id !== id);
-        
-        if (conflicts && conflicts.length > 0) {
-            return Swal.fire("Overlap!", `Slot already booked by ${conflicts[0].customer_name}`, "error");
-        }
+        if (conflicts && conflicts.length > 0) return Swal.fire("Overlap!", `Slot already booked by ${conflicts[0].customer_name}`, "error");
 
-        const bookingData = { customer_name: name, phone_number: phone, booking_date: date, start_time: startTimeWithSec, end_time: endTimeStr };
+        const bookingData = { 
+            customer_name: name, 
+            phone_number: phone, 
+            booking_date: date, 
+            start_time: startTimeWithSec, 
+            end_time: endTimeStr,
+            price: price 
+        };
+
         let res = id ? await supabaseClient.from('turf_bookings').update(bookingData).eq('id', id) : await supabaseClient.from('turf_bookings').insert([bookingData]);
 
         if (res.error) Swal.fire("Error", res.error.message, "error");
         else {
-            // Confirmation before opening WhatsApp to avoid mobile browser blocks
             Swal.fire({ 
                 title: 'Booking Saved!', 
-                text: "Click below to notify the customer via WhatsApp.",
+                text: "Click below to notify via WhatsApp.",
                 icon: 'success', 
                 showCancelButton: true, 
                 confirmButtonColor: '#25D366',
                 confirmButtonText: '<i class="bi bi-whatsapp"></i> Send Message' 
-            }).then(s => { if (s.isConfirmed) sendWhatsApp(name, phone, date, start, endTimeStr, id ? 'modify' : 'confirm'); });
+            }).then(s => { 
+                if (s.isConfirmed) sendWhatsApp(name, phone, date, start, endTimeStr, 'confirm', price); 
+            });
             resetForm(); updateView();
         }
     }
 
-    async function loadHistory(type) {
-        const now = new Date();
-        const todayStr = now.toISOString().split('T')[0];
-        const currentTime = now.toTimeString().split(' ')[0];
-
-        const { data } = await supabaseClient.from('turf_bookings').select('*').order('booking_date').order('start_time');
-        const list = document.getElementById(`${type}List`);
-        list.innerHTML = '';
-
-        if (data) {
-            const filtered = data.filter(b => {
-                const isToday = b.booking_date === todayStr;
-                const isFutureDate = b.booking_date > todayStr;
-                const isPastDate = b.booking_date < todayStr;
-
-                if (type === 'upcoming') return isFutureDate || (isToday && b.start_time > currentTime);
-                if (type === 'ongoing') return isToday && b.start_time <= currentTime && b.end_time > currentTime;
-                if (type === 'completed') return isPastDate || (isToday && b.end_time <= currentTime);
-            });
-
-            list.innerHTML = filtered.length ? filtered.map(b => `
-                <tr>
-                    <td>${b.booking_date.slice(5)}</td>
-                    <td>${b.start_time.slice(0,5)} - ${b.end_time.slice(0,5)}</td>
-                    <td>${b.customer_name}</td>
-                    <td>
-                        ${type === 'upcoming' ? `<button class='btn btn-sm btn-outline-success' onclick="sendWhatsApp('${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','confirm')"><i class='bi bi-whatsapp'></i></button>` : 
-                          type === 'ongoing' ? `<span class="badge badge-ongoing">LIVE</span>` : 
-                          `<span class="badge bg-light text-dark border">Done</span>`}
-                    </td>
-                </tr>`).join('') : `<tr><td colspan="4" class="text-center py-3 text-muted">No records found.</td></tr>`;
+    function sendWhatsApp(n, p, d, s, e, t, price = 0) {
+        const cp = "91" + p.replace(/\D/g, '');
+        const dateObj = new Date(d);
+        const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
+        const monthDay = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        
+        let message = "";
+        if (t === 'cancel') {
+            message = `*CANCELLED*: Slot on ${monthDay} (${s.slice(0,5)}) removed.`;
+        } else {
+            message = `*TURFIT BOOKING CONFIRMED*%0A%0A` +
+            `Hi *${n}*, your booking for *${dayName}, ${monthDay}* (${s.slice(0,5)} - ${e.slice(0,5)}) is successful!%0A%0A` +
+            `*Price:* ₹${price}%0A%0A` +
+            `*RULES & REGULATIONS:*%0A` +
+            `1. Spitting and Smoking is strictly prohibited inside the turf premises, pathway (outside turf) and the ramp. If caught doing the same, then a fine of ₹300 shall be charged from the booking team.%0A` +
+            `2. Cricket bat or ball, football, stumps etc. are the property of the turf and shall not be carried outside the turf without the permission of the owner. If caught carrying outside then it will be treated as theft, fine of ₹500 shall be taken from the booking team.%0A` +
+            `3. *Early Arrival:* Kindly wait outside the turf if you arrive before your slot. Accessing the turf early will be counted in your booking and charged extra.`;
         }
+        window.open(`https://wa.me/${cp}?text=${message}`, '_blank').focus();
     }
 
     async function loadDaySlots() {
@@ -223,30 +210,48 @@
         const container = document.getElementById('dayList');
         container.innerHTML = data && data.length ? data.map(b => `
             <div class="p-3 bg-light border rounded mb-2 d-flex justify-content-between align-items-center">
-                <div><span class="fw-bold text-success">${b.start_time.slice(0,5)} - ${b.end_time.slice(0,5)}</span><br><small>${b.customer_name}</small></div>
+                <div><span class="fw-bold text-success">${b.start_time.slice(0,5)} - ${b.end_time.slice(0,5)}</span><br><small>${b.customer_name} (₹${b.price || 0})</small></div>
                 <div class="d-flex gap-1">
-                    <button class="action-btn btn-resend" onclick="sendWhatsApp('${b.customer_name}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}', '${b.end_time}', 'confirm')"><i class="bi bi-whatsapp"></i></button>
-                    <button class="action-btn btn-edit" onclick="editBooking('${b.id}', '${b.customer_name}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}')"><i class="bi bi-pencil"></i></button>
+                    <button class="action-btn btn-resend" onclick="sendWhatsApp('${b.customer_name}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}', '${b.end_time}', 'confirm', '${b.price}')"><i class="bi bi-whatsapp"></i></button>
+                    <button class="action-btn btn-edit" onclick="editBooking('${b.id}', '${b.customer_name}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}', '${b.price}')"><i class="bi bi-pencil"></i></button>
                     <button class="action-btn btn-delete" onclick="deleteBooking('${b.id}', '${b.customer_name}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}')"><i class="bi bi-trash"></i></button>
                 </div>
             </div>`).join('') : '<div class="text-center py-4 text-muted small">No slots for this date.</div>';
     }
 
-    function sendWhatsApp(n, p, d, s, e, t) {
-        const cp = "91" + p.replace(/\D/g, '');
-        const f = new Date(d).toLocaleDateString('en-US', {month:'short', day:'numeric'});
-        const rules = `%0A%0A*RULES:*%0A1. No smoking/spitting.%0A2. Damage to turf property fine: ₹500.`;
-        
-        let m = t === 'cancel' ? `*CANCELLED*: Slot on ${f} (${s.slice(0,5)}) removed.` : `*CONFIRMED*: Slot on ${f} (${s.slice(0,5)} - ${e.slice(0,5)}) is successful!${rules}`;
-        window.open(`https://wa.me/${cp}?text=${encodeURIComponent(m)}`, '_blank').focus();
+    async function loadHistory(type) {
+        const now = new Date();
+        const todayStr = now.toISOString().split('T')[0];
+        const currentTime = now.toTimeString().split(' ')[0];
+        const { data } = await supabaseClient.from('turf_bookings').select('*').order('booking_date').order('start_time');
+        const list = document.getElementById(`${type}List`);
+        list.innerHTML = '';
+        if (data) {
+            const filtered = data.filter(b => {
+                const isToday = b.booking_date === todayStr;
+                const isFutureDate = b.booking_date > todayStr;
+                const isPastDate = b.booking_date < todayStr;
+                if (type === 'upcoming') return isFutureDate || (isToday && b.start_time > currentTime);
+                if (type === 'ongoing') return isToday && b.start_time <= currentTime && b.end_time > currentTime;
+                if (type === 'completed') return isPastDate || (isToday && b.end_time <= currentTime);
+            });
+            list.innerHTML = filtered.length ? filtered.map(b => `
+                <tr>
+                    <td>${b.booking_date.slice(5)}</td>
+                    <td>${b.start_time.slice(0,5)}</td>
+                    <td>${b.customer_name}</td>
+                    <td>${type === 'upcoming' ? `<button class='btn btn-sm btn-outline-success' onclick="sendWhatsApp('${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','confirm','${b.price}')"><i class='bi bi-whatsapp'></i></button>` : `<span class="badge ${type === 'ongoing' ? 'badge-ongoing' : 'bg-light text-dark border'}">${type.toUpperCase()}</span>`}</td>
+                </tr>`).join('') : `<tr><td colspan="4" class="text-center py-3 text-muted">No records.</td></tr>`;
+        }
     }
 
-    function editBooking(id, n, p, d, s) {
+    function editBooking(id, n, p, d, s, price) {
         document.getElementById('editBookingId').value = id;
         document.getElementById('userName').value = n;
         document.getElementById('userPhone').value = p;
         document.getElementById('bookDate').value = d;
         document.getElementById('startTime').value = s.slice(0,5);
+        document.getElementById('bookingPrice').value = price || '';
         document.getElementById('formTitle').innerText = "Edit Booking";
         document.getElementById('cancelEditBtn').classList.remove('d-none');
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -257,12 +262,13 @@
         document.getElementById('userName').value = '';
         document.getElementById('userPhone').value = '';
         document.getElementById('startTime').value = '';
+        document.getElementById('bookingPrice').value = '';
         document.getElementById('formTitle').innerText = "New Booking";
         document.getElementById('cancelEditBtn').classList.add('d-none');
     }
 
     async function deleteBooking(id, n, p, d, s) {
-        if (confirm(`Delete ${n}'s slot and notify them?`)) {
+        if (confirm(`Delete ${n}'s slot?`)) {
             const { error } = await supabaseClient.from('turf_bookings').delete().eq('id', id);
             if (!error) { sendWhatsApp(n, p, d, s, '', 'cancel'); updateView(); }
         }
