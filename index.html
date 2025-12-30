@@ -359,43 +359,26 @@
             let message = "";
 
             if (t === 'cancel') {
-                message = `*CANCELLED*
-Hi ${n},
-Your slot on ${monthDay} (${s.slice(0, 5)}) has been cancelled.`;
+                message = `*CANCELLED*\nHi ${n},\nYour slot on ${monthDay} (${s.slice(0, 5)}) has been cancelled.`;
             }
             else if (t === 'remind') {
-                message = `*PAYMENT REMINDER - TURFIT*
-
-Hi *${n}*
-Your slot on *${dayName}, ${monthDay}* (${s.slice(0, 5)} - ${e.slice(0, 5)}) is completed.
-
-*Pending Amount:* ₹${price}
-
-Kindly clear the payment if not already done. 
-Thank you for choosing *TURFIT* !!`;
+                message = `*PAYMENT REMINDER - TURFIT*\n\nHi *${n}*\nYour slot on *${dayName}, ${monthDay}* (${s.slice(0, 5)} - ${e.slice(0, 5)}) is completed.\n\n*Pending Amount:* ₹${price}\n\nKindly clear the payment if not already done. \nThank you for choosing *TURFIT* !!`;
             }
             else {
-                message = `*TURFIT BOOKING CONFIRMED*
-
-Hi *${n}*
-Your booking for *${dayName}, ${monthDay}*
-${s.slice(0, 5)} - ${e.slice(0, 5)}
-
-*Amount:* ₹${price}
-
-*RULES & REGULATIONS:*
-
-1. Spitting and Smoking is strictly prohibited inside the turf premises, pathway (outside turf) and the ramp. If caught doing the same, then a fine of ₹300 shall be charged from the booking team.
-
-2. Cricket bat or ball, football, stumps etc. are the property of the turf and shall not be carried outside the turf without the permission of the owner. If caught carrying outside then it will be treated as theft, fine of ₹500 shall be taken from the booking team
-
-3. Early Arrival: Kindly wait outside the turf if you arrive before your slot. Accessing the turf early will be counted in your booking and charged extra.
-
-Thank you for choosing *TURFIT* !!`;
+                message = `*TURFIT BOOKING CONFIRMED*\n\nHi *${n}*\nYour booking for *${dayName}, ${monthDay}*\n${s.slice(0, 5)} - ${e.slice(0, 5)}\n\n*Amount:* ₹${price}\n\n*RULES & REGULATIONS:*\n\n1. Spitting and Smoking is strictly prohibited inside the turf premises, pathway (outside turf) and the ramp. If caught doing the same, then a fine of ₹300 shall be charged from the booking team.\n\n2. Cricket bat or ball, football, stumps etc. are the property of the turf and shall not be carried outside the turf without the permission of the owner. If caught carrying outside then it will be treated as theft, fine of ₹500 shall be taken from the booking team\n\n3. Early Arrival: Kindly wait outside the turf if you arrive before your slot. Accessing the turf early will be counted in your booking and charged extra.\n\nThank you for choosing *TURFIT* !!`;
             }
 
             const encodedMessage = encodeURIComponent(message);
-            window.open(`https://wa.me/${cp}?text=${encodedMessage}`, '_blank');
+            const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+            if (isMobile) {
+                // This protocol (whatsapp://) bypasses the browser and 
+                // forces the phone to look for the installed apps immediately.
+                window.location.href = `whatsapp://send?phone=${cp}&text=${encodedMessage}`;
+            } else {
+                // Desktop still works best with the standard web link
+                window.open(`https://wa.me/${cp}?text=${encodedMessage}`, '_blank');
+            }
         }
 
         async function loadDaySlots() {
