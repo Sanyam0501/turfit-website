@@ -4,89 +4,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TURF MANAGER - Admin Panel</title>
+    <title>TURF MANAGER - Pro Admin</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         :root {
-            --turf-green: #2d6a4f;
-            --dark-green: #1b4332;
-            --bg-light: #f8f9fa;
+            --admin-green: #1b4332;
+            --accent: #2d6a4f;
         }
 
         body {
-            background-color: var(--bg-light);
+            background: #f0f2f5;
             font-family: 'Segoe UI', sans-serif;
-            color: #333;
         }
 
-        .admin-header {
-            background: var(--dark-green);
-            color: white;
-            padding: 20px 0;
-            margin-bottom: 30px;
+        .hero {
+            background: var(--admin-green);
+            color: #fff;
+            padding: 25px 0;
             border-bottom: 5px solid #d8f3dc;
         }
 
         .card {
-            border: none;
             border-radius: 12px;
+            border: none;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
 
-        .nav-pills .nav-link {
-            color: #666;
+        .btn-primary-custom {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+        }
+
+        .btn-primary-custom:hover {
+            background-color: #1b4332;
+            color: white;
+        }
+
+        .nav-tabs .nav-link {
+            color: #6c757d;
             font-weight: 600;
+            border: none;
+            padding: 12px 15px;
+            font-size: 0.9rem;
         }
 
-        .nav-pills .nav-link.active {
-            background-color: var(--turf-green);
+        .nav-tabs .nav-link.active {
+            color: var(--accent);
+            border-bottom: 3px solid var(--accent);
+            background: transparent;
         }
 
-        .booking-card {
-            background: white;
-            border-left: 5px solid #dee2e6;
-            margin-bottom: 10px;
+        .action-btn {
+            padding: 4px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: 0.2s;
+            border: 1px solid transparent;
+            background: transparent;
         }
 
-        .booking-card.paid { border-left-color: #2ecc71; }
-        .booking-card.unpaid { border-left-color: #e74c3c; }
+        .btn-resend { color: #2d6a4f; border-color: #2d6a4f; }
+        .btn-edit { color: #ffc107; border-color: #ffc107; }
+        .btn-delete { color: #dc3545; border-color: #dc3545; }
 
-        .btn-whatsapp { background-color: #25D366; color: white; border: none; }
-        
-        label { font-size: 0.8rem; font-weight: 700; color: #666; margin-bottom: 5px; text-transform: uppercase; }
+        .badge-ongoing {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
     </style>
 </head>
 
 <body>
 
-    <div class="admin-header text-center">
-        <div class="container">
-            <h2 class="fw-bold"><i class="bi bi-whatsapp me-2"></i>TURF MANAGER</h2>
-            <p class="mb-0 opacity-75" id="headerDate"></p>
-        </div>
+    <div class="hero text-center mb-4">
+        <h2 class="fw-bold"><i class="bi bi-whatsapp me-2"></i>TURF MANAGER</h2>
+        <p class="mb-0 opacity-75" id="currentDisplayDate"></p>
     </div>
 
-    <div class="container pb-5">
+    <div class="container mb-5">
         <div class="row g-4">
             <div class="col-lg-4">
                 <div class="card p-4">
-                    <h5 class="fw-bold mb-4" id="formTitle">New Booking</h5>
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="fw-bold mb-0" id="formTitle">New Booking</h5>
+                        <button id="cancelEditBtn" class="btn btn-sm btn-outline-secondary d-none"
+                            onclick="resetForm()">Cancel</button>
+                    </div>
                     <input type="hidden" id="editBookingId">
-                    
                     <div class="mb-3">
-                        <label>DATE</label>
+                        <label class="form-label small fw-bold text-muted">DATE</label>
                         <input type="date" id="bookDate" class="form-control" onchange="updateView()">
                     </div>
-
-                    <div class="row g-2 mb-3">
-                        <div class="col-6">
-                            <label>START TIME</label>
-                            <input type="time" id="startTime" class="form-control">
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label small fw-bold text-muted">START TIME</label>
+                            <input type="time" id="startTime" class="form-control" step="300">
                         </div>
-                        <div class="col-6">
-                            <label>DURATION</label>
+                        <div class="col-6 mb-3">
+                            <label class="form-label small fw-bold text-muted">DURATION</label>
                             <select id="duration" class="form-select">
                                 <option value="1">1 Hour</option>
                                 <option value="1.5">1.5 Hours</option>
@@ -94,59 +120,111 @@
                             </select>
                         </div>
                     </div>
-
                     <div class="mb-3">
-                        <label>CUSTOMER NAME</label>
+                        <label class="form-label small fw-bold text-muted">CUSTOMER NAME</label>
                         <input type="text" id="userName" class="form-control" placeholder="Enter name">
                     </div>
-
                     <div class="mb-3">
-                        <label>WHATSAPP NUMBER</label>
+                        <label class="form-label small fw-bold text-muted">WHATSAPP NUMBER</label>
                         <div class="input-group">
                             <span class="input-group-text">+91</span>
                             <input type="tel" id="userPhone" class="form-control" placeholder="10-digit number">
                         </div>
                     </div>
-
-                    <div class="row g-2 mb-4">
-                        <div class="col-6">
-                            <label>TOTAL PRICE (₹)</label>
-                            <input type="number" id="bookingPrice" class="form-control" placeholder="Amount">
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label small fw-bold text-muted">TOTAL PRICE (₹)</label>
+                            <input type="number" id="bookingPrice" class="form-control" placeholder="Amount" oninput="toggleFullPay()">
                         </div>
-                        <div class="col-6">
-                            <label>PAID AMOUNT (₹)</label>
-                            <input type="number" id="paidAmount" class="form-control" value="0">
+                        <div class="col-6 mb-3">
+                            <label class="form-label small fw-bold text-muted">PAID AMOUNT (₹)</label>
+                            <input type="number" id="paidAmount" class="form-control" placeholder="0" value="0">
                         </div>
                     </div>
-
-                    <div class="d-grid gap-2">
-                        <button class="btn btn-whatsapp py-3 fw-bold" onclick="saveEntry()">
-                            SAVE & SEND MESSAGE
-                        </button>
-                        <button id="cancelEditBtn" class="btn btn-outline-secondary d-none" onclick="resetForm()">
-                            Cancel
-                        </button>
+                    <div class="mb-4 form-check">
+                        <input type="checkbox" class="form-check-input" id="fullPayCheck" onchange="handleFullPayCheck()">
+                        <label class="form-check-label small fw-bold text-muted" for="fullPayCheck">FULL PAYMENT RECEIVED</label>
                     </div>
+                    <button id="submitBtn" class="btn btn-primary-custom w-100 py-3 fw-bold" onclick="saveEntry()">
+                        <i class="bi bi-check-circle-fill me-2"></i>SAVE & SEND MESSAGE
+                    </button>
                 </div>
             </div>
 
             <div class="col-lg-8">
-                <ul class="nav nav-pills mb-4 bg-white p-2 rounded card flex-row" id="pills-tab" role="tablist">
-                    <li class="nav-item flex-fill">
-                        <button class="nav-link w-100 active" data-bs-toggle="pill" data-bs-target="#tab-today" onclick="loadDaySlots()">Today</button>
-                    </li>
-                    <li class="nav-item flex-fill">
-                        <button class="nav-link w-100" data-bs-toggle="pill" data-bs-target="#tab-upcoming" onclick="loadHistory('upcoming')">Upcoming</button>
-                    </li>
-                    <li class="nav-item flex-fill">
-                        <button class="nav-link w-100" data-bs-toggle="pill" data-bs-target="#tab-completed" onclick="loadHistory('completed')">History</button>
-                    </li>
-                </ul>
+                <div class="card p-0 overflow-hidden">
+                    <ul class="nav nav-tabs px-3 bg-white" id="bookingTabs" role="tablist">
+                        <li class="nav-item">
+                            <button class="nav-link active" id="today-tab" data-bs-toggle="tab"
+                                data-bs-target="#todayPanel" type="button" onclick="loadDaySlots()">Today</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" id="upcoming-tab" data-bs-toggle="tab"
+                                data-bs-target="#upcomingPanel" type="button"
+                                onclick="loadHistory('upcoming')">Upcoming</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" id="ongoing-tab" data-bs-toggle="tab"
+                                data-bs-target="#ongoingPanel" type="button"
+                                onclick="loadHistory('ongoing')">Ongoing</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" id="completed-tab" data-bs-toggle="tab"
+                                data-bs-target="#completedPanel" type="button"
+                                onclick="loadHistory('completed')">Completed</button>
+                        </li>
+                    </ul>
 
-                <div class="tab-content">
-                    <div class="tab-pane fade show active" id="tab-today"><div id="dayList"></div></div>
-                    <div class="tab-pane fade" id="tab-upcoming"><div id="upcomingList"></div></div>
-                    <div class="tab-pane fade" id="tab-completed"><div id="completedList"></div></div>
+                    <div class="tab-content p-4 bg-white">
+                        <div class="tab-pane fade show active" id="todayPanel">
+                            <div id="dayList"></div>
+                        </div>
+                        <div class="tab-pane fade" id="upcomingPanel">
+                            <div class="table-responsive">
+                                <table class="table align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Time</th>
+                                            <th>Customer</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="upcomingList"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="ongoingPanel">
+                            <div class="table-responsive">
+                                <table class="table align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Time</th>
+                                            <th>Customer</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="ongoingList"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="completedPanel">
+                            <div class="table-responsive">
+                                <table class="table align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Time</th>
+                                            <th>Customer</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="completedList"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -168,8 +246,26 @@
 
         function updateView() {
             loadDaySlots();
-            document.getElementById('headerDate').innerText = new Date(document.getElementById('bookDate').value).toDateString();
+            document.getElementById('currentDisplayDate').innerText = new Date(document.getElementById('bookDate').value).toDateString();
         }
+
+        // --- NEW PAYMENT UI LOGIC ---
+        function handleFullPayCheck() {
+            const check = document.getElementById('fullPayCheck');
+            const price = document.getElementById('bookingPrice').value;
+            const paidInput = document.getElementById('paidAmount');
+            if (check.checked) {
+                paidInput.value = price;
+            } else {
+                paidInput.value = 0;
+            }
+        }
+
+        function toggleFullPay() {
+            const check = document.getElementById('fullPayCheck');
+            if (check.checked) handleFullPayCheck();
+        }
+        // ----------------------------
 
         async function saveEntry() {
             const id = document.getElementById('editBookingId').value;
@@ -177,123 +273,153 @@
             const phone = document.getElementById('userPhone').value;
             const date = document.getElementById('bookDate').value;
             const start = document.getElementById('startTime').value;
-            const price = parseFloat(document.getElementById('bookingPrice').value || 0);
-            const paid = parseFloat(document.getElementById('paidAmount').value || 0);
+            const price = document.getElementById('bookingPrice').value;
+            const paid = document.getElementById('paidAmount').value || 0;
             const duration = parseFloat(document.getElementById('duration').value);
 
-            if (!name || !phone || !start || price <= 0) {
-                return Swal.fire("Required", "Please fill all details.", "warning");
+            if (!name || !phone || !start || !price) {
+                return Swal.fire("Required", "Please fill all details", "warning");
             }
 
             let [h, m] = start.split(':').map(Number);
             let totalMinutes = h * 60 + m + (duration * 60);
-            let endTime = `${String(Math.floor(totalMinutes / 60) % 24).padStart(2, '0')}:${String(totalMinutes % 60).padStart(2, '0')}:00`;
-            let startTimeFull = start.length === 5 ? start + ":00" : start;
+            let endTimeStr = `${String(Math.floor(totalMinutes / 60) % 24).padStart(2, '0')}:${String(totalMinutes % 60).padStart(2, '0')}:00`;
+            let startTimeWithSec = start.length === 5 ? start + ":00" : start;
 
-            const bookingData = { customer_name: name, phone_number: phone, booking_date: date, start_time: startTimeFull, end_time: endTime, price, paid_amount: paid };
+            const { data: existingBookings } = await supabaseClient.from('turf_bookings').select('id, start_time, end_time').eq('booking_date', date);
 
-            let result = id ? 
-                await supabaseClient.from('turf_bookings').update(bookingData).eq('id', id).select() : 
-                await supabaseClient.from('turf_bookings').insert([bookingData]).select();
-
-            if (result.error) return Swal.fire("Error", result.error.message, "error");
-
-            Swal.fire({
-                title: "Success!",
-                text: "Send WhatsApp message?",
-                icon: "success",
-                showCancelButton: true,
-                confirmButtonText: "Send WhatsApp"
-            }).then(res => {
-                if (res.isConfirmed) sendWhatsApp(name, phone, date, start, endTime, 'confirm', price, paid);
+            const isOverlap = existingBookings.some(b => {
+                if (id && String(b.id) === String(id)) return false;
+                return (startTimeWithSec < b.end_time && endTimeStr > b.start_time);
             });
 
-            resetForm();
-            updateView();
+            if (isOverlap) return Swal.fire("Slot Unavailable", "Overlap detected.", "error");
+
+            const bookingData = {
+                customer_name: name,
+                phone_number: phone,
+                booking_date: date,
+                start_time: startTimeWithSec,
+                end_time: endTimeStr,
+                price: parseFloat(price),
+                paid_amount: parseFloat(paid)
+            };
+
+            let result = id ? await supabaseClient.from('turf_bookings').update(bookingData).eq('id', id).select() : await supabaseClient.from('turf_bookings').insert([bookingData]).select();
+
+            if (result.error) Swal.fire("Error", result.error.message, "error");
+            else {
+                Swal.fire({
+                    title: 'Success!',
+                    text: id ? "Booking updated." : "New booking saved.",
+                    icon: 'success',
+                    showCancelButton: true,
+                    confirmButtonColor: '#25D366',
+                    confirmButtonText: '<i class="bi bi-whatsapp"></i> Send Message'
+                }).then(s => {
+                    if (s.isConfirmed) sendWhatsApp(name, phone, date, start, endTimeStr, 'confirm', price, paid);
+                });
+                resetForm();
+                updateView();
+            }
         }
 
-        async function askReminderAmount(n, p, d, s, e, total, paid) {
-            const balance = total - paid;
-            const { value: amount } = await Swal.fire({
-                title: 'Reminder Amount',
+        async function promptReminder(n, p, d, s, e, price, currentPaid) {
+            const balance = price - currentPaid;
+            const { value: amountToRequest } = await Swal.fire({
+                title: 'Payment Reminder',
                 input: 'number',
-                inputLabel: `Current balance is ₹${balance}. Enter amount to ask:`,
+                inputLabel: `Remaining balance is ₹${balance}. Enter amount to request:`,
                 inputValue: balance,
-                showCancelButton: true
+                showCancelButton: true,
+                inputValidator: (value) => { if (!value) return 'Please enter an amount' }
             });
-            if (amount) sendWhatsApp(n, p, d, s, e, 'remind', total, amount);
+            if (amountToRequest) sendWhatsApp(n, p, d, s, e, 'remind', price, amountToRequest);
         }
 
-        function sendWhatsApp(n, p, d, s, e, type, total, value) {
-            const phone = "91" + p.replace(/\D/g, '');
+        function sendWhatsApp(n, p, d, s, e, t, price = 0, amountToRequestOrPaid = 0) {
+            const cp = "91" + p.replace(/\D/g, '');
             const dateObj = new Date(d);
             const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
             const monthDay = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
             let message = "";
 
-            if (type === 'cancel') {
+            if (t === 'cancel') {
                 message = `*CANCELLED*\nHi ${n},\nYour slot on ${monthDay} (${s.slice(0, 5)}) has been cancelled.`;
-            } else if (type === 'remind') {
-                message = `*PAYMENT REMINDER - TURFIT*\n\nHi *${n}*\nYour slot on *${dayName}, ${monthDay}* (${s.slice(0, 5)} - ${e.slice(0, 5)}) is completed.\n\n*Pending Amount:* ₹${value}\n\nKindly clear the payment if not already done. \nThank you for choosing *TURFIT* !!`;
-            } else {
-                message = `*TURFIT BOOKING CONFIRMED*\n\nHi *${n}*\nYour booking for *${dayName}, ${monthDay}*\n${s.slice(0, 5)} - ${e.slice(0, 5)}\n\n*Total Amount:* ₹${total}\n*Paid Amount:* ₹${value}\n*Balance:* ₹${total - value}\n\n*Kindly Pay Advance ₹200 for Booking Confirmation.*\n\n*RULES & REGULATIONS:*\n\n1. Spitting and Smoking is strictly prohibited inside the turf premises, pathway (outside turf) and the ramp. If caught doing the same, then a fine of ₹300 shall be charged from the booking team.\n\n2. Cricket bat or ball, football, stumps etc. are the property of the turf and shall not be carried outside the turf without the permission of the owner. If caught carrying outside then it will be treated as theft, fine of ₹500 shall be taken from the booking team\n\n3. Early Arrival: Kindly wait outside the turf if you arrive before your slot. Accessing the turf early will be counted in your booking and charged extra.\n\nThank you for choosing *TURFIT* !!`;
+            }
+            else if (t === 'remind') {
+                message = `*PAYMENT REMINDER - TURFIT*\n\nHi *${n}*\nYour slot on *${dayName}, ${monthDay}* (${s.slice(0, 5)} - ${e.slice(0, 5)}) is completed.\n\n*Pending Amount:* ₹${amountToRequestOrPaid}\n\nKindly clear the payment if not already done. \nThank you for choosing *TURFIT* !!`;
+            } 
+            else {
+                const balance = price - amountToRequestOrPaid;
+                message = `*TURFIT BOOKING CONFIRMED*\n\nHi *${n}*\nYour booking for *${dayName}, ${monthDay}*\n${s.slice(0, 5)} - ${e.slice(0, 5)}\n\n*Total Amount:* ₹${price}\n*Advance Paid:* ₹${amountToRequestOrPaid}\n*Balance to Pay:* ₹${balance}\n\n*Kindly Pay Advance ₹200 for Booking Confirmation.*\n\n*RULES & REGULATIONS:*\n\n1. Spitting and Smoking is strictly prohibited inside the turf premises, pathway (outside turf) and the ramp. If caught doing the same, then a fine of ₹300 shall be charged from the booking team.\n\n2. Cricket bat or ball, football, stumps etc. are the property of the turf and shall not be carried outside the turf without the permission of the owner. If caught carrying outside then it will be treated as theft, fine of ₹500 shall be taken from the booking team\n\n3. Early Arrival: Kindly wait outside the turf if you arrive before your slot. Accessing the turf early will be counted in your booking and charged extra.\n\nThank you for choosing *TURFIT* !!`;
             }
 
-            window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+            const encodedMessage = encodeURIComponent(message);
+            const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+            if (isMobile) window.location.href = `whatsapp://send?phone=${cp}&text=${encodedMessage}`;
+            else window.open(`https://wa.me/${cp}?text=${encodedMessage}`, '_blank');
         }
 
         async function loadDaySlots() {
             const date = document.getElementById('bookDate').value;
             const { data } = await supabaseClient.from('turf_bookings').select('*').eq('booking_date', date).order('start_time');
             const container = document.getElementById('dayList');
-            
-            container.innerHTML = data?.length ? data.map(b => {
-                const balance = b.price - (b.paid_amount || 0);
-                const isPaid = balance <= 0;
+            container.innerHTML = data && data.length ? data.map(b => {
+                const balance = (b.price || 0) - (b.paid_amount || 0);
+                const statusBadge = balance <= 0 ? 
+                    '<span class="badge bg-success-subtle text-success border border-success ms-2">PAID</span>' : 
+                    '<span class="badge bg-danger-subtle text-danger border border-danger ms-2">UNPAID</span>';
                 return `
-                <div class="card p-3 mb-2 booking-card ${isPaid ? 'paid' : 'unpaid'}">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <span class="fw-bold text-success">${b.start_time.slice(0, 5)} - ${b.end_time.slice(0, 5)}</span><br>
-                            <span class="fw-bold">${b.customer_name}</span><br>
-                            <small class="text-muted">Total: ₹${b.price} | Paid: ₹${b.paid_amount || 0}</small>
-                        </div>
-                        <div class="text-end">
-                            <span class="badge ${isPaid ? 'bg-success' : 'bg-danger'} mb-2">${isPaid ? 'PAID' : 'BAL: ₹' + balance}</span><br>
-                            <div class="btn-group btn-group-sm">
-                                <button class="btn btn-outline-dark" onclick="editBooking('${b.id}','${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}',${b.price},${b.paid_amount})">Edit</button>
-                                <button class="btn btn-whatsapp" onclick="sendWhatsApp('${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','confirm',${b.price},${b.paid_amount})"><i class="bi bi-whatsapp"></i></button>
-                                <button class="btn btn-outline-danger" onclick="deleteBooking('${b.id}','${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}')"><i class="bi bi-trash"></i></button>
-                            </div>
-                        </div>
+                <div class="p-3 bg-light border rounded mb-2 d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="fw-bold text-success">${b.start_time.slice(0, 5)} - ${b.end_time.slice(0, 5)}</span> ${statusBadge}<br>
+                        <small>${b.customer_name} (Total: ₹${b.price || 0} | Paid: ₹${b.paid_amount || 0})</small>
+                    </div>
+                    <div class="d-flex gap-1">
+                        <button class="action-btn btn-resend" onclick="sendWhatsApp('${b.customer_name}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}', '${b.end_time}', 'confirm', '${b.price}', '${b.paid_amount}')"><i class="bi bi-whatsapp"></i></button>
+                        <button class="action-btn btn-edit" onclick="editBooking('${b.id}','${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','${b.price}','${b.paid_amount}')"><i class="bi bi-pencil"></i></button>
+                        <button class="action-btn btn-delete" onclick="deleteBooking('${b.id}', '${b.customer_name}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}')"><i class="bi bi-trash"></i></button>
                     </div>
                 </div>`;
-            }).join('') : `<div class="text-center p-4 text-muted">No bookings.</div>`;
+            }).join('') : '<div class="text-center py-4 text-muted small">No slots.</div>';
         }
 
         async function loadHistory(type) {
             const now = new Date();
             const todayStr = now.toISOString().split('T')[0];
-            const { data } = await supabaseClient.from('turf_bookings').select('*').order('booking_date', {ascending: type === 'upcoming'});
-            const container = document.getElementById(type === 'upcoming' ? 'upcomingList' : 'completedList');
-            
-            const filtered = data?.filter(b => type === 'upcoming' ? b.booking_date > todayStr : b.booking_date <= todayStr) || [];
-
-            container.innerHTML = filtered.map(b => `
-                <div class="card p-3 mb-2">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <small class="fw-bold text-muted">${b.booking_date.slice(5)} | ${b.start_time.slice(0,5)}</small><br>
-                            <span class="fw-bold">${b.customer_name}</span>
-                        </div>
-                        <div>
-                            ${type === 'completed' ? 
-                                `<button class="btn btn-sm btn-outline-warning" onclick="askReminderAmount('${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}',${b.price},${b.paid_amount})">Reminder</button>` : 
-                                `<button class="btn btn-sm btn-whatsapp" onclick="sendWhatsApp('${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','confirm',${b.price},${b.paid_amount})">Notify</button>`
-                            }
-                        </div>
-                    </div>
-                </div>`).join('') || '<div class="text-center p-4">No data.</div>';
+            const currentTime = now.toTimeString().split(' ')[0];
+            const { data } = await supabaseClient.from('turf_bookings').select('*').order('booking_date').order('start_time');
+            const list = document.getElementById(`${type}List`);
+            list.innerHTML = '';
+            if (data) {
+                const filtered = data.filter(b => {
+                    const isToday = b.booking_date === todayStr;
+                    if (type === 'upcoming') return b.booking_date > todayStr || (isToday && b.start_time > currentTime);
+                    if (type === 'ongoing') return isToday && b.start_time <= currentTime && b.end_time > currentTime;
+                    if (type === 'completed') return b.booking_date < todayStr || (isToday && b.end_time <= currentTime);
+                });
+                list.innerHTML = filtered.length ? filtered.map(b => {
+                    const balance = (b.price || 0) - (b.paid_amount || 0);
+                    return `
+                    <tr>
+                        <td>${b.booking_date.slice(5)}</td>
+                        <td>${b.start_time.slice(0, 5)}</td>
+                        <td>${b.customer_name}</td>
+                        <td>
+                            ${type === 'upcoming' ? `<button class='btn btn-sm btn-outline-success' onclick="sendWhatsApp('${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','confirm','${b.price}','${b.paid_amount}')"><i class='bi bi-whatsapp'></i></button>` :
+                            type === 'completed' ? `
+                              <div class="d-flex gap-2 align-items-center">
+                                <span class="badge ${balance <= 0 ? 'bg-success' : 'bg-danger'}">${balance <= 0 ? 'PAID' : 'Bal: ₹' + balance}</span>
+                                <button class="btn btn-sm btn-outline-warning" onclick="promptReminder('${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','${b.price}','${b.paid_amount}')">
+                                    <i class="bi bi-bell"></i>
+                                </button>
+                              </div>` :
+                                `<span class="badge badge-ongoing">ONGOING</span>`}
+                        </td>
+                    </tr>`}).join('') : `<tr><td colspan="4" class="text-center py-3 text-muted">No records.</td></tr>`;
+            }
         }
 
         function editBooking(id, n, p, d, s, e, price, paid) {
@@ -304,6 +430,10 @@
             document.getElementById('startTime').value = s.slice(0, 5);
             document.getElementById('bookingPrice').value = price;
             document.getElementById('paidAmount').value = paid;
+            document.getElementById('fullPayCheck').checked = (parseFloat(price) === parseFloat(paid) && parseFloat(price) > 0);
+            const startMin = parseInt(s.slice(0, 2)) * 60 + parseInt(s.slice(3, 5));
+            const endMin = parseInt(e.slice(0, 2)) * 60 + parseInt(e.slice(3, 5));
+            document.getElementById('duration').value = (endMin - startMin) / 60;
             document.getElementById('formTitle').innerText = "Edit Booking";
             document.getElementById('cancelEditBtn').classList.remove('d-none');
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -313,8 +443,10 @@
             document.getElementById('editBookingId').value = '';
             document.getElementById('userName').value = '';
             document.getElementById('userPhone').value = '';
+            document.getElementById('startTime').value = '';
             document.getElementById('bookingPrice').value = '';
             document.getElementById('paidAmount').value = '0';
+            document.getElementById('fullPayCheck').checked = false;
             document.getElementById('formTitle').innerText = "New Booking";
             document.getElementById('cancelEditBtn').classList.add('d-none');
         }
@@ -329,4 +461,5 @@
         init();
     </script>
 </body>
+
 </html>
