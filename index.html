@@ -319,23 +319,20 @@ Your slot on ${monthDay} (${s.slice(0, 5)}) has been cancelled.`;
                 message =
                     `*TURFIT BOOKING CONFIRMED*
 
-Hi *${n}* 👋
+Hi *${n}*
 Your booking for *${dayName}, ${monthDay}*
-⏰ ${s.slice(0, 5)} - ${e.slice(0, 5)}
+${s.slice(0, 5)} - ${e.slice(0, 5)}
 
-💰 *Amount:* ₹${price}
+*Amount:* ₹${price}
 
 *RULES & REGULATIONS:*
-1️⃣ Spitting & Smoking is strictly prohibited inside the turf premises, pathway, and ramp.
-   ➤ Fine: ₹300
+1️1 Spitting and Smoking is strictly prohibited inside the turf premises, pathway (outside turf) and the ramp. If caught doing the same, then a fine of ₹300 shall be charged from the booking team.
 
-2️⃣ Turf equipment (bat, ball, football, stumps) must NOT be taken outside.
-   ➤ Fine: ₹500
+2️2 Cricket bat or ball, football, stumps etc. are the property of the turf and shall not be carried outside the turf without the permission of the owner. If caught carrying outside then it will be treated as theft, fine of ₹500 shall be taken from the booking team
 
-3️⃣ *Early Arrival:* Please wait outside if you arrive early.
-   ➤ Early entry will be charged extra.
+3️3 Early Arrival: Kindly wait outside the turf if you arrive before your slot. Accessing the turf early will be counted in your booking and charged extra.
 
-Thank you for choosing *TURFIT* ⚽`;
+Thank you for choosing *TURFIT*`;
             }
 
             const encodedMessage = encodeURIComponent(message);
