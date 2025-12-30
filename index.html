@@ -308,8 +308,6 @@
                 end_time: endTimeStr,
                 price: price
             };
-            console.log("Updating DB with:", bookingData);
-
 
             let res = id
                 ? await supabaseClient.from('turf_bookings').update(bookingData).eq('id', id)
@@ -390,8 +388,19 @@ Thank you for choosing *TURFIT* !!`;
                 <div><span class="fw-bold text-success">${b.start_time.slice(0, 5)} - ${b.end_time.slice(0, 5)}</span><br><small>${b.customer_name} (₹${b.price || 0})</small></div>
                 <div class="d-flex gap-1">
                     <button class="action-btn btn-resend" onclick="sendWhatsApp('${b.customer_name}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}', '${b.end_time}', 'confirm', '${b.price}')"><i class="bi bi-whatsapp"></i></button>
-                    <button class="action-btn btn-edit" onclick="editBooking(id, name, phone, date, start, end, price)"
-><i class="bi bi-pencil"></i></button>
+                    <button class="action-btn btn-edit"
+  onclick="editBooking(
+    '${b.id}',
+    '${b.customer_name}',
+    '${b.phone_number}',
+    '${b.booking_date}',
+    '${b.start_time}',
+    '${b.end_time}',
+    '${b.price}'
+  )">
+  <i class="bi bi-pencil"></i>
+</button>
+
                     <button class="action-btn btn-delete" onclick="deleteBooking('${b.id}', '${b.customer_name}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}')"><i class="bi bi-trash"></i></button>
                 </div>
             </div>`).join('') : '<div class="text-center py-4 text-muted small">No slots for this date.</div>';
@@ -441,17 +450,18 @@ Thank you for choosing *TURFIT* !!`;
             document.getElementById('startTime').value = s.slice(0, 5);
             document.getElementById('bookingPrice').value = price || '';
 
-            // ✅ FIX: restore correct duration
-            const startMin = (+s.slice(0, 2) * 60) + (+s.slice(3, 5));
-            const endMin = (+e.slice(0, 2) * 60) + (+e.slice(3, 5));
+            // 🔥 FIX: calculate duration from start & end
+            const startMin = parseInt(s.slice(0, 2)) * 60 + parseInt(s.slice(3, 5));
+            const endMin = parseInt(e.slice(0, 2)) * 60 + parseInt(e.slice(3, 5));
             const duration = (endMin - startMin) / 60;
 
             document.getElementById('duration').value = duration;
 
             document.getElementById('formTitle').innerText = "Edit Booking";
             document.getElementById('cancelEditBtn').classList.remove('d-none');
-        }
 
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
 
 
         function resetForm() {
