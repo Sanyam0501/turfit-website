@@ -27,7 +27,6 @@
         .summary-box { background: #fff; border-radius: 12px; padding: 15px; margin-bottom: 20px; border-left: 5px solid var(--accent); }
         .summary-val { font-size: 1.25rem; font-weight: bold; color: var(--admin-green); }
         
-        /* PIN Lock Styles */
         #lockScreen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: var(--admin-green); z-index: 9999;
@@ -71,7 +70,7 @@
                         <div class="row">
                             <div class="col-6 mb-3">
                                 <label class="form-label small fw-bold text-muted">START TIME</label>
-                                <input type="time" id="startTime" class="form-control">
+                                <select id="startTime" class="form-select"></select>
                             </div>
                             <div class="col-6 mb-3">
                                 <label class="form-label small fw-bold text-muted">DURATION</label>
@@ -161,7 +160,7 @@
                     <div class="row">
                         <div class="col-6 mb-3">
                             <label class="small fw-bold">START TIME</label>
-                            <input type="time" id="edit_start" class="form-control">
+                            <select id="edit_start" class="form-select"></select>
                         </div>
                         <div class="col-6 mb-3">
                             <label class="small fw-bold">DURATION</label>
@@ -206,11 +205,33 @@
                 document.getElementById('appContent').style.display = 'block';
             }
 
+            // Populate 12-hour time dropdowns
+            populateTimeDropdowns();
+
             document.getElementById('bookDate').valueAsDate = new Date();
             updateView();
         }
 
-        // --- PIN LOGIC ---
+        function populateTimeDropdowns() {
+            const startSelect = document.getElementById('startTime');
+            const editSelect = document.getElementById('edit_start');
+            let options = "";
+
+            for (let i = 0; i < 24; i++) {
+                for (let j = 0; j < 60; j += 30) {
+                    let h = i;
+                    let m = j === 0 ? "00" : j;
+                    let ampm = h >= 12 ? "PM" : "AM";
+                    let displayH = h % 12 || 12;
+                    let val = `${String(h).padStart(2, '0')}:${m}`;
+                    let text = `${displayH}:${m} ${ampm}`;
+                    options += `<option value="${val}">${text}</option>`;
+                }
+            }
+            startSelect.innerHTML = options;
+            editSelect.innerHTML = options;
+        }
+
         async function checkPin() {
             const val = document.getElementById('pinEntry').value;
             if (val.length >= 4) {
@@ -231,7 +252,6 @@
             location.reload();
         }
 
-        // --- TIME FORMATTING (STRICT 12H) ---
         function formatTo12H(timeStr) {
             if (!timeStr) return "";
             let [h, m] = timeStr.split(':');
@@ -357,6 +377,7 @@
             document.getElementById('edit_start').value = s.slice(0, 5);
             document.getElementById('edit_price').value = price;
             document.getElementById('edit_paid').value = paid;
+            
             const startMin = parseInt(s.slice(0, 2)) * 60 + parseInt(s.slice(3, 5));
             const endMin = parseInt(e.slice(0, 2)) * 60 + parseInt(e.slice(3, 5));
             document.getElementById('edit_duration').value = (endMin - startMin) / 60;
@@ -364,7 +385,7 @@
         }
 
         function resetForm() {
-            ['userName', 'userPhone', 'startTime', 'bookingPrice'].forEach(id => document.getElementById(id).value = '');
+            ['userName', 'userPhone', 'bookingPrice'].forEach(id => document.getElementById(id).value = '');
             document.getElementById('paidAmount').value = '0';
         }
 
