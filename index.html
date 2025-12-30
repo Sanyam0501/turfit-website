@@ -9,98 +9,20 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        :root {
-            --admin-green: #1b4332;
-            --accent: #2d6a4f;
-        }
-
-        body {
-            background: #f0f2f5;
-            font-family: 'Segoe UI', sans-serif;
-        }
-
-        .hero {
-            background: var(--admin-green);
-            color: #fff;
-            padding: 25px 0;
-            border-bottom: 5px solid #d8f3dc;
-        }
-
-        .card {
-            border-radius: 12px;
-            border: none;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-
-        .btn-primary-custom {
-            background-color: var(--accent);
-            color: white;
-            border: none;
-        }
-
-        .btn-primary-custom:hover {
-            background-color: #1b4332;
-            color: white;
-        }
-
-        .nav-tabs .nav-link {
-            color: #6c757d;
-            font-weight: 600;
-            border: none;
-            padding: 12px 15px;
-            font-size: 0.9rem;
-        }
-
-        .nav-tabs .nav-link.active {
-            color: var(--accent);
-            border-bottom: 3px solid var(--accent);
-            background: transparent;
-        }
-
-        .action-btn {
-            padding: 4px 8px;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: 0.2s;
-            border: 1px solid transparent;
-            background: transparent;
-        }
-
-        .btn-resend {
-            color: #2d6a4f;
-            border-color: #2d6a4f;
-        }
-
-        .btn-edit {
-            color: #ffc107;
-            border-color: #ffc107;
-        }
-
-        .btn-delete {
-            color: #dc3545;
-            border-color: #dc3545;
-        }
-
-        .badge-ongoing {
-            background-color: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeeba;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0.6;
-            }
-
-            100% {
-                opacity: 1;
-            }
-        }
+        :root { --admin-green: #1b4332; --accent: #2d6a4f; }
+        body { background: #f0f2f5; font-family: 'Segoe UI', sans-serif; }
+        .hero { background: var(--admin-green); color: #fff; padding: 25px 0; border-bottom: 5px solid #d8f3dc; }
+        .card { border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
+        .btn-primary-custom { background-color: var(--accent); color: white; border: none; }
+        .btn-primary-custom:hover { background-color: #1b4332; color: white; }
+        .nav-tabs .nav-link { color: #6c757d; font-weight: 600; border: none; padding: 12px 15px; font-size: 0.9rem; }
+        .nav-tabs .nav-link.active { color: var(--accent); border-bottom: 3px solid var(--accent); background: transparent; }
+        .action-btn { padding: 4px 8px; border-radius: 6px; cursor: pointer; transition: 0.2s; border: 1px solid transparent; background: transparent; }
+        .btn-resend { color: #2d6a4f; border-color: #2d6a4f; }
+        .btn-edit { color: #ffc107; border-color: #ffc107; }
+        .btn-delete { color: #dc3545; border-color: #dc3545; }
+        .badge-ongoing { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
     </style>
 </head>
 
@@ -117,8 +39,7 @@
                 <div class="card p-4">
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <h5 class="fw-bold mb-0" id="formTitle">New Booking</h5>
-                        <button id="cancelEditBtn" class="btn btn-sm btn-outline-secondary d-none"
-                            onclick="resetForm()">Cancel</button>
+                        <button id="cancelEditBtn" class="btn btn-sm btn-outline-secondary d-none" onclick="resetForm()">Cancel</button>
                     </div>
                     <input type="hidden" id="editBookingId">
                     <div class="mb-3">
@@ -128,7 +49,7 @@
                     <div class="row">
                         <div class="col-6 mb-3">
                             <label class="form-label small fw-bold text-muted">START TIME</label>
-                            <input type="time" id="startTime" class="form-control" step="300">
+                            <input type="time" id="startTime" class="form-control">
                         </div>
                         <div class="col-6 mb-3">
                             <label class="form-label small fw-bold text-muted">DURATION</label>
@@ -163,75 +84,43 @@
             <div class="col-lg-8">
                 <div class="card p-0 overflow-hidden">
                     <ul class="nav nav-tabs px-3 bg-white" id="bookingTabs" role="tablist">
-                        <li class="nav-item">
-                            <button class="nav-link active" id="today-tab" data-bs-toggle="tab"
-                                data-bs-target="#todayPanel" type="button" onclick="loadDaySlots()">Today</button>
-                        </li>
-                        <li class="nav-item">
-                            <button class="nav-link" id="upcoming-tab" data-bs-toggle="tab"
-                                data-bs-target="#upcomingPanel" type="button"
-                                onclick="loadHistory('upcoming')">Upcoming</button>
-                        </li>
-                        <li class="nav-item">
-                            <button class="nav-link" id="ongoing-tab" data-bs-toggle="tab"
-                                data-bs-target="#ongoingPanel" type="button"
-                                onclick="loadHistory('ongoing')">Ongoing</button>
-                        </li>
-                        <li class="nav-item">
-                            <button class="nav-link" id="completed-tab" data-bs-toggle="tab"
-                                data-bs-target="#completedPanel" type="button"
-                                onclick="loadHistory('completed')">Completed</button>
-                        </li>
+                        <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#todayPanel" onclick="loadDaySlots()">Today</button></li>
+                        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#upcomingPanel" onclick="loadHistory('upcoming')">Upcoming</button></li>
+                        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#ongoingPanel" onclick="loadHistory('ongoing')">Ongoing</button></li>
+                        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#completedPanel" onclick="loadHistory('completed')">Completed</button></li>
+                        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#settingsPanel" onclick="loadSettings()"><i class="bi bi-gear"></i></button></li>
                     </ul>
 
                     <div class="tab-content p-4 bg-white">
-                        <div class="tab-pane fade show active" id="todayPanel">
-                            <div id="dayList"></div>
-                        </div>
+                        <div class="tab-pane fade show active" id="todayPanel"><div id="dayList"></div></div>
+                        
                         <div class="tab-pane fade" id="upcomingPanel">
-                            <div class="table-responsive">
-                                <table class="table align-middle">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>Date</th>
-                                            <th>Time</th>
-                                            <th>Customer</th>
-                                            <th>Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="upcomingList"></tbody>
-                                </table>
-                            </div>
+                            <div class="table-responsive"><table class="table align-middle"><thead class="table-light"><tr><th>Date</th><th>Time</th><th>Customer</th><th>Action</th></tr></thead><tbody id="upcomingList"></tbody></table></div>
                         </div>
+
                         <div class="tab-pane fade" id="ongoingPanel">
-                            <div class="table-responsive">
-                                <table class="table align-middle">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>Date</th>
-                                            <th>Time</th>
-                                            <th>Customer</th>
-                                            <th>Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="ongoingList"></tbody>
-                                </table>
-                            </div>
+                            <div class="table-responsive"><table class="table align-middle"><thead class="table-light"><tr><th>Date</th><th>Time</th><th>Customer</th><th>Status</th></tr></thead><tbody id="ongoingList"></tbody></table></div>
                         </div>
+
                         <div class="tab-pane fade" id="completedPanel">
-                            <div class="table-responsive">
-                                <table class="table align-middle">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>Date</th>
-                                            <th>Time</th>
-                                            <th>Customer</th>
-                                            <th>Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="completedList"></tbody>
-                                </table>
+                            <div class="table-responsive"><table class="table align-middle"><thead class="table-light"><tr><th>Date</th><th>Time</th><th>Customer</th><th>Action</th></tr></thead><tbody id="completedList"></tbody></table></div>
+                        </div>
+
+                        <div class="tab-pane fade" id="settingsPanel">
+                            <h5 class="fw-bold mb-3">Payment Settings</h5>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">UPI ID (VPA)</label>
+                                <input type="text" id="setUpiId" class="form-control" placeholder="yourname@bank">
                             </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">QR CODE IMAGE URL</label>
+                                <input type="text" id="setQrUrl" class="form-control" placeholder="https://link-to-your-qr.jpg">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">ADVANCE AMOUNT (₹)</label>
+                                <input type="number" id="setAdvance" class="form-control">
+                            </div>
+                            <button class="btn btn-primary-custom w-100" onclick="saveSettings()">SAVE SETTINGS</button>
                         </div>
                     </div>
                 </div>
@@ -258,6 +147,67 @@
             document.getElementById('currentDisplayDate').innerText = new Date(document.getElementById('bookDate').value).toDateString();
         }
 
+        // SETTINGS LOGIC
+        async function loadSettings() {
+            const { data } = await supabaseClient.from('admin_settings').select('*');
+            if (data) {
+                data.forEach(s => {
+                    if (s.key === 'upi_id') document.getElementById('setUpiId').value = s.value;
+                    if (s.key === 'qr_url') document.getElementById('setQrUrl').value = s.value;
+                    if (s.key === 'advance_amount') document.getElementById('setAdvance').value = s.value;
+                });
+            }
+        }
+
+        async function saveSettings() {
+            const updates = [
+                { key: 'upi_id', value: document.getElementById('setUpiId').value },
+                { key: 'qr_url', value: document.getElementById('setQrUrl').value },
+                { key: 'advance_amount', value: document.getElementById('setAdvance').value }
+            ];
+            for (const item of updates) {
+                await supabaseClient.from('admin_settings').upsert(item, { onConflict: 'key' });
+            }
+            Swal.fire("Success", "Settings updated!", "success");
+        }
+
+        async function getSetting(key) {
+            const { data } = await supabaseClient.from('admin_settings').select('value').eq('key', key).single();
+            return data ? data.value : "";
+        }
+
+        // WHATSAPP LOGIC
+        async function sendWhatsApp(n, p, d, s, e, t, price = 0) {
+            const upiId = await getSetting('upi_id');
+            const qrUrl = await getSetting('qr_url');
+            const advance = await getSetting('advance_amount') || "200";
+            
+            const cp = "91" + p.replace(/\D/g, '');
+            const dateObj = new Date(d);
+            const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
+            const monthDay = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            const upiLink = `upi://pay?pa=${upiId}&pn=TURFIT&am=${advance}&cu=INR`;
+
+            let message = "";
+            if (t === 'cancel') {
+                message = `*CANCELLED*\nHi ${n},\nYour slot on ${monthDay} (${s.slice(0, 5)}) has been cancelled.`;
+            } else if (t === 'remind') {
+                const pendingUpi = `upi://pay?pa=${upiId}&pn=TURFIT&am=${price}&cu=INR`;
+                message = `*PAYMENT REMINDER - TURFIT*\n\nHi *${n}*\nYour slot on *${monthDay}* is completed.\n\n*Pending Amount:* ₹${price}\n👉 *TAP TO PAY:* ${pendingUpi}\n\nThank you!`;
+            } else {
+                message = `*TURFIT BOOKING CONFIRMED*\n\nHi *${n}*\n*${dayName}, ${monthDay}*\n${s.slice(0, 5)} - ${e.slice(0, 5)}\n\n*Total Amount:* ₹${price}\n\n✅ *KINDLY PAY ADVANCE ₹${advance} TO CONFIRM*\n👉 *CLICK TO PAY:* ${upiLink}\n\n${qrUrl ? `🖼️ *QR CODE:* ${qrUrl}\n\n` : ""}*RULES:*\n1. No Smoking/Spitting (Fine ₹300).\n2. Don't take turf property outside.\n\nThank you for choosing *TURFIT* !!`;
+            }
+
+            const encodedMessage = encodeURIComponent(message);
+            const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+            if (isMobile) {
+                window.location.href = `whatsapp://send?phone=${cp}&text=${encodedMessage}`;
+            } else {
+                window.open(`https://wa.me/${cp}?text=${encodedMessage}`, '_blank');
+            }
+        }
+
+        // BOOKING LOGIC
         async function saveEntry() {
             const id = document.getElementById('editBookingId').value;
             const name = document.getElementById('userName').value;
@@ -267,76 +217,24 @@
             const price = document.getElementById('bookingPrice').value;
             const duration = parseFloat(document.getElementById('duration').value);
 
-            if (!name || !phone || !start || !price) {
-                return Swal.fire("Required", "Please fill all details", "warning");
-            }
+            if (!name || !phone || !start || !price) return Swal.fire("Required", "Fill all details", "warning");
 
-            // Time Calculation
             let [h, m] = start.split(':').map(Number);
             let totalMinutes = h * 60 + m + (duration * 60);
             let endTimeStr = `${String(Math.floor(totalMinutes / 60) % 24).padStart(2, '0')}:${String(totalMinutes % 60).padStart(2, '0')}:00`;
             let startTimeWithSec = start.length === 5 ? start + ":00" : start;
 
-            // 1. Check for Overlaps (excluding current booking if editing)
-            const { data: existingBookings, error: fetchError } = await supabaseClient
-                .from('turf_bookings')
-                .select('id, start_time, end_time')
-                .eq('booking_date', date);
+            const bookingData = { customer_name: name, phone_number: phone, booking_date: date, start_time: startTimeWithSec, end_time: endTimeStr, price: parseFloat(price) };
 
-            if (fetchError) return Swal.fire("Error", "Could not verify availability", "error");
+            let result = id ? await supabaseClient.from('turf_bookings').update(bookingData).eq('id', id).select() 
+                            : await supabaseClient.from('turf_bookings').insert([bookingData]).select();
 
-            const isOverlap = existingBookings.some(b => {
-                // If editing, don't collide with itself
-                if (id && String(b.id) === String(id)) return false;
-
-                return (
-                    startTimeWithSec < b.end_time &&
-                    endTimeStr > b.start_time
-                );
-            });
-
-            if (isOverlap) {
-                return Swal.fire("Slot Unavailable", "This time overlaps with another booking.", "error");
-            }
-
-            // 2. Prepare Data Object
-            const bookingData = {
-                customer_name: name,
-                phone_number: phone,
-                booking_date: date,
-                start_time: startTimeWithSec,
-                end_time: endTimeStr,
-                price: parseFloat(price) // Ensure price is a number
-            };
-
-            // 3. Execute Update or Insert
-            let result;
-            if (id) {
-                // UPDATE
-                result = await supabaseClient
-                    .from('turf_bookings')
-                    .update(bookingData)
-                    .eq('id', id)
-                    .select(); // Adding .select() ensures we see if a row was actually affected
-            } else {
-                // INSERT
-                result = await supabaseClient
-                    .from('turf_bookings')
-                    .insert([bookingData])
-                    .select();
-            }
-
-            // 4. Handle Response
             if (result.error) {
-                console.error("Supabase Error:", result.error);
                 Swal.fire("Error", result.error.message, "error");
-            } else if (result.data && result.data.length === 0 && id) {
-                // Case where .eq('id', id) didn't match anything
-                Swal.fire("Error", "Booking not found or no changes made.", "error");
             } else {
                 Swal.fire({
                     title: 'Success!',
-                    text: id ? "Booking updated successfully." : "New booking saved.",
+                    text: "Booking saved.",
                     icon: 'success',
                     showCancelButton: true,
                     confirmButtonColor: '#25D366',
@@ -344,40 +242,8 @@
                 }).then(s => {
                     if (s.isConfirmed) sendWhatsApp(name, phone, date, start, endTimeStr, 'confirm', price);
                 });
-
                 resetForm();
                 updateView();
-            }
-        }
-
-        function sendWhatsApp(n, p, d, s, e, t, price = 0) {
-            const cp = "91" + p.replace(/\D/g, '');
-            const dateObj = new Date(d);
-            const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
-            const monthDay = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-
-            let message = "";
-
-            if (t === 'cancel') {
-                message = `*CANCELLED*\nHi ${n},\nYour slot on ${monthDay} (${s.slice(0, 5)}) has been cancelled.`;
-            }
-            else if (t === 'remind') {
-                message = `*PAYMENT REMINDER - TURFIT*\n\nHi *${n}*\nYour slot on *${dayName}, ${monthDay}* (${s.slice(0, 5)} - ${e.slice(0, 5)}) is completed.\n\n*Pending Amount:* ₹${price}\n\nKindly clear the payment if not already done. \nThank you for choosing *TURFIT* !!`;
-            }
-            else {
-                message = `*TURFIT BOOKING CONFIRMED*\n\nHi *${n}*\nYour booking for *${dayName}, ${monthDay}*\n${s.slice(0, 5)} - ${e.slice(0, 5)}\n\n*Amount:* ₹${price}\n\n*RULES & REGULATIONS:*\n\n1. Spitting and Smoking is strictly prohibited inside the turf premises, pathway (outside turf) and the ramp. If caught doing the same, then a fine of ₹300 shall be charged from the booking team.\n\n2. Cricket bat or ball, football, stumps etc. are the property of the turf and shall not be carried outside the turf without the permission of the owner. If caught carrying outside then it will be treated as theft, fine of ₹500 shall be taken from the booking team\n\n3. Early Arrival: Kindly wait outside the turf if you arrive before your slot. Accessing the turf early will be counted in your booking and charged extra.\n\nThank you for choosing *TURFIT* !!`;
-            }
-
-            const encodedMessage = encodeURIComponent(message);
-            const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-            if (isMobile) {
-                // This protocol (whatsapp://) bypasses the browser and 
-                // forces the phone to look for the installed apps immediately.
-                window.location.href = `whatsapp://send?phone=${cp}&text=${encodedMessage}`;
-            } else {
-                // Desktop still works best with the standard web link
-                window.open(`https://wa.me/${cp}?text=${encodedMessage}`, '_blank');
             }
         }
 
@@ -386,26 +252,14 @@
             const { data } = await supabaseClient.from('turf_bookings').select('*').eq('booking_date', date).order('start_time');
             const container = document.getElementById('dayList');
             container.innerHTML = data && data.length ? data.map(b => `
-            <div class="p-3 bg-light border rounded mb-2 d-flex justify-content-between align-items-center">
-                <div><span class="fw-bold text-success">${b.start_time.slice(0, 5)} - ${b.end_time.slice(0, 5)}</span><br><small>${b.customer_name} (₹${b.price || 0})</small></div>
-                <div class="d-flex gap-1">
-                    <button class="action-btn btn-resend" onclick="sendWhatsApp('${b.customer_name}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}', '${b.end_time}', 'confirm', '${b.price}')"><i class="bi bi-whatsapp"></i></button>
-                    <button class="action-btn btn-edit"
-  onclick="editBooking(
-    '${b.id}',
-    '${b.customer_name}',
-    '${b.phone_number}',
-    '${b.booking_date}',
-    '${b.start_time}',
-    '${b.end_time}',
-    '${b.price}'
-  )">
-  <i class="bi bi-pencil"></i>
-</button>
-
-                    <button class="action-btn btn-delete" onclick="deleteBooking('${b.id}', '${b.customer_name}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}')"><i class="bi bi-trash"></i></button>
-                </div>
-            </div>`).join('') : '<div class="text-center py-4 text-muted small">No slots for this date.</div>';
+                <div class="p-3 bg-light border rounded mb-2 d-flex justify-content-between align-items-center">
+                    <div><span class="fw-bold text-success">${b.start_time.slice(0, 5)} - ${b.end_time.slice(0, 5)}</span><br><small>${b.customer_name} (₹${b.price})</small></div>
+                    <div class="d-flex gap-1">
+                        <button class="action-btn btn-resend" onclick="sendWhatsApp('${b.customer_name}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}', '${b.end_time}', 'confirm', '${b.price}')"><i class="bi bi-whatsapp"></i></button>
+                        <button class="action-btn btn-edit" onclick="editBooking('${b.id}','${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','${b.price}')"><i class="bi bi-pencil"></i></button>
+                        <button class="action-btn btn-delete" onclick="deleteBooking('${b.id}', '${b.customer_name}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}')"><i class="bi bi-trash"></i></button>
+                    </div>
+                </div>`).join('') : '<div class="text-center py-4 text-muted small">No slots for this date.</div>';
         }
 
         async function loadHistory(type) {
@@ -418,11 +272,9 @@
             if (data) {
                 const filtered = data.filter(b => {
                     const isToday = b.booking_date === todayStr;
-                    const isFutureDate = b.booking_date > todayStr;
-                    const isPastDate = b.booking_date < todayStr;
-                    if (type === 'upcoming') return isFutureDate || (isToday && b.start_time > currentTime);
+                    if (type === 'upcoming') return b.booking_date > todayStr || (isToday && b.start_time > currentTime);
                     if (type === 'ongoing') return isToday && b.start_time <= currentTime && b.end_time > currentTime;
-                    if (type === 'completed') return isPastDate || (isToday && b.end_time <= currentTime);
+                    if (type === 'completed') return b.booking_date < todayStr || (isToday && b.end_time <= currentTime);
                 });
                 list.innerHTML = filtered.length ? filtered.map(b => `
                 <tr>
@@ -431,14 +283,8 @@
                     <td>${b.customer_name}</td>
                     <td>
                         ${type === 'upcoming' ? `<button class='btn btn-sm btn-outline-success' onclick="sendWhatsApp('${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','confirm','${b.price}')"><i class='bi bi-whatsapp'></i></button>` :
-                        type === 'completed' ? `
-                          <div class="d-flex gap-2 align-items-center">
-                            <span class="badge bg-light text-dark border">COMPLETED</span>
-                            <button class="btn btn-sm btn-outline-warning" onclick="sendWhatsApp('${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','remind','${b.price}')">
-                                <i class="bi bi-bell"></i>
-                            </button>
-                          </div>` :
-                            `<span class="badge badge-ongoing">ONGOING</span>`}
+                          type === 'completed' ? `<button class="btn btn-sm btn-outline-warning" onclick="sendWhatsApp('${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','remind','${b.price}')"><i class="bi bi-bell"></i></button>` :
+                          `<span class="badge badge-ongoing">ONGOING</span>`}
                     </td>
                 </tr>`).join('') : `<tr><td colspan="4" class="text-center py-3 text-muted">No records.</td></tr>`;
             }
@@ -450,21 +296,11 @@
             document.getElementById('userPhone').value = p;
             document.getElementById('bookDate').value = d;
             document.getElementById('startTime').value = s.slice(0, 5);
-            document.getElementById('bookingPrice').value = price || '';
-
-            // 🔥 FIX: calculate duration from start & end
-            const startMin = parseInt(s.slice(0, 2)) * 60 + parseInt(s.slice(3, 5));
-            const endMin = parseInt(e.slice(0, 2)) * 60 + parseInt(e.slice(3, 5));
-            const duration = (endMin - startMin) / 60;
-
-            document.getElementById('duration').value = duration;
-
+            document.getElementById('bookingPrice').value = price;
             document.getElementById('formTitle').innerText = "Edit Booking";
             document.getElementById('cancelEditBtn').classList.remove('d-none');
-
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
-
 
         function resetForm() {
             document.getElementById('editBookingId').value = '';
@@ -478,13 +314,13 @@
 
         async function deleteBooking(id, n, p, d, s) {
             if (confirm(`Delete ${n}'s slot?`)) {
-                const { error } = await supabaseClient.from('turf_bookings').delete().eq('id', id);
-                if (!error) { sendWhatsApp(n, p, d, s, '', 'cancel'); updateView(); }
+                await supabaseClient.from('turf_bookings').delete().eq('id', id);
+                sendWhatsApp(n, p, d, s, '', 'cancel');
+                updateView();
             }
         }
 
         init();
     </script>
 </body>
-
 </html>
