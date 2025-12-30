@@ -14,7 +14,7 @@
         .card { border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         .btn-primary-custom { background-color: var(--accent); color: white; border: none; }
         .btn-primary-custom:hover { background-color: #1b4332; color: white; }
-        .nav-tabs .nav-link { color: #6c757d; font-weight: 600; border: none; padding: 12px 15px; font-size: 0.9rem; }
+        .nav-tabs .nav-link { color: #6c757d; font-weight: 600; border: none; padding: 12px 15px; font-size: 0.85rem; }
         .nav-tabs .nav-link.active { color: var(--accent); border-bottom: 3px solid var(--accent); background: transparent; }
         .action-btn { padding: 4px 8px; border-radius: 6px; cursor: pointer; transition: 0.2s; border: 1px solid transparent; background: transparent; }
         .btn-resend { color: #2d6a4f; border-color: #2d6a4f; }
@@ -44,23 +44,33 @@
                     <label class="form-label small fw-bold text-muted">DATE</label>
                     <input type="date" id="bookDate" class="form-control" onchange="updateView()">
                 </div>
+                
                 <div class="row">
-                    <div class="col-6 mb-3">
+                    <div class="col-7 mb-3">
                         <label class="form-label small fw-bold text-muted">START TIME</label>
-                        <input type="time" id="startTime" class="form-control">
+                        <div class="d-flex gap-1">
+                            <select id="startHour" class="form-select"></select>
+                            <select id="startMin" class="form-select">
+                                <option value="00">00</option><option value="05">05</option><option value="10">10</option>
+                                <option value="15">15</option><option value="20">20</option><option value="25">25</option>
+                                <option value="30">30</option><option value="35">35</option><option value="40">40</option>
+                                <option value="45">45</option><option value="50">50</option><option value="55">55</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="col-6 mb-3">
+                    <div class="col-5 mb-3">
                         <label class="form-label small fw-bold text-muted">DURATION</label>
                         <select id="duration" class="form-select">
-                            <option value="1">1 Hour</option>
-                            <option value="1.5">1.5 Hours</option>
-                            <option value="2">2 Hours</option>
+                            <option value="1">1 Hr</option>
+                            <option value="1.5">1.5 Hrs</option>
+                            <option value="2">2 Hrs</option>
                         </select>
                     </div>
                 </div>
+
                 <div class="mb-3">
                     <label class="form-label small fw-bold text-muted">CUSTOMER NAME</label>
-                    <input type="text" id="userName" class="form-control" placeholder="Enter name">
+                    <input type="text" id="userName" class="form-control" placeholder="Name">
                 </div>
                 <div class="mb-4">
                     <label class="form-label small fw-bold text-muted">WHATSAPP NUMBER</label>
@@ -70,7 +80,7 @@
                     </div>
                 </div>
                 <button id="submitBtn" class="btn btn-primary-custom w-100 py-3 fw-bold" onclick="saveEntry()">
-                    <i class="bi bi-check-circle-fill me-2"></i>SAVE BOOKING
+                    <i class="bi bi-check-circle-fill me-2"></i>SAVE & SEND MESSAGE
                 </button>
             </div>
         </div>
@@ -94,18 +104,9 @@
 
                 <div class="tab-content p-4 bg-white">
                     <div class="tab-pane fade show active" id="todayPanel"><div id="dayList"></div></div>
-                    
-                    <div class="tab-pane fade" id="upcomingPanel">
-                        <div class="table-responsive"><table class="table align-middle"><thead class="table-light"><tr><th>Date</th><th>Time</th><th>Customer</th><th>Action</th></tr></thead><tbody id="upcomingList"></tbody></table></div>
-                    </div>
-
-                    <div class="tab-pane fade" id="ongoingPanel">
-                        <div class="table-responsive"><table class="table align-middle"><thead class="table-light"><tr><th>Date</th><th>Time</th><th>Customer</th><th>Status</th></tr></thead><tbody id="ongoingList"></tbody></table></div>
-                    </div>
-
-                    <div class="tab-pane fade" id="completedPanel">
-                        <div class="table-responsive"><table class="table align-middle"><thead class="table-light"><tr><th>Date</th><th>Time</th><th>Customer</th><th>Status</th></tr></thead><tbody id="completedList"></tbody></table></div>
-                    </div>
+                    <div class="tab-pane fade" id="upcomingPanel"><div class="table-responsive"><table class="table align-middle"><thead class="table-light"><tr><th>Date</th><th>Time</th><th>Customer</th><th>Action</th></tr></thead><tbody id="upcomingList"></tbody></table></div></div>
+                    <div class="tab-pane fade" id="ongoingPanel"><div class="table-responsive"><table class="table align-middle"><thead class="table-light"><tr><th>Date</th><th>Time</th><th>Customer</th><th>Status</th></tr></thead><tbody id="ongoingList"></tbody></table></div></div>
+                    <div class="tab-pane fade" id="completedPanel"><div class="table-responsive"><table class="table align-middle"><thead class="table-light"><tr><th>Date</th><th>Time</th><th>Customer</th><th>Status</th></tr></thead><tbody id="completedList"></tbody></table></div></div>
                 </div>
             </div>
         </div>
@@ -119,6 +120,12 @@
     let supabaseClient;
 
     async function init() {
+        const hourSelect = document.getElementById('startHour');
+        for(let i=0; i<24; i++) {
+            let h = String(i).padStart(2,'0');
+            hourSelect.innerHTML += `<option value="${h}">${h}</option>`;
+        }
+
         const res = await fetch('/api/get-public-key');
         const keys = await res.json();
         supabaseClient = supabase.createClient(keys.SUPABASE_URL_PUBLIC, keys.SUPABASE_ANON_KEY);
@@ -136,33 +143,35 @@
         const name = document.getElementById('userName').value;
         const phone = document.getElementById('userPhone').value;
         const date = document.getElementById('bookDate').value;
-        const start = document.getElementById('startTime').value;
+        const h = document.getElementById('startHour').value;
+        const m = document.getElementById('startMin').value;
         const duration = parseFloat(document.getElementById('duration').value);
 
-        if (!name || !phone || !start) return Swal.fire("Required", "Fill all fields", "warning");
+        if (!name || !phone) return Swal.fire("Required", "Fill all details", "warning");
 
-        let [h, m] = start.split(':').map(Number);
-        let totalMinutes = h * 60 + m + (duration * 60);
-        let end = `${String(Math.floor(totalMinutes / 60) % 24).padStart(2,'0')}:${String(totalMinutes % 60).padStart(2,'0')}:00`;
-        let startWithSec = start + ":00";
+        const start = `${h}:${m}`;
+        let totalMinutes = parseInt(h) * 60 + parseInt(m) + (duration * 60);
+        let endTimeStr = `${String(Math.floor(totalMinutes / 60) % 24).padStart(2,'0')}:${String(totalMinutes % 60).padStart(2,'0')}:00`;
+        let startTimeWithSec = start + ":00";
 
         // OVERLAP CHECK
         let { data: conflicts } = await supabaseClient.from('turf_bookings').select('id, customer_name, start_time, end_time')
-            .eq('booking_date', date).lt('start_time', end).gt('end_time', startWithSec);
+            .eq('booking_date', date).lt('start_time', endTimeStr).gt('end_time', startTimeWithSec);
         
         if (id) conflicts = conflicts.filter(c => c.id !== id);
         
         if (conflicts && conflicts.length > 0) {
-            return Swal.fire("Overlap!", `Slot busy: ${conflicts[0].customer_name}`, "error");
+            return Swal.fire("Slot Occupied", `This time overlaps with ${conflicts[0].customer_name}`, "error");
         }
 
-        const bookingData = { customer_name: name, phone_number: phone, booking_date: date, start_time: startWithSec, end_time: end };
+        const bookingData = { customer_name: name, phone_number: phone, booking_date: date, start_time: startTimeWithSec, end_time: endTimeStr };
         let res = id ? await supabaseClient.from('turf_bookings').update(bookingData).eq('id', id) : await supabaseClient.from('turf_bookings').insert([bookingData]);
 
         if (res.error) Swal.fire("Error", res.error.message, "error");
         else {
-            Swal.fire({ title: 'Saved!', icon: 'success', showCancelButton: true, confirmButtonText: 'WhatsApp' })
-                .then(s => { if (s.isConfirmed) sendWhatsApp(name, phone, date, start, end, id ? 'modify' : 'confirm'); });
+            Swal.fire({ 
+                title: 'Saved!', icon: 'success', showCancelButton: true, confirmButtonColor: '#25D366', confirmButtonText: '<i class="bi bi-whatsapp"></i> Notify WhatsApp' 
+            }).then(s => { if (s.isConfirmed) sendWhatsApp(name, phone, date, start, endTimeStr, id ? 'modify' : 'confirm'); });
             resetForm(); updateView();
         }
     }
@@ -173,7 +182,6 @@
         const currentTime = now.toTimeString().split(' ')[0];
 
         const { data } = await supabaseClient.from('turf_bookings').select('*').order('booking_date').order('start_time');
-        
         const list = document.getElementById(`${type}List`);
         list.innerHTML = '';
 
@@ -183,13 +191,9 @@
                 const isFutureDate = b.booking_date > todayStr;
                 const isPastDate = b.booking_date < todayStr;
 
-                if (type === 'upcoming') {
-                    return isFutureDate || (isToday && b.start_time > currentTime);
-                } else if (type === 'ongoing') {
-                    return isToday && b.start_time <= currentTime && b.end_time > currentTime;
-                } else if (type === 'completed') {
-                    return isPastDate || (isToday && b.end_time <= currentTime);
-                }
+                if (type === 'upcoming') return isFutureDate || (isToday && b.start_time > currentTime);
+                if (type === 'ongoing') return isToday && b.start_time <= currentTime && b.end_time > currentTime;
+                if (type === 'completed') return isPastDate || (isToday && b.end_time <= currentTime);
             });
 
             list.innerHTML = filtered.length ? filtered.map(b => `
@@ -199,8 +203,7 @@
                     <td>${b.customer_name}</td>
                     <td>
                         ${type === 'upcoming' ? `<button class='btn btn-sm btn-outline-success' onclick="sendWhatsApp('${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','confirm')"><i class='bi bi-whatsapp'></i></button>` : 
-                          type === 'ongoing' ? `<span class="badge badge-ongoing">LIVE</span>` : 
-                          `<span class="badge bg-light text-dark border">Done</span>`}
+                          type === 'ongoing' ? `<span class="badge badge-ongoing">LIVE</span>` : `<span class="badge bg-light text-dark border">Done</span>`}
                     </td>
                 </tr>`).join('') : `<tr><td colspan="4" class="text-center py-3 text-muted">No records.</td></tr>`;
         }
@@ -218,14 +221,14 @@
                     <button class="action-btn btn-edit" onclick="editBooking('${b.id}', '${b.customer_name}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}')"><i class="bi bi-pencil"></i></button>
                     <button class="action-btn btn-delete" onclick="deleteBooking('${b.id}', '${b.customer_name}', '${b.phone_number}', '${b.booking_date}', '${b.start_time}')"><i class="bi bi-trash"></i></button>
                 </div>
-            </div>`).join('') : '<div class="text-center py-4 text-muted small">No slots.</div>';
+            </div>`).join('') : '<div class="text-center py-4 text-muted small">No slots for this date.</div>';
     }
 
     function sendWhatsApp(n, p, d, s, e, t) {
         const cp = "91" + p.replace(/\D/g, '');
         const f = new Date(d).toLocaleDateString('en-US', {month:'short', day:'numeric'});
-        let m = t === 'cancel' ? `*CANCELLED*: Slot on ${f} (${s.slice(0,5)}) removed.` : `*CONFIRMED*: Slot on ${f} (${s.slice(0,5)} - ${e.slice(0,5)}) is yours!`;
-        window.open(`https://wa.me/${cp}?text=${encodeURIComponent(m)}`, '_blank');
+        let m = t === 'cancel' ? `*CANCELLED*: Slot on ${f} (${s.slice(0,5)}) removed.` : `*CONFIRMED*: Slot on ${f} (${s.slice(0,5)} - ${e.slice(0,5)}) is successful!`;
+        window.open(`https://wa.me/${cp}?text=${encodeURIComponent(m)}`, '_blank').focus();
     }
 
     function editBooking(id, n, p, d, s) {
@@ -233,7 +236,9 @@
         document.getElementById('userName').value = n;
         document.getElementById('userPhone').value = p;
         document.getElementById('bookDate').value = d;
-        document.getElementById('startTime').value = s.slice(0,5);
+        const [hour, min] = s.slice(0,5).split(':');
+        document.getElementById('startHour').value = hour;
+        document.getElementById('startMin').value = min;
         document.getElementById('formTitle').innerText = "Edit Booking";
         document.getElementById('cancelEditBtn').classList.remove('d-none');
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -243,7 +248,6 @@
         document.getElementById('editBookingId').value = '';
         document.getElementById('userName').value = '';
         document.getElementById('userPhone').value = '';
-        document.getElementById('startTime').value = '';
         document.getElementById('formTitle').innerText = "New Booking";
         document.getElementById('cancelEditBtn').classList.add('d-none');
     }
