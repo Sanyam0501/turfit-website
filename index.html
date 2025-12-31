@@ -9,22 +9,118 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        :root { --admin-green: #1b4332; --accent: #2d6a4f; }
-        body { background: #f0f2f5; font-family: 'Segoe UI', sans-serif; }
-        .hero { background: var(--admin-green); color: #fff; padding: 25px 0; border-bottom: 5px solid #d8f3dc; }
-        .card { border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
-        .btn-primary-custom { background-color: var(--accent); color: white; border: none; }
-        .btn-primary-custom:hover { background-color: #1b4332; color: white; }
-        .nav-tabs .nav-link { color: #6c757d; font-weight: 600; border: none; padding: 12px 15px; font-size: 0.9rem; }
-        .nav-tabs .nav-link.active { color: var(--accent); border-bottom: 3px solid var(--accent); background: transparent; }
-        .action-btn { padding: 4px 8px; border-radius: 6px; cursor: pointer; transition: 0.2s; border: 1px solid transparent; background: transparent; }
-        .btn-edit { color: #ffc107; border-color: #ffc107; }
-        .summary-box { background: #fff; border-radius: 12px; padding: 15px; margin-bottom: 20px; border-left: 5px solid var(--accent); }
-        .summary-val { font-size: 1.25rem; font-weight: bold; color: var(--admin-green); }
-        #lockScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--admin-green); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; }
-        .pin-input { width: 220px; text-align: center; font-size: 2.5rem; letter-spacing: 8px; background: transparent; border: none; border-bottom: 2px solid white; color: white; outline: none; }
-        .time-group { display: flex; gap: 4px; }
-        .time-group select { padding: 4px; font-size: 0.85rem; }
+        :root {
+            --admin-green: #1b4332;
+            --accent: #2d6a4f;
+        }
+
+        body {
+            background: #f0f2f5;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        .hero {
+            background: var(--admin-green);
+            color: #fff;
+            padding: 25px 0;
+            border-bottom: 5px solid #d8f3dc;
+        }
+
+        .card {
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-primary-custom {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+        }
+
+        .btn-primary-custom:hover {
+            background-color: #1b4332;
+            color: white;
+        }
+
+        .nav-tabs .nav-link {
+            color: #6c757d;
+            font-weight: 600;
+            border: none;
+            padding: 12px 15px;
+            font-size: 0.9rem;
+        }
+
+        .nav-tabs .nav-link.active {
+            color: var(--accent);
+            border-bottom: 3px solid var(--accent);
+            background: transparent;
+        }
+
+        .action-btn {
+            padding: 4px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: 0.2s;
+            border: 1px solid transparent;
+            background: transparent;
+        }
+
+        .btn-edit {
+            color: #ffc107;
+            border-color: #ffc107;
+        }
+
+        .summary-box {
+            background: #fff;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-left: 5px solid var(--accent);
+        }
+
+        .summary-val {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: var(--admin-green);
+        }
+
+        #lockScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--admin-green);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+
+        .pin-input {
+            width: 220px;
+            text-align: center;
+            font-size: 2.5rem;
+            letter-spacing: 8px;
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid white;
+            color: white;
+            outline: none;
+        }
+
+        .time-group {
+            display: flex;
+            gap: 4px;
+        }
+
+        .time-group select {
+            padding: 4px;
+            font-size: 0.85rem;
+        }
     </style>
 </head>
 
@@ -125,16 +221,76 @@
 
                     <div class="card p-0 overflow-hidden shadow-sm">
                         <ul class="nav nav-tabs px-3 bg-white" id="bookingTabs">
-                            <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#todayPanel" onclick="loadDaySlots()">Today</button></li>
-                            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#upcomingPanel" onclick="loadHistory('upcoming')">Upcoming</button></li>
-                            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#ongoingPanel" onclick="loadHistory('ongoing')">Ongoing</button></li>
-                            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#completedPanel" onclick="loadHistory('completed')">Completed</button></li>
+                            <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab"
+                                    data-bs-target="#todayPanel" onclick="loadDaySlots()">Today</button></li>
+                            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab"
+                                    data-bs-target="#upcomingPanel" onclick="loadHistory('upcoming')">Upcoming</button>
+                            </li>
+                            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab"
+                                    data-bs-target="#ongoingPanel" onclick="loadHistory('ongoing')">Ongoing</button>
+                            </li>
+                            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab"
+                                    data-bs-target="#completedPanel"
+                                    onclick="loadHistory('completed')">Completed</button></li>
                         </ul>
                         <div class="tab-content p-4 bg-white">
-                            <div class="tab-pane fade show active" id="todayPanel"><div id="dayList"></div></div>
-                            <div class="tab-pane fade" id="upcomingPanel"><div class="table-responsive"><table class="table"><thead><tr><th>Date</th><th>Time</th><th>Customer</th><th>Total</th><th>Paid</th><th>Bal</th><th>Action</th></tr></thead><tbody id="upcomingList"></tbody></table></div></div>
-                            <div class="tab-pane fade" id="ongoingPanel"><div class="table-responsive"><table class="table"><thead><tr><th>Date</th><th>Time</th><th>Customer</th><th>Total</th><th>Paid</th><th>Bal</th><th>Status</th></tr></thead><tbody id="ongoingList"></tbody></table></div></div>
-                            <div class="tab-pane fade" id="completedPanel"><div class="table-responsive"><table class="table"><thead><tr><th>Date</th><th>Time</th><th>Customer</th><th>Total</th><th>Paid</th><th>Bal</th><th>Action</th></tr></thead><tbody id="completedList"></tbody></table></div></div>
+                            <div class="tab-pane fade show active" id="todayPanel">
+                                <div id="dayList"></div>
+                            </div>
+                            <div class="tab-pane fade" id="upcomingPanel">
+                                <div class="table-responsive">
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th>Date</th>
+                                                <th>Time</th>
+                                                <th>Customer</th>
+                                                <th>Total</th>
+                                                <th>Paid</th>
+                                                <th>Bal</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="upcomingList"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="ongoingPanel">
+                                <div class="table-responsive">
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th>Date</th>
+                                                <th>Time</th>
+                                                <th>Customer</th>
+                                                <th>Total</th>
+                                                <th>Paid</th>
+                                                <th>Bal</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="ongoingList"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="completedPanel">
+                                <div class="table-responsive">
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th>Date</th>
+                                                <th>Time</th>
+                                                <th>Customer</th>
+                                                <th>Total</th>
+                                                <th>Paid</th>
+                                                <th>Bal</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="completedList"></tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -179,13 +335,18 @@
                             </div>
                         </div>
                     </div>
-                    <div class="mb-3"><label class="small fw-bold">CUSTOMER</label><input type="text" id="edit_name" class="form-control"></div>
-                    <div class="mb-3"><label class="small fw-bold">PHONE</label><input type="tel" id="edit_phone" class="form-control"></div>
+                    <div class="mb-3"><label class="small fw-bold">CUSTOMER</label><input type="text" id="edit_name"
+                            class="form-control"></div>
+                    <div class="mb-3"><label class="small fw-bold">PHONE</label><input type="tel" id="edit_phone"
+                            class="form-control"></div>
                     <div class="row align-items-end">
-                        <div class="col-4 mb-3"><label class="small fw-bold">TOTAL PRICE</label><input type="number" id="edit_price" class="form-control"></div>
-                        <div class="col-4 mb-3"><label class="small fw-bold">PAID AMOUNT</label><input type="number" id="edit_paid" class="form-control"></div>
+                        <div class="col-4 mb-3"><label class="small fw-bold">TOTAL PRICE</label><input type="number"
+                                id="edit_price" class="form-control"></div>
+                        <div class="col-4 mb-3"><label class="small fw-bold">PAID AMOUNT</label><input type="number"
+                                id="edit_paid" class="form-control"></div>
                         <div class="col-4 mb-3">
-                            <button class="btn btn-success btn-sm w-100" style="height: 38px;" onclick="setFullPayment()">
+                            <button class="btn btn-success btn-sm w-100" style="height: 38px;"
+                                onclick="setFullPayment()">
                                 <i class="bi bi-check-all"></i> FULL
                             </button>
                         </div>
@@ -211,7 +372,7 @@
             const keys = await res.json();
             supabaseClient = supabase.createClient(keys.SUPABASE_URL_PUBLIC, keys.SUPABASE_ANON_KEY);
             bsEditModal = new bootstrap.Modal(document.getElementById('editModal'));
-            
+
             document.getElementById('pinEntry').addEventListener('input', checkPin);
             if (localStorage.getItem('turf_session') === 'active') {
                 document.getElementById('lockScreen').style.display = 'none';
@@ -232,11 +393,11 @@
                 document.getElementById('m_start'), document.getElementById('edit_m'),
                 document.getElementById('m_end'), document.getElementById('edit_m_end')
             ];
-            
+
             let hOpts = "", mOpts = "";
             for (let i = 1; i <= 12; i++) hOpts += `<option value="${i}">${i}</option>`;
             for (let i = 0; i < 60; i += 5) mOpts += `<option value="${String(i).padStart(2, '0')}">${String(i).padStart(2, '0')}</option>`;
-            
+
             hPickers.forEach(p => p.innerHTML = hOpts);
             mPickers.forEach(p => p.innerHTML = mOpts);
         }
@@ -250,7 +411,7 @@
 
         function setFullPayment() {
             const total = document.getElementById('edit_price').value;
-            if(total) document.getElementById('edit_paid').value = total;
+            if (total) document.getElementById('edit_paid').value = total;
         }
 
         async function saveEntry(isEdit) {
@@ -273,25 +434,57 @@
             const ampmE = document.getElementById(isEdit ? 'edit_ampm_end' : 'ampm_end').value;
             const end24 = get24hFromSelectors(hE, mE, ampmE);
 
+            // Basic Validation
             if (!name || !phone || !price) return Swal.fire("Required", "Fill all fields", "warning");
+            if (start24 >= end24) return Swal.fire("Invalid Time", "End time must be after start time", "error");
 
-            const bookingData = { 
-                customer_name: name, 
-                phone_number: phone, 
-                booking_date: date, 
-                start_time: start24, 
-                end_time: end24, 
-                price: parseFloat(price), 
-                paid_amount: parseFloat(paid) 
+            // --- CHECK FOR CLASHES ---
+            // We look for any booking on the same date where (start < newEnd) AND (end > newStart)
+            let query = supabaseClient
+                .from('turf_bookings')
+                .select('customer_name, start_time, end_time')
+                .eq('booking_date', date)
+                .lt('start_time', end24)
+                .gt('end_time', start24);
+
+            // If editing, ignore the current booking record itself
+            if (isEdit) {
+                query = query.neq('id', id);
+            }
+
+            const { data: clashes, error: clashError } = await query;
+
+            if (clashError) {
+                return Swal.fire("Error", "Could not verify slot availability", "error");
+            }
+
+            if (clashes && clashes.length > 0) {
+                const clash = clashes[0];
+                return Swal.fire({
+                    title: "Slot Overlap!",
+                    html: `This time clashes with: <br><b>${clash.customer_name}</b> (${formatTo12H(clash.start_time)} - ${formatTo12H(clash.end_time)})`,
+                    icon: "error"
+                });
+            }
+            // --- END CLASH CHECK ---
+
+            const bookingData = {
+                customer_name: name,
+                phone_number: phone,
+                booking_date: date,
+                start_time: start24,
+                end_time: end24,
+                price: parseFloat(price),
+                paid_amount: parseFloat(paid)
             };
-            
+
             let res = id ? await supabaseClient.from('turf_bookings').update(bookingData).eq('id', id) : await supabaseClient.from('turf_bookings').insert([bookingData]);
 
             if (res.error) {
                 Swal.fire("Error", res.error.message, "error");
             } else {
                 if (isEdit) bsEditModal.hide();
-                
+
                 Swal.fire({
                     title: isEdit ? "Updated!" : "Saved!",
                     text: "Booking has been recorded successfully.",
@@ -307,7 +500,7 @@
                     }
                 });
 
-                if(!isEdit) resetForm();
+                if (!isEdit) resetForm();
                 updateView();
             }
         }
@@ -334,7 +527,7 @@
                 } else {
                     bsEditModal.hide();
                     updateView();
-                    
+
                     Swal.fire({
                         title: "Deleted!",
                         text: "Booking removed successfully.",
@@ -361,7 +554,7 @@
             const monthDay = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
             const s12 = formatTo12H(s);
             const e12 = formatTo12H(e);
-            
+
             let msg = "";
             if (t === 'confirm') {
                 const bal = price - paid;
@@ -491,4 +684,5 @@
         init();
     </script>
 </body>
+
 </html>
