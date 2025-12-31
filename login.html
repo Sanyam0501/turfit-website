@@ -78,7 +78,7 @@
     async function checkPin() {
     const pin = document.getElementById('pinEntry').value.trim();
 
-    // Trigger ONLY when the length reaches 4 (for PIN 0708)
+    // Only run the database check when exactly 4 digits are entered
     if (pin.length !== 4) return; 
 
     const { data, error } = await supabaseClient
@@ -87,24 +87,24 @@
         .eq('id', 1)
         .single();
 
-    if (error || !data) {
+    if (error) {
         console.error("Supabase Error:", error);
-        Swal.fire("Error", "Unable to verify PIN", "error");
+        // If it's the 0 rows error, tell the user the DB is misconfigured
+        if (error.code === 'PGRST116') {
+            Swal.fire("System Error", "PIN record not found in database (ID 1 missing).", "error");
+        } else {
+            Swal.fire("Error", "Unable to verify PIN: " + error.message, "error");
+        }
+        document.getElementById('pinEntry').value = '';
         return;
     }
 
-    // Ensure we are comparing strings and trimming whitespace
-    const dbPin = String(data.pin).trim();
-
-    if (dbPin === pin) {
+    if (data && String(data.pin).trim() === pin) {
         sessionStorage.setItem('turf_session', 'active');
         window.location.href = 'admin.html';
     } else {
-        // Use a small delay so the user sees the 4th dot before clearing
-        setTimeout(() => {
-            Swal.fire("Invalid PIN", "Access Denied", "error");
-            document.getElementById('pinEntry').value = '';
-        }, 100);
+        Swal.fire("Invalid PIN", "Access Denied", "error");
+        document.getElementById('pinEntry').value = '';
     }
 }
 
