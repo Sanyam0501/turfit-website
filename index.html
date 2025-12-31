@@ -129,15 +129,6 @@
             background: var(--admin-green);
             color: white;
         }
-
-        .timer-badge {
-            background: rgba(255,255,255,0.1);
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-family: monospace;
-            font-size: 0.85rem;
-            border: 1px solid rgba(255,255,255,0.3);
-        }
     </style>
 </head>
 
@@ -153,7 +144,7 @@
     <div id="appContent" style="display: none;">
         <div class="hero text-center">
             <div class="container d-flex justify-content-between align-items-center">
-                <div class="timer-badge" id="sessionTimer">10:00</div>
+                <div style="width: 40px;"></div>
                 <h2 class="fw-bold m-0"><i class="bi bi-whatsapp me-2"></i>TURFIT MANAGER</h2>
                 <button class="btn btn-sm btn-outline-light" onclick="logout()">Logout</button>
             </div>
@@ -355,8 +346,8 @@
     <script>
         let supabaseClient;
         let bsEditModal;
-        let timeLeft = 600; // 10 minutes in seconds
-        let countdownInterval;
+        let logoutTimer;
+        const TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 
         async function init() {
             const res = await fetch('/api/get-public-key');
@@ -366,6 +357,7 @@
 
             document.getElementById('pinEntry').addEventListener('input', checkPin);
             
+            // Check session from sessionStorage (Clears when tab is closed)
             if (sessionStorage.getItem('turf_session') === 'active') {
                 showApp();
             }
@@ -383,31 +375,14 @@
         function showApp() {
             document.getElementById('lockScreen').style.display = 'none';
             document.getElementById('appContent').style.display = 'block';
-            startCountdown();
-        }
-
-        function startCountdown() {
-            clearInterval(countdownInterval);
-            countdownInterval = setInterval(() => {
-                timeLeft--;
-                updateTimerDisplay();
-                if (timeLeft <= 0) {
-                    logout();
-                }
-            }, 1000);
+            resetTimer();
         }
 
         function resetTimer() {
             if (sessionStorage.getItem('turf_session') === 'active') {
-                timeLeft = 600;
-                updateTimerDisplay();
+                clearTimeout(logoutTimer);
+                logoutTimer = setTimeout(logout, TIMEOUT_MS);
             }
-        }
-
-        function updateTimerDisplay() {
-            const mins = Math.floor(timeLeft / 60);
-            const secs = timeLeft % 60;
-            document.getElementById('sessionTimer').innerText = `${mins}:${String(secs).padStart(2, '0')}`;
         }
 
         function logout() { 
