@@ -456,37 +456,75 @@
         }
 
         async function deleteBooking() {
-            const id = document.getElementById('edit_id').value;
-            const name = document.getElementById('edit_name').value;
-            const phone = document.getElementById('edit_phone').value;
-            const { isConfirmed } = await Swal.fire({ title: 'Delete?', text: "Permanent action!", icon: 'warning', showCancelButton: true });
+    const id = document.getElementById('edit_id').value;
+    const name = document.getElementById('edit_name').value;
+    const phone = document.getElementById('edit_phone').value;
+    const date = document.getElementById('edit_date').value;
+    
+    // Get time from selectors to include in the message
+    const start24 = get24hFromSelectors(
+        document.getElementById('edit_h').value,
+        document.getElementById('edit_m').value,
+        document.getElementById('edit_ampm').value
+    );
+    const end24 = get24hFromSelectors(
+        document.getElementById('edit_h_end').value,
+        document.getElementById('edit_m_end').value,
+        document.getElementById('edit_ampm_end').value
+    );
 
-            if (isConfirmed) {
-                await supabaseClient.from('turf_bookings').delete().eq('id', id);
-                bsEditModal.hide();
-                updateView();
-                Swal.fire("Deleted!", "", "success").then(() => {
-                    const msg = `*BOOKING CANCELLED - TURFIT*\n\nHi *${name}*,\nYour booking has been cancelled.`;
-                    window.open(`https://wa.me/91${phone}?text=${encodeURIComponent(msg)}`, '_blank');
-                });
-            }
+    const { isConfirmed } = await Swal.fire({ 
+        title: 'Delete Booking?', 
+        text: "This will remove the entry and notify the customer.", 
+        icon: 'warning', 
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        confirmButtonText: 'Yes, Delete'
+    });
+
+    if (isConfirmed) {
+        const { error } = await supabaseClient.from('turf_bookings').delete().eq('id', id);
+        
+        if (error) {
+            Swal.fire("Error", "Could not delete: " + error.message, "error");
+        } else {
+            bsEditModal.hide();
+            updateView();
+            
+            // Trigger the WhatsApp Cancellation message
+            sendWhatsApp(name, phone, date, start24, end24, 'cancel');
+            
+            Swal.fire("Deleted!", "Booking removed and WhatsApp opened.", "success");
         }
+    }
+}
 
         function sendWhatsApp(n, p, d, s, e, t, price = 0, paid = 0) {
-            const cp = "91" + p.replace(/\D/g, '');
-            const monthDay = new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-            const s12 = formatTo12H(s);
-            const e12 = formatTo12H(e);
-            const bal = price - paid;
+    const cp = "91" + p.replace(/\D/g, '');
+    const monthDay = new Date(d).toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        month: 'short', 
+        day: 'numeric' 
+    });
+    const s12 = formatTo12H(s);
+    const e12 = formatTo12H(e);
+    const bal = price - paid;
 
-            let msg = "";
-            if (t === 'confirm') {
-                msg = `*TURFIT BOOKING INFORMATION*\n\nHi *${n}*\nYour booking for *${monthDay}*\n${s12} - ${e12}\n\n*Total:* ₹${price}\n*Paid:* ₹${paid}\n*Balance:* ₹${bal}${paid > 0 ? "" : "\n\n*Kindly Pay Advance ₹200 for Booking Confirmation.*"}\n\n*RULES & REGULATIONS:*\n\n1. Spitting and Smoking is strictly prohibited inside the turf premises, pathway (outside turf) and the ramp. If caught, a fine of *₹300* shall be charged.\n\n2. Cricket/Football equipment are turf property. Carrying them outside without permission will be treated as theft; fine of *₹500* applies.\n\n3. Early Arrival: Kindly wait outside if you arrive early. Early access will be charged extra.\n\n*Read Full T&C:* https://ebqukydndivisiafpdls.supabase.co/storage/v1/object/public/tnc/TNC_TURFIT.pdf\n\nThank you for choosing *TURFIT* !!`;
-            } else {
-                msg = `*PAYMENT REMINDER - TURFIT*\n\nHi *${n}*\nYour slot on *${monthDay}* (${s12}) is completed.\n\n*Pending:* ₹${paid}\nKindly clear payment.`;
-            }
-            window.open(`https://wa.me/${cp}?text=${encodeURIComponent(msg)}`, '_blank');
-        }
+    let msg = "";
+    
+    if (t === 'confirm') {
+        msg = `*TURFIT BOOKING INFORMATION*\n\nHi *${n}*\nYour booking for *${monthDay}*\n${s12} - ${e12}\n\n*Total:* ₹${price}\n*Paid:* ₹${paid}\n*Balance:* ₹${bal}${paid > 0 ? "" : "\n\n*Kindly Pay Advance ₹200 for Booking Confirmation.*"}\n\n*Rules:* No Smoking/Spitting. Early access charged extra.\n\nThank you for choosing *TURFIT* !!`;
+    } 
+    else if (t === 'remind') {
+        msg = `*PAYMENT REMINDER - TURFIT*\n\nHi *${n}*\nYour slot on *${monthDay}* (${s12}) is completed.\n\n*Pending Balance:* ₹${paid}\nKindly clear the payment at your earliest convenience.`;
+    } 
+    else if (t === 'cancel') {
+        // NEW: Cancellation Message with Date and Time
+        msg = `*BOOKING CANCELLED - TURFIT*\n\nHi *${n}*,\n\nThis is to inform you that your booking has been *CANCELLED*.\n\n*Date:* ${monthDay}\n*Time:* ${s12} - ${e12}\n\nIf you have already paid an advance, please contact us for the refund process.\n\nRegards,\n*TURFIT Management*`;
+    }
+
+    window.open(`https://wa.me/${cp}?text=${encodeURIComponent(msg)}`, '_blank');
+}
 
         async function checkPin() {
             const val = document.getElementById('pinEntry').value;
@@ -513,12 +551,37 @@
         }
 
         function createBookingItem(b) {
-            return `<div class="p-3 bg-light border rounded mb-2 d-flex justify-content-between align-items-center shadow-sm">
-                <div><span class="fw-bold text-success">${formatTo12H(b.start_time)} - ${formatTo12H(b.end_time)}</span><br><small><b>${b.customer_name}</b> (Pending: ₹${b.price - b.paid_amount})</small></div>
-                <div class="d-flex gap-1">
-                    <button class="action-btn" onclick="sendWhatsApp('${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','confirm',${b.price},${b.paid_amount})"><i class="bi bi-whatsapp text-success"></i></button>
-                    <button class="action-btn text-warning" onclick="openEditModal('${b.id}','${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','${b.price}','${b.paid_amount}')"><i class="bi bi-pencil"></i></button>
-                </div></div>`;
+            const pendingBalance = b.price - b.paid_amount;
+            const isCompleted = new Date() > new Date(`${b.booking_date}T${b.end_time}`);
+
+            // Create the Payment Reminder button only if balance > 0 and booking is finished
+            const reminderBtn = (isCompleted && pendingBalance > 0) ? `
+        <button class="action-btn" title="Send Payment Reminder" 
+            onclick="sendWhatsApp('${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','remind',${b.price},${pendingBalance})">
+            <i class="bi bi-bell-fill text-danger"></i>
+        </button>` : '';
+
+            return `
+        <div class="p-3 bg-white border rounded mb-2 d-flex justify-content-between align-items-center shadow-sm">
+            <div>
+                <span class="fw-bold ${isCompleted ? 'text-muted' : 'text-success'}">
+                    ${formatTo12H(b.start_time)} - ${formatTo12H(b.end_time)}
+                </span>
+                <br>
+                <small class="text-dark"><strong>${b.customer_name}</strong></small>
+                <br>
+                <small class="text-muted">Pending: ₹${pendingBalance}</small>
+            </div>
+            <div class="d-flex gap-1">
+                ${reminderBtn}
+                <button class="action-btn" onclick="sendWhatsApp('${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','confirm',${b.price},${b.paid_amount})">
+                    <i class="bi bi-whatsapp text-success"></i>
+                </button>
+                <button class="action-btn text-warning" onclick="openEditModal('${b.id}','${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','${b.price}','${b.paid_amount}')">
+                    <i class="bi bi-pencil"></i>
+                </button>
+            </div>
+        </div>`;
         }
 
         async function loadDaySlots() {
