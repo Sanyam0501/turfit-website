@@ -9,33 +9,16 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        :root { --admin-green: #1b4332; --accent: #2d6a4f; --timeline-hour-height: 60px; }
-        body { background: #f0f2f5; font-family: 'Segoe UI', sans-serif; color: #333; }
+        :root { --admin-green: #1b4332; --accent: #2d6a4f; }
+        body { background: #f0f2f5; font-family: 'Segoe UI', sans-serif; }
         .hero { background: var(--admin-green); color: #fff; padding: 25px 0; border-bottom: 5px solid #d8f3dc; }
-        .card { border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); }
+        .card { border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
         .btn-primary-custom { background-color: var(--accent); color: white; border: none; }
         .btn-primary-custom:hover { background-color: #1b4332; color: white; }
         .nav-tabs .nav-link { color: #6c757d; font-weight: 600; border: none; padding: 12px 15px; font-size: 0.9rem; }
         .nav-tabs .nav-link.active { color: var(--accent); border-bottom: 3px solid var(--accent); background: transparent; }
-        
-        /* Timeline/Calendar View Styles */
-        .timeline-container { position: relative; background: white; border-radius: 12px; padding: 15px; height: 650px; overflow-y: auto; border: 1px solid #dee2e6; }
-        .timeline-grid { position: relative; border-left: 2px solid #e9ecef; margin-left: 55px; min-height: 1080px; } /* 18 hours * 60px */
-        .hour-mark { height: var(--timeline-hour-height); border-bottom: 1px dashed #e9ecef; position: relative; }
-        .hour-label { position: absolute; left: -55px; width: 50px; text-align: right; font-size: 0.7rem; color: #adb5bd; font-weight: bold; top: -7px; }
-        
-        .booking-slot { 
-            position: absolute; left: 5px; right: 5px; 
-            background: #d8f3dc; 
-            border-left: 5px solid var(--accent); 
-            border-radius: 6px; padding: 6px 10px; 
-            font-size: 0.75rem; overflow: hidden; 
-            z-index: 10; transition: all 0.2s ease;
-            cursor: pointer; box-shadow: 2px 2px 5px rgba(0,0,0,0.05);
-        }
-        .booking-slot:hover { transform: scale(1.01); z-index: 20; background: #b7e4c7; }
-        .booking-slot b { color: var(--admin-green); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
+        .action-btn { padding: 4px 8px; border-radius: 6px; cursor: pointer; transition: 0.2s; border: 1px solid transparent; background: transparent; }
+        .btn-edit { color: #ffc107; border-color: #ffc107; }
         .summary-box { background: #fff; border-radius: 12px; padding: 15px; margin-bottom: 20px; border-left: 5px solid var(--accent); }
         .summary-val { font-size: 1.25rem; font-weight: bold; color: var(--admin-green); }
         #lockScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--admin-green); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; }
@@ -51,6 +34,7 @@
         <i class="bi bi-shield-lock-fill mb-3" style="font-size: 3rem;"></i>
         <h4 class="fw-bold mb-4">TURFIT ACCESS</h4>
         <input type="password" id="pinEntry" class="pin-input" maxlength="6" autofocus placeholder="••••••">
+        <p class="mt-4 opacity-50 small">Enter Security PIN</p>
     </div>
 
     <div id="appContent" style="display: none;">
@@ -66,7 +50,7 @@
         <div class="container mt-4 mb-5">
             <div class="row g-4">
                 <div class="col-lg-4">
-                    <div class="card p-4 mb-4">
+                    <div class="card p-4">
                         <h5 class="fw-bold mb-4">New Booking</h5>
                         <div class="mb-3">
                             <label class="form-label small fw-bold text-muted">DATE</label>
@@ -74,22 +58,24 @@
                         </div>
                         <div class="row">
                             <div class="col-12 mb-3">
-                                <label class="form-label small fw-bold text-muted">START TIME</label>
+                                <label class="form-label small fw-bold text-muted">START TIME (12H)</label>
                                 <div class="time-group">
                                     <select id="h_start" class="form-select"></select>
                                     <select id="m_start" class="form-select"></select>
                                     <select id="ampm_start" class="form-select">
-                                        <option value="AM">AM</option><option value="PM" selected>PM</option>
+                                        <option value="AM">AM</option>
+                                        <option value="PM" selected>PM</option>
                                     </select>
                                 </div>
                             </div>
                             <div class="col-12 mb-3">
-                                <label class="form-label small fw-bold text-muted">END TIME</label>
+                                <label class="form-label small fw-bold text-muted">END TIME (12H)</label>
                                 <div class="time-group">
                                     <select id="h_end" class="form-select"></select>
                                     <select id="m_end" class="form-select"></select>
                                     <select id="ampm_end" class="form-select">
-                                        <option value="AM">AM</option><option value="PM" selected>PM</option>
+                                        <option value="AM">AM</option>
+                                        <option value="PM" selected>PM</option>
                                     </select>
                                 </div>
                             </div>
@@ -99,8 +85,11 @@
                             <input type="text" id="userName" class="form-control">
                         </div>
                         <div class="mb-3">
-                            <label class="form-label small fw-bold text-muted">PHONE NUMBER</label>
-                            <input type="tel" id="userPhone" class="form-control" placeholder="10 digits">
+                            <label class="form-label small fw-bold text-muted">WHATSAPP NUMBER</label>
+                            <div class="input-group">
+                                <span class="input-group-text">+91</span>
+                                <input type="tel" id="userPhone" class="form-control">
+                            </div>
                         </div>
                         <div class="row">
                             <div class="col-6 mb-3">
@@ -112,32 +101,40 @@
                                 <input type="number" id="paidAmount" class="form-control" value="0">
                             </div>
                         </div>
-                        <button class="btn btn-primary-custom w-100 py-3 fw-bold" onclick="saveEntry(false)">SAVE BOOKING</button>
-                    </div>
-
-                    <h6 class="fw-bold mb-3 text-muted px-1"><i class="bi bi-calendar3 me-2"></i>DAILY TIMELINE</h6>
-                    <div class="timeline-container shadow-sm">
-                        <div class="timeline-grid" id="timelineGrid">
-                            </div>
+                        <button class="btn btn-primary-custom w-100 py-3 fw-bold" onclick="saveEntry(false)">
+                            SAVE BOOKING
+                        </button>
                     </div>
                 </div>
 
                 <div class="col-lg-8">
                     <div class="row g-3 mb-3 text-center">
-                        <div class="col-6"><div class="summary-box shadow-sm"><div>RECEIVED</div><div class="summary-val">₹<span id="statReceived">0</span></div></div></div>
-                        <div class="col-6"><div class="summary-box shadow-sm" style="border-left-color: #dc3545;"><div>PENDING</div><div class="summary-val text-danger">₹<span id="statPending">0</span></div></div></div>
+                        <div class="col-6">
+                            <div class="summary-box shadow-sm">
+                                <div class="small fw-bold text-muted text-uppercase">Received</div>
+                                <div class="summary-val">₹<span id="statReceived">0</span></div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="summary-box shadow-sm" style="border-left-color: #dc3545;">
+                                <div class="small fw-bold text-muted text-uppercase">Pending</div>
+                                <div class="summary-val text-danger">₹<span id="statPending">0</span></div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="card p-0 overflow-hidden shadow-sm">
                         <ul class="nav nav-tabs px-3 bg-white" id="bookingTabs">
                             <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#todayPanel" onclick="loadDaySlots()">Today</button></li>
                             <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#upcomingPanel" onclick="loadHistory('upcoming')">Upcoming</button></li>
+                            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#ongoingPanel" onclick="loadHistory('ongoing')">Ongoing</button></li>
                             <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#completedPanel" onclick="loadHistory('completed')">Completed</button></li>
                         </ul>
                         <div class="tab-content p-4 bg-white">
                             <div class="tab-pane fade show active" id="todayPanel"><div id="dayList"></div></div>
-                            <div class="tab-pane fade" id="upcomingPanel"><div class="table-responsive"><table class="table align-middle"><thead><tr><th>Date</th><th>Time</th><th>Customer</th><th>Bal</th><th>Action</th></tr></thead><tbody id="upcomingList"></tbody></table></div></div>
-                            <div class="tab-pane fade" id="completedPanel"><div class="table-responsive"><table class="table align-middle"><thead><tr><th>Date</th><th>Time</th><th>Customer</th><th>Total</th><th>Action</th></tr></thead><tbody id="completedList"></tbody></table></div></div>
+                            <div class="tab-pane fade" id="upcomingPanel"><div class="table-responsive"><table class="table"><thead><tr><th>Date</th><th>Time</th><th>Customer</th><th>Total</th><th>Paid</th><th>Bal</th><th>Action</th></tr></thead><tbody id="upcomingList"></tbody></table></div></div>
+                            <div class="tab-pane fade" id="ongoingPanel"><div class="table-responsive"><table class="table"><thead><tr><th>Date</th><th>Time</th><th>Customer</th><th>Total</th><th>Paid</th><th>Bal</th><th>Status</th></tr></thead><tbody id="ongoingList"></tbody></table></div></div>
+                            <div class="tab-pane fade" id="completedPanel"><div class="table-responsive"><table class="table"><thead><tr><th>Date</th><th>Time</th><th>Customer</th><th>Total</th><th>Paid</th><th>Bal</th><th>Action</th></tr></thead><tbody id="completedList"></tbody></table></div></div>
                         </div>
                     </div>
                 </div>
@@ -148,30 +145,55 @@
     <div class="modal fade" id="editModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-                <div class="modal-header"><h5 class="modal-title fw-bold">Edit Booking</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Edit Booking</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
                 <div class="modal-body">
                     <input type="hidden" id="edit_id">
-                    <div class="mb-3"><label class="small fw-bold">DATE</label><input type="date" id="edit_date" class="form-control"></div>
+                    <div class="mb-3">
+                        <label class="small fw-bold">DATE</label>
+                        <input type="date" id="edit_date" class="form-control">
+                    </div>
                     <div class="row">
-                        <div class="col-6 mb-3">
+                        <div class="col-12 mb-3">
                             <label class="small fw-bold">START TIME</label>
-                            <div class="time-group"><select id="edit_h" class="form-select"></select><select id="edit_m" class="form-select"></select><select id="edit_ampm" class="form-select"><option>AM</option><option>PM</option></select></div>
+                            <div class="time-group">
+                                <select id="edit_h" class="form-select"></select>
+                                <select id="edit_m" class="form-select"></select>
+                                <select id="edit_ampm" class="form-select">
+                                    <option value="AM">AM</option>
+                                    <option value="PM">PM</option>
+                                </select>
+                            </div>
                         </div>
-                        <div class="col-6 mb-3">
+                        <div class="col-12 mb-3">
                             <label class="small fw-bold">END TIME</label>
-                            <div class="time-group"><select id="edit_h_end" class="form-select"></select><select id="edit_m_end" class="form-select"></select><select id="edit_ampm_end" class="form-select"><option>AM</option><option>PM</option></select></div>
+                            <div class="time-group">
+                                <select id="edit_h_end" class="form-select"></select>
+                                <select id="edit_m_end" class="form-select"></select>
+                                <select id="edit_ampm_end" class="form-select">
+                                    <option value="AM">AM</option>
+                                    <option value="PM">PM</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
-                    <div class="mb-3"><label class="small fw-bold">NAME</label><input type="text" id="edit_name" class="form-control"></div>
+                    <div class="mb-3"><label class="small fw-bold">CUSTOMER</label><input type="text" id="edit_name" class="form-control"></div>
                     <div class="mb-3"><label class="small fw-bold">PHONE</label><input type="tel" id="edit_phone" class="form-control"></div>
-                    <div class="row">
-                        <div class="col-6 mb-3"><label class="small fw-bold">TOTAL</label><input type="number" id="edit_price" class="form-control"></div>
-                        <div class="col-6 mb-3"><label class="small fw-bold">PAID</label><input type="number" id="edit_paid" class="form-control"></div>
+                    <div class="row align-items-end">
+                        <div class="col-4 mb-3"><label class="small fw-bold">TOTAL PRICE</label><input type="number" id="edit_price" class="form-control"></div>
+                        <div class="col-4 mb-3"><label class="small fw-bold">PAID AMOUNT</label><input type="number" id="edit_paid" class="form-control"></div>
+                        <div class="col-4 mb-3">
+                            <button class="btn btn-success btn-sm w-100" style="height: 38px;" onclick="setFullPayment()">
+                                <i class="bi bi-check-all"></i> FULL
+                            </button>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer d-flex justify-content-between">
-                    <button class="btn btn-outline-danger" onclick="deleteBooking()">DELETE</button>
-                    <button class="btn btn-primary-custom px-4" onclick="saveEntry(true)">UPDATE BOOKING</button>
+                    <button class="btn btn-danger" onclick="deleteBooking()">DELETE</button>
+                    <button class="btn btn-primary-custom px-4" onclick="saveEntry(true)">UPDATE</button>
                 </div>
             </div>
         </div>
@@ -181,7 +203,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <script>
-        let supabaseClient, bsEditModal;
+        let supabaseClient;
+        let bsEditModal;
 
         async function init() {
             const res = await fetch('/api/get-public-key');
@@ -194,21 +217,31 @@
                 document.getElementById('lockScreen').style.display = 'none';
                 document.getElementById('appContent').style.display = 'block';
             }
+
             populateSelectors();
             document.getElementById('bookDate').valueAsDate = new Date();
             updateView();
         }
 
         function populateSelectors() {
-            const hP = [document.getElementById('h_start'), document.getElementById('edit_h'), document.getElementById('h_end'), document.getElementById('edit_h_end')];
-            const mP = [document.getElementById('m_start'), document.getElementById('edit_m'), document.getElementById('m_end'), document.getElementById('edit_m_end')];
-            let hO = "", mO = "";
-            for (let i = 1; i <= 12; i++) hO += `<option value="${i}">${i}</option>`;
-            for (let i = 0; i < 60; i += 5) mO += `<option value="${String(i).padStart(2, '0')}">${String(i).padStart(2, '0')}</option>`;
-            hP.forEach(p => p.innerHTML = hO); mP.forEach(p => p.innerHTML = mO);
+            const hPickers = [
+                document.getElementById('h_start'), document.getElementById('edit_h'),
+                document.getElementById('h_end'), document.getElementById('edit_h_end')
+            ];
+            const mPickers = [
+                document.getElementById('m_start'), document.getElementById('edit_m'),
+                document.getElementById('m_end'), document.getElementById('edit_m_end')
+            ];
+            
+            let hOpts = "", mOpts = "";
+            for (let i = 1; i <= 12; i++) hOpts += `<option value="${i}">${i}</option>`;
+            for (let i = 0; i < 60; i += 5) mOpts += `<option value="${String(i).padStart(2, '0')}">${String(i).padStart(2, '0')}</option>`;
+            
+            hPickers.forEach(p => p.innerHTML = hOpts);
+            mPickers.forEach(p => p.innerHTML = mOpts);
         }
 
-        function get24h(h, m, ampm) {
+        function get24hFromSelectors(h, m, ampm) {
             let hour = parseInt(h);
             if (ampm === "PM" && hour < 12) hour += 12;
             if (ampm === "AM" && hour === 12) hour = 0;
@@ -223,6 +256,11 @@
             return data.some(b => (start < b.end_time && end > b.start_time));
         }
 
+        function setFullPayment() {
+            const total = document.getElementById('edit_price').value;
+            if(total) document.getElementById('edit_paid').value = total;
+        }
+
         async function saveEntry(isEdit) {
             const id = isEdit ? document.getElementById('edit_id').value : null;
             const name = document.getElementById(isEdit ? 'edit_name' : 'userName').value;
@@ -231,110 +269,110 @@
             const price = document.getElementById(isEdit ? 'edit_price' : 'bookingPrice').value;
             const paid = document.getElementById(isEdit ? 'edit_paid' : 'paidAmount').value || 0;
 
-            const start24 = get24h(document.getElementById(isEdit ? 'edit_h' : 'h_start').value, document.getElementById(isEdit ? 'edit_m' : 'm_start').value, document.getElementById(isEdit ? 'edit_ampm' : 'ampm_start').value);
-            const end24 = get24h(document.getElementById(isEdit ? 'edit_h_end' : 'h_end').value, document.getElementById(isEdit ? 'edit_m_end' : 'm_end').value, document.getElementById(isEdit ? 'edit_ampm_end' : 'ampm_end').value);
+            const hS = document.getElementById(isEdit ? 'edit_h' : 'h_start').value;
+            const mS = document.getElementById(isEdit ? 'edit_m' : 'm_start').value;
+            const ampmS = document.getElementById(isEdit ? 'edit_ampm' : 'ampm_start').value;
+            const start24 = get24hFromSelectors(hS, mS, ampmS);
 
-            if (!name || !phone || !price) return Swal.fire("Required", "Please fill all details", "warning");
-            if (start24 >= end24) return Swal.fire("Time Error", "End time must be after start time", "error");
+            const hE = document.getElementById(isEdit ? 'edit_h_end' : 'h_end').value;
+            const mE = document.getElementById(isEdit ? 'edit_m_end' : 'm_end').value;
+            const ampmE = document.getElementById(isEdit ? 'edit_ampm_end' : 'ampm_end').value;
+            const end24 = get24hFromSelectors(hE, mE, ampmE);
 
-            Swal.fire({ title: 'Validating Slot...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            if (!name || !phone || !price || !date) return Swal.fire("Required", "Fill all fields", "warning");
+            if (start24 >= end24) return Swal.fire("Invalid Time", "End time must be after start time", "error");
+
+            Swal.fire({ title: 'Checking Availability...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            
             const isOverlapping = await checkOverlap(date, start24, end24, id);
-            if (isOverlapping) { Swal.close(); return Swal.fire("Slot Taken", "This time slot overlaps with an existing booking!", "error"); }
+            if (isOverlapping) {
+                Swal.close();
+                return Swal.fire("Overlap Error", "This slot is already booked!", "error");
+            }
 
-            const bData = { customer_name: name, phone_number: phone, booking_date: date, start_time: start24, end_time: end24, price: parseFloat(price), paid_amount: parseFloat(paid) };
-            let res = id ? await supabaseClient.from('turf_bookings').update(bData).eq('id', id) : await supabaseClient.from('turf_bookings').insert([bData]);
+            const bookingData = { customer_name: name, phone_number: phone, booking_date: date, start_time: start24, end_time: end24, price: parseFloat(price), paid_amount: parseFloat(paid) };
+            
+            let res = id ? await supabaseClient.from('turf_bookings').update(bookingData).eq('id', id) : await supabaseClient.from('turf_bookings').insert([bookingData]);
 
-            if (res.error) { Swal.fire("Error", res.error.message, "error"); } 
-            else {
+            if (res.error) {
+                Swal.fire("Error", res.error.message, "error");
+            } else {
                 if (isEdit) bsEditModal.hide();
-                Swal.fire({ title: "Booking Saved!", icon: "success", showCancelButton: true, confirmButtonText: 'Send WhatsApp', confirmButtonColor: '#25D366' }).then((r) => { if(r.isConfirmed) sendWhatsApp(name, phone, date, start24, end24, 'confirm', price, paid); });
+                Swal.fire({
+                    title: isEdit ? "Updated!" : "Saved!",
+                    icon: "success",
+                    showCancelButton: true,
+                    confirmButtonText: '<i class="bi bi-whatsapp"></i> SEND MESSAGE',
+                    confirmButtonColor: '#25D366'
+                }).then((result) => {
+                    if (result.isConfirmed) sendWhatsApp(name, phone, date, start24, end24, 'confirm', price, paid);
+                });
                 if(!isEdit) resetForm();
                 updateView();
             }
         }
 
-        function updateTimeline(data) {
-            const grid = document.getElementById('timelineGrid');
-            grid.innerHTML = '';
-            for (let i = 6; i <= 23; i++) {
-                const label = i > 12 ? `${i - 12} PM` : i === 12 ? `12 PM` : `${i} AM`;
-                grid.innerHTML += `<div class="hour-mark"><span class="hour-label">${label}</span></div>`;
-            }
-            data.forEach(b => {
-                const s = b.start_time.split(':').map(Number), e = b.end_time.split(':').map(Number);
-                const startMins = (s[0] - 6) * 60 + s[1], duration = (e[0] * 60 + e[1]) - (s[0] * 60 + s[1]);
-                const top = (startMins / 60) * 60, height = (duration / 60) * 60;
-                grid.innerHTML += `<div class="booking-slot" style="top:${top}px; height:${height}px" onclick="openEditModal('${b.id}','${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','${b.price}','${b.paid_amount}')">
-                    <b>${b.customer_name}</b><span>${formatTo12H(b.start_time)} - ${formatTo12H(b.end_time)}</span></div>`;
-            });
-        }
-
-        async function loadDaySlots() {
-            const date = document.getElementById('bookDate').value;
-            const { data } = await supabaseClient.from('turf_bookings').select('*').eq('booking_date', date).order('start_time');
-            updateStats(data || []);
-            updateTimeline(data || []);
-            const container = document.getElementById('dayList');
-            container.innerHTML = data && data.length ? data.map(b => `
-                <div class="p-3 bg-white border rounded mb-2 d-flex justify-content-between align-items-center shadow-sm">
-                    <div><span class="fw-bold text-success">${formatTo12H(b.start_time)} - ${formatTo12H(b.end_time)}</span><br><small>${b.customer_name} (Bal: ₹${b.price - b.paid_amount})</small></div>
-                    <div class="d-flex gap-1">
-                        <button class="action-btn" onclick="sendWhatsApp('${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','confirm',${b.price},${b.paid_amount})"><i class="bi bi-whatsapp text-success"></i></button>
-                        <button class="action-btn btn-edit" onclick="openEditModal('${b.id}','${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','${b.price}','${b.paid_amount}')"><i class="bi bi-pencil"></i></button>
-                    </div></div>`).join('') : '<div class="text-center py-4 text-muted small">No bookings for this date.</div>';
-        }
-
-        async function loadHistory(type) {
-            const now = new Date(), todayStr = now.toISOString().split('T')[0], currentTime = now.toTimeString().split(' ')[0];
-            const { data } = await supabaseClient.from('turf_bookings').select('*').order('booking_date', {ascending: false}).order('start_time');
-            const list = document.getElementById(`${type}List`);
-            list.innerHTML = '';
-            if (data) {
-                const filtered = data.filter(b => type === 'upcoming' ? b.booking_date >= todayStr : b.booking_date < todayStr);
-                list.innerHTML = filtered.map(b => `<tr>
-                    <td>${b.booking_date.slice(5)}</td><td>${formatTo12H(b.start_time)}</td><td>${b.customer_name}</td>
-                    <td class="text-danger fw-bold">₹${b.price - b.paid_amount}</td>
-                    <td><button class="btn btn-sm btn-outline-warning" onclick="openEditModal('${b.id}','${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','${b.price}','${b.paid_amount}')"><i class="bi bi-pencil"></i></button></td>
-                </tr>`).join('');
-            }
-        }
-
-        function openEditModal(id, n, p, d, s, e, pr, pa) {
-            document.getElementById('edit_id').value = id;
-            document.getElementById('edit_name').value = n; document.getElementById('edit_phone').value = p;
-            document.getElementById('edit_date').value = d; document.getElementById('edit_price').value = pr; document.getElementById('edit_paid').value = pa;
-            
-            const sh = parseInt(s.split(':')[0]), eh = parseInt(e.split(':')[0]);
-            document.getElementById('edit_h').value = sh % 12 || 12; document.getElementById('edit_m').value = s.split(':')[1];
-            document.getElementById('edit_ampm').value = sh >= 12 ? "PM" : "AM";
-            document.getElementById('edit_h_end').value = eh % 12 || 12; document.getElementById('edit_m_end').value = e.split(':')[1];
-            document.getElementById('edit_ampm_end').value = eh >= 12 ? "PM" : "AM";
-            bsEditModal.show();
-        }
-
         async function deleteBooking() {
             const id = document.getElementById('edit_id').value;
-            const res = await Swal.fire({ title: 'Delete Booking?', text: "This cannot be undone!", icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545' });
-            if (res.isConfirmed) {
-                await supabaseClient.from('turf_bookings').delete().eq('id', id);
-                bsEditModal.hide(); updateView();
+            const name = document.getElementById('edit_name').value;
+            const phone = document.getElementById('edit_phone').value;
+            const confirmDel = await Swal.fire({ title: 'Delete?', text: "Cannot undo!", icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545' });
+
+            if (confirmDel.isConfirmed) {
+                const { error } = await supabaseClient.from('turf_bookings').delete().eq('id', id);
+                if (error) { Swal.fire("Error", error.message, "error"); } 
+                else {
+                    bsEditModal.hide();
+                    updateView();
+                    Swal.fire({ title: "Deleted!", icon: "success", showCancelButton: true, confirmButtonText: 'WhatsApp Notification' }).then((r) => {
+                        if (r.isConfirmed) {
+                            const msg = `*BOOKING CANCELLED - TURFIT*\n\nHi *${name}*, Your booking has been cancelled.`;
+                            window.open(`https://wa.me/91${phone.replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`, '_blank');
+                        }
+                    });
+                }
             }
         }
 
-        function sendWhatsApp(n, p, d, s, e, t, price, paid) {
-            const dateStr = new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-            const msg = `*TURFIT BOOKING*\n\nHi *${n}*\nSlot: *${dateStr}* (${formatTo12H(s)} - ${formatTo12H(e)})\nTotal: ₹${price}\nPaid: ₹${paid}\nBalance: ₹${price-paid}\n\nThank you for choosing *TURFIT*!`;
-            window.open(`https://wa.me/91${p.replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`, '_blank');
+        function sendWhatsApp(n, p, d, s, e, t, price = 0, paid = 0) {
+            const cp = "91" + p.replace(/\D/g, '');
+            const dateObj = new Date(d);
+            const monthDay = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            const s12 = formatTo12H(s), e12 = formatTo12H(e);
+            let msg = "";
+            if (t === 'confirm') {
+                const bal = price - paid;
+                msg = `*TURFIT BOOKING INFORMATION*\n\nHi *${n}*\nDate: *${monthDay}*\nTime: ${s12} - ${e12}\n\n*Total:* ₹${price}\n*Paid:* ₹${paid}\n*Balance:* ₹${bal}\n\nThank you for choosing *TURFIT* !!`;
+            } else {
+                msg = `*PAYMENT REMINDER - TURFIT*\n\nHi *${n}*, Your slot on *${monthDay}* (${s12}) has a pending balance of ₹${paid}. Kindly clear it.`;
+            }
+            window.open(`https://wa.me/${cp}?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
-        function formatTo12H(t) {
-            let [h, m] = t.split(':'); h = parseInt(h);
-            return `${h % 12 || 12}:${m} ${h >= 12 ? 'PM' : 'AM'}`;
+        async function checkPin() {
+            const val = document.getElementById('pinEntry').value;
+            if (val.length >= 4) {
+                const { data } = await supabaseClient.from('site_access').select('pin').eq('id', 1).single();
+                if (data && data.pin === val) {
+                    localStorage.setItem('turf_session', 'active');
+                    document.getElementById('lockScreen').style.display = 'none';
+                    document.getElementById('appContent').style.display = 'block';
+                } else if (val.length === 6) {
+                    document.getElementById('pinEntry').value = '';
+                    Swal.fire("Error", "Wrong PIN", "error");
+                }
+            }
         }
 
-        function resetForm() {
-            ['userName', 'userPhone', 'bookingPrice'].forEach(i => document.getElementById(i).value = '');
-            document.getElementById('paidAmount').value = '0';
+        function logout() { localStorage.removeItem('turf_session'); location.reload(); }
+
+        function formatTo12H(timeStr) {
+            if (!timeStr) return "";
+            let [h, m] = timeStr.split(':');
+            h = parseInt(h);
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            h = h % 12 || 12;
+            return `${h}:${m} ${ampm}`;
         }
 
         function updateView() {
@@ -344,20 +382,77 @@
 
         function updateStats(data) {
             let r = 0, p = 0;
-            data.forEach(b => { r += b.paid_amount; p += (b.price - b.paid_amount); });
+            data.forEach(b => { r += parseFloat(b.paid_amount || 0); p += (parseFloat(b.price || 0) - parseFloat(b.paid_amount || 0)); });
             document.getElementById('statReceived').innerText = r.toLocaleString();
             document.getElementById('statPending').innerText = p.toLocaleString();
         }
 
-        async function checkPin() {
-            const v = document.getElementById('pinEntry').value;
-            if (v.length >= 4) {
-                const { data } = await supabaseClient.from('site_access').select('pin').eq('id', 1).single();
-                if (data && data.pin === v) { localStorage.setItem('turf_session', 'active'); location.reload(); }
+        async function loadDaySlots() {
+            const date = document.getElementById('bookDate').value;
+            const { data } = await supabaseClient.from('turf_bookings').select('*').eq('booking_date', date).order('start_time');
+            updateStats(data || []);
+            const container = document.getElementById('dayList');
+            container.innerHTML = data && data.length ? data.map(b => {
+                const bal = (b.price || 0) - (b.paid_amount || 0);
+                return `<div class="p-3 bg-light border rounded mb-2 d-flex justify-content-between align-items-center shadow-sm">
+                    <div><span class="fw-bold text-success">${formatTo12H(b.start_time)} - ${formatTo12H(b.end_time)}</span><br><small>${b.customer_name} (Bal: ₹${bal})</small></div>
+                    <div class="d-flex gap-1">
+                        <button class="action-btn" onclick="sendWhatsApp('${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','confirm',${b.price},${b.paid_amount})"><i class="bi bi-whatsapp text-success"></i></button>
+                        <button class="action-btn btn-edit" onclick="openEditModal('${b.id}','${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','${b.price}','${b.paid_amount}')"><i class="bi bi-pencil"></i></button>
+                    </div></div>`;
+            }).join('') : '<div class="text-center py-4 text-muted small">No bookings for this date.</div>';
+        }
+
+        async function loadHistory(type) {
+            const now = new Date(), todayStr = now.toISOString().split('T')[0], currentTime = now.toTimeString().split(' ')[0];
+            const { data } = await supabaseClient.from('turf_bookings').select('*').order('booking_date').order('start_time');
+            const list = document.getElementById(`${type}List`);
+            list.innerHTML = '';
+            if (data) {
+                const filtered = data.filter(b => {
+                    const isToday = b.booking_date === todayStr;
+                    if (type === 'upcoming') return b.booking_date > todayStr || (isToday && b.start_time > currentTime);
+                    if (type === 'ongoing') return isToday && b.start_time <= currentTime && b.end_time > currentTime;
+                    return b.booking_date < todayStr || (isToday && b.end_time <= currentTime);
+                });
+                updateStats(filtered);
+                list.innerHTML = filtered.map(b => {
+                    const bal = (b.price || 0) - (b.paid_amount || 0);
+                    return `<tr><td>${b.booking_date.slice(5)}</td><td>${formatTo12H(b.start_time)}</td><td>${b.customer_name}</td><td>₹${b.price}</td><td>₹${b.paid_amount}</td><td class="text-danger fw-bold">₹${bal}</td>
+                        <td><div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-warning" onclick="openEditModal('${b.id}','${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','${b.price}','${b.paid_amount}')"><i class="bi bi-pencil"></i></button>
+                            ${bal > 0 ? `<button class="btn btn-sm btn-outline-info" onclick="sendWhatsApp('${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','remind',${b.price},${bal})"><i class="bi bi-bell"></i></button>` : ''}
+                        </div></td></tr>`
+                }).join('');
             }
         }
 
-        function logout() { localStorage.removeItem('turf_session'); location.reload(); }
+        function openEditModal(id, n, p, d, s, e, price, paid) {
+            document.getElementById('edit_id').value = id;
+            document.getElementById('edit_name').value = n;
+            document.getElementById('edit_phone').value = p;
+            document.getElementById('edit_date').value = d;
+            document.getElementById('edit_price').value = price;
+            document.getElementById('edit_paid').value = paid;
+
+            let [shh, smm] = s.split(':'), sh = parseInt(shh);
+            document.getElementById('edit_h').value = sh % 12 || 12;
+            document.getElementById('edit_m').value = smm;
+            document.getElementById('edit_ampm').value = sh >= 12 ? "PM" : "AM";
+
+            let [ehh, emm] = e.split(':'), eh = parseInt(ehh);
+            document.getElementById('edit_h_end').value = eh % 12 || 12;
+            document.getElementById('edit_m_end').value = emm;
+            document.getElementById('edit_ampm_end').value = eh >= 12 ? "PM" : "AM";
+
+            bsEditModal.show();
+        }
+
+        function resetForm() {
+            ['userName', 'userPhone', 'bookingPrice'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('paidAmount').value = '0';
+        }
+
         init();
     </script>
 </body>
