@@ -396,6 +396,34 @@
 
             if (start24 >= end24) return Swal.fire("Error", "End time must be after start", "error");
 
+            // --- CLASH CHECK LOGIC START ---
+            // Query existing bookings for the same date
+            let query = supabaseClient
+                .from('turf_bookings')
+                .select('id, customer_name, start_time, end_time')
+                .eq('booking_date', date);
+
+            // If editing, exclude the current booking from the clash check
+            if (isEdit) query = query.neq('id', id);
+
+            const { data: existingBookings, error: fetchError } = await query;
+
+            if (fetchError) return Swal.fire("Error", "Could not verify availability", "error");
+
+            // Check for overlap: (StartA < EndB) AND (EndA > StartB)
+            const clash = existingBookings.find(b => {
+                return (start24 < b.end_time && end24 > b.start_time);
+            });
+
+            if (clash) {
+                return Swal.fire({
+                    title: "Slot Unavailable",
+                    text: `This time clashes with a booking by ${clash.customer_name} (${formatTo12H(clash.start_time)} - ${formatTo12H(clash.end_time)})`,
+                    icon: "error"
+                });
+            }
+            // --- CLASH CHECK LOGIC END ---
+
             const bookingData = { customer_name: name, phone_number: phone, booking_date: date, start_time: start24, end_time: end24, price, paid_amount: paid };
 
             let res = id ? await supabaseClient.from('turf_bookings').update(bookingData).eq('id', id) : await supabaseClient.from('turf_bookings').insert([bookingData]);
@@ -411,9 +439,7 @@
                         icon: "success",
                         timer: 1500,
                         showConfirmButton: false
-                    }).then(() => {
-                        location.reload();
-                    });
+                    }).then(() => { location.reload(); });
                 } else {
                     updateView();
                     Swal.fire({
@@ -489,7 +515,7 @@
 
         function createBookingItem(b) {
             return `<div class="p-3 bg-light border rounded mb-2 d-flex justify-content-between align-items-center shadow-sm">
-                <div><span class="fw-bold text-success">${formatTo12H(b.start_time)} - ${formatTo12H(b.end_time)}</span><br><small>${b.customer_name} (Bal: ₹${b.price - b.paid_amount})</small></div>
+                <div><span class="fw-bold text-success">${formatTo12H(b.start_time)} - ${formatTo12H(b.end_time)}</span><br><small>${b.customer_name} (Pending: ₹${b.price - b.paid_amount})</small></div>
                 <div class="d-flex gap-1">
                     <button class="action-btn" onclick="sendWhatsApp('${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','confirm',${b.price},${b.paid_amount})"><i class="bi bi-whatsapp text-success"></i></button>
                     <button class="action-btn text-warning" onclick="openEditModal('${b.id}','${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','${b.price}','${b.paid_amount}')"><i class="bi bi-pencil"></i></button>
@@ -514,7 +540,7 @@
             const now = new Date();
             const { data } = await supabaseClient.from('turf_bookings').select('*').order('booking_date', { ascending: false }).order('start_time', { ascending: false });
             const list = document.getElementById(`${type}List`);
-            
+
             if (!data) return;
 
             const filtered = data.filter(b => {
