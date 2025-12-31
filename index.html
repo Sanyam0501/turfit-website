@@ -69,12 +69,15 @@
                                 </div>
                             </div>
                             <div class="col-12 mb-3">
-                                <label class="form-label small fw-bold text-muted">DURATION</label>
-                                <select id="duration" class="form-select">
-                                    <option value="1">1 Hour</option>
-                                    <option value="1.5">1.5 Hours</option>
-                                    <option value="2">2 Hours</option>
-                                </select>
+                                <label class="form-label small fw-bold text-muted">END TIME (12H)</label>
+                                <div class="time-group">
+                                    <select id="h_end" class="form-select"></select>
+                                    <select id="m_end" class="form-select"></select>
+                                    <select id="ampm_end" class="form-select">
+                                        <option value="AM">AM</option>
+                                        <option value="PM" selected>PM</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
                         <div class="mb-3">
@@ -165,12 +168,15 @@
                             </div>
                         </div>
                         <div class="col-12 mb-3">
-                            <label class="small fw-bold">DURATION</label>
-                            <select id="edit_duration" class="form-select">
-                                <option value="1">1 Hour</option>
-                                <option value="1.5">1.5 Hours</option>
-                                <option value="2">2 Hours</option>
-                            </select>
+                            <label class="small fw-bold">END TIME</label>
+                            <div class="time-group">
+                                <select id="edit_h_end" class="form-select"></select>
+                                <select id="edit_m_end" class="form-select"></select>
+                                <select id="edit_ampm_end" class="form-select">
+                                    <option value="AM">AM</option>
+                                    <option value="PM">PM</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                     <div class="mb-3"><label class="small fw-bold">CUSTOMER</label><input type="text" id="edit_name" class="form-control"></div>
@@ -218,11 +224,19 @@
         }
 
         function populateSelectors() {
-            const hPickers = [document.getElementById('h_start'), document.getElementById('edit_h')];
-            const mPickers = [document.getElementById('m_start'), document.getElementById('edit_m')];
+            const hPickers = [
+                document.getElementById('h_start'), document.getElementById('edit_h'),
+                document.getElementById('h_end'), document.getElementById('edit_h_end')
+            ];
+            const mPickers = [
+                document.getElementById('m_start'), document.getElementById('edit_m'),
+                document.getElementById('m_end'), document.getElementById('edit_m_end')
+            ];
+            
             let hOpts = "", mOpts = "";
             for (let i = 1; i <= 12; i++) hOpts += `<option value="${i}">${i}</option>`;
             for (let i = 0; i < 60; i += 5) mOpts += `<option value="${String(i).padStart(2, '0')}">${String(i).padStart(2, '0')}</option>`;
+            
             hPickers.forEach(p => p.innerHTML = hOpts);
             mPickers.forEach(p => p.innerHTML = mOpts);
         }
@@ -246,20 +260,30 @@
             const date = document.getElementById(isEdit ? 'edit_date' : 'bookDate').value;
             const price = document.getElementById(isEdit ? 'edit_price' : 'bookingPrice').value;
             const paid = document.getElementById(isEdit ? 'edit_paid' : 'paidAmount').value || 0;
-            const duration = parseFloat(document.getElementById(isEdit ? 'edit_duration' : 'duration').value);
 
-            const h = document.getElementById(isEdit ? 'edit_h' : 'h_start').value;
-            const m = document.getElementById(isEdit ? 'edit_m' : 'm_start').value;
-            const ampm = document.getElementById(isEdit ? 'edit_ampm' : 'ampm_start').value;
-            const start24 = get24hFromSelectors(h, m, ampm);
+            // Start Time
+            const hS = document.getElementById(isEdit ? 'edit_h' : 'h_start').value;
+            const mS = document.getElementById(isEdit ? 'edit_m' : 'm_start').value;
+            const ampmS = document.getElementById(isEdit ? 'edit_ampm' : 'ampm_start').value;
+            const start24 = get24hFromSelectors(hS, mS, ampmS);
+
+            // End Time
+            const hE = document.getElementById(isEdit ? 'edit_h_end' : 'h_end').value;
+            const mE = document.getElementById(isEdit ? 'edit_m_end' : 'm_end').value;
+            const ampmE = document.getElementById(isEdit ? 'edit_ampm_end' : 'ampm_end').value;
+            const end24 = get24hFromSelectors(hE, mE, ampmE);
 
             if (!name || !phone || !price) return Swal.fire("Required", "Fill all fields", "warning");
 
-            let [hour, min] = start24.split(':').map(Number);
-            let totalMinutes = hour * 60 + min + (duration * 60);
-            let endTimeStr = `${String(Math.floor(totalMinutes / 60) % 24).padStart(2, '0')}:${String(totalMinutes % 60).padStart(2, '0')}:00`;
-
-            const bookingData = { customer_name: name, phone_number: phone, booking_date: date, start_time: start24, end_time: endTimeStr, price: parseFloat(price), paid_amount: parseFloat(paid) };
+            const bookingData = { 
+                customer_name: name, 
+                phone_number: phone, 
+                booking_date: date, 
+                start_time: start24, 
+                end_time: end24, 
+                price: parseFloat(price), 
+                paid_amount: parseFloat(paid) 
+            };
             
             let res = id ? await supabaseClient.from('turf_bookings').update(bookingData).eq('id', id) : await supabaseClient.from('turf_bookings').insert([bookingData]);
 
@@ -268,7 +292,6 @@
             } else {
                 if (isEdit) bsEditModal.hide();
                 
-                // POPUP WITH BUTTONS
                 Swal.fire({
                     title: isEdit ? "Updated!" : "Saved!",
                     text: "Booking has been recorded successfully.",
@@ -280,7 +303,7 @@
                     cancelButtonColor: '#6c757d'
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        sendWhatsApp(name, phone, date, start24, endTimeStr, 'confirm', price, paid);
+                        sendWhatsApp(name, phone, date, start24, end24, 'confirm', price, paid);
                     }
                 });
 
@@ -343,7 +366,7 @@
             if (t === 'confirm') {
                 const bal = price - paid;
                 const adv = paid > 0 ? "" : "\n\n*Kindly Pay Advance ₹200 for Booking Confirmation.*";
-                msg = `*TURFIT BOOKING CONFIRMED*\n\nHi *${n}*\nYour booking for *${monthDay}*\n${s12} - ${e12}\n\n*Total:* ₹${price}\n*Paid:* ₹${paid}\n*Balance:* ₹${bal}${adv}\n\n*RULES & REGULATIONS:*\n\n1. Spitting and Smoking is strictly prohibited inside the turf premises.\n2. Cricket/Football equipment are turf property.\n3. Early Arrival: Kindly wait outside if you arrive early.\n\nThank you for choosing *TURFIT* !!`;
+                msg = `*TURFIT BOOKING INFORMATION*\n\nHi *${n}*\nYour booking for *${monthDay}*\n${s12} - ${e12}\n\n*Total:* ₹${price}\n*Paid:* ₹${paid}\n*Balance:* ₹${bal}${adv}\n\n*RULES & REGULATIONS:*\n\n1. Spitting and Smoking is strictly prohibited inside the turf premises.\n2. Cricket/Football equipment are turf property.\n3. Early Arrival: Kindly wait outside if you arrive early.\n\nThank you for choosing *TURFIT* !!`;
             } else if (t === 'remind') {
                 msg = `*PAYMENT REMINDER - TURFIT*\n\nHi *${n}*\nYour slot on *${monthDay}* (${s12}) is completed.\n\n*Pending Amount:* ₹${paid}\n\nKindly clear payment. Thank you!`;
             }
@@ -440,17 +463,23 @@
             document.getElementById('edit_date').value = d;
             document.getElementById('edit_price').value = price;
             document.getElementById('edit_paid').value = paid;
-            let [hh, mm] = s.split(':');
-            let h = parseInt(hh);
-            let ampm = h >= 12 ? "PM" : "AM";
-            h = h % 12 || 12;
-            document.getElementById('edit_h').value = h;
-            document.getElementById('edit_m').value = mm;
-            document.getElementById('edit_ampm').value = ampm;
-            const startMin = parseInt(hh) * 60 + parseInt(mm);
+
+            // Start Time Selectors
+            let [shh, smm] = s.split(':');
+            let sh = parseInt(shh);
+            let s_ampm = sh >= 12 ? "PM" : "AM";
+            document.getElementById('edit_h').value = sh % 12 || 12;
+            document.getElementById('edit_m').value = smm;
+            document.getElementById('edit_ampm').value = s_ampm;
+
+            // End Time Selectors
             let [ehh, emm] = e.split(':');
-            const endMin = parseInt(ehh) * 60 + parseInt(emm);
-            document.getElementById('edit_duration').value = (endMin - startMin) / 60;
+            let eh = parseInt(ehh);
+            let e_ampm = eh >= 12 ? "PM" : "AM";
+            document.getElementById('edit_h_end').value = eh % 12 || 12;
+            document.getElementById('edit_m_end').value = emm;
+            document.getElementById('edit_ampm_end').value = e_ampm;
+
             bsEditModal.show();
         }
 
