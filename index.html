@@ -346,6 +346,8 @@
     <script>
         let supabaseClient;
         let bsEditModal;
+        let logoutTimer;
+        const TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
 
         async function init() {
             const res = await fetch('/api/get-public-key');
@@ -354,14 +356,49 @@
             bsEditModal = new bootstrap.Modal(document.getElementById('editModal'));
 
             document.getElementById('pinEntry').addEventListener('input', checkPin);
-            if (localStorage.getItem('turf_session') === 'active') {
-                document.getElementById('lockScreen').style.display = 'none';
-                document.getElementById('appContent').style.display = 'block';
+            
+            // Check session from sessionStorage (Clears when tab is closed)
+            if (sessionStorage.getItem('turf_session') === 'active') {
+                showApp();
             }
 
             populateSelectors();
             document.getElementById('bookDate').valueAsDate = new Date();
             updateView();
+            
+            // Interaction listeners to reset the timer
+            ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'].forEach(evt => {
+                document.addEventListener(evt, resetTimer, true);
+            });
+        }
+
+        function showApp() {
+            document.getElementById('lockScreen').style.display = 'none';
+            document.getElementById('appContent').style.display = 'block';
+            resetTimer();
+        }
+
+        function resetTimer() {
+            if (sessionStorage.getItem('turf_session') === 'active') {
+                clearTimeout(logoutTimer);
+                logoutTimer = setTimeout(logout, TIMEOUT_MS);
+            }
+        }
+
+        function logout() { 
+            sessionStorage.removeItem('turf_session'); 
+            location.reload(); 
+        }
+
+        async function checkPin() {
+            const val = document.getElementById('pinEntry').value;
+            if (val.length >= 4) {
+                const { data } = await supabaseClient.from('site_access').select('pin').eq('id', 1).single();
+                if (data && data.pin === val) {
+                    sessionStorage.setItem('turf_session', 'active');
+                    showApp();
+                }
+            }
         }
 
         function populateSelectors() {
@@ -384,8 +421,6 @@
         function setFullPayment() {
             document.getElementById('edit_paid').value = document.getElementById('edit_price').value;
         }
-
-        // Locate the saveEntry function in your script and replace it with this:
 
         async function saveEntry(isEdit) {
             const id = isEdit ? document.getElementById('edit_id').value : null;
@@ -419,15 +454,8 @@
             } else {
                 if (isEdit) {
                     bsEditModal.hide();
-                    // This reloads the page immediately after a successful update
-                    Swal.fire({
-                        title: "Updated!",
-                        text: "The page will now reload.",
-                        icon: "success",
-                        timer: 1500,
-                        showConfirmButton: false
-                    }).then(() => {
-                        location.reload();
+                    Swal.fire({ title: "Updated!", icon: "success", timer: 1000, showConfirmButton: false }).then(() => {
+                        updateView();
                     });
                 } else {
                     updateView();
@@ -473,23 +501,11 @@
             if (t === 'confirm') {
                 msg = `*TURFIT BOOKING INFORMATION*\n\nHi *${n}*\nYour booking for *${monthDay}*\n${s12} - ${e12}\n\n*Total:* ₹${price}\n*Paid:* ₹${paid}\n*Balance:* ₹${bal}${paid > 0 ? "" : "\n\n*Kindly Pay Advance ₹200 for Booking Confirmation.*"}\n\n*RULES & REGULATIONS:*\n\n1. Spitting and Smoking is strictly prohibited inside the turf premises, pathway (outside turf) and the ramp. If caught, a fine of *₹300* shall be charged.\n\n2. Cricket/Football equipment are turf property. Carrying them outside without permission will be treated as theft; fine of *₹500* applies.\n\n3. Early Arrival: Kindly wait outside if you arrive early. Early access will be charged extra.\n\n*Read Full T&C:* https://ebqukydndivisiafpdls.supabase.co/storage/v1/object/public/tnc/TNC_TURFIT.pdf\n\nThank you for choosing *TURFIT* !!`;
             } else {
-                msg = `*PAYMENT REMINDER - TURFIT*\n\nHi *${n}*\nYour slot on *${monthDay}* (${s12}) is completed.\n\n*Pending:* ₹${paid}\nKindly clear payment.`;
+                msg = `*PAYMENT REMINDER - TURFIT*\n\nHi *${n}*\nYour slot on *${monthDay}* (${s12}) is completed.\n\n*Pending:* ₹${bal}\nKindly clear payment.`;
             }
             window.open(`https://wa.me/${cp}?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
-        async function checkPin() {
-            const val = document.getElementById('pinEntry').value;
-            if (val.length >= 4) {
-                const { data } = await supabaseClient.from('site_access').select('pin').eq('id', 1).single();
-                if (data && data.pin === val) {
-                    localStorage.setItem('turf_session', 'active');
-                    location.reload();
-                }
-            }
-        }
-
-        function logout() { localStorage.removeItem('turf_session'); location.reload(); }
         function formatTo12H(timeStr) {
             if (!timeStr) return "";
             let [h, m] = timeStr.split(':');
