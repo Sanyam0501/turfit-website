@@ -124,6 +124,7 @@
             overflow: hidden;
             border: none;
         }
+
         .modal-header {
             background: var(--admin-green);
             color: white;
@@ -202,7 +203,8 @@
                                 <input type="number" id="paidAmount" class="form-control" value="0">
                             </div>
                         </div>
-                        <button class="btn btn-primary-custom w-100 py-3 fw-bold" onclick="saveEntry(false)">SAVE BOOKING</button>
+                        <button class="btn btn-primary-custom w-100 py-3 fw-bold" onclick="saveEntry(false)">SAVE
+                            BOOKING</button>
                     </div>
                 </div>
 
@@ -224,21 +226,42 @@
 
                     <div class="card p-0 overflow-hidden shadow-sm">
                         <ul class="nav nav-tabs px-3 bg-white" id="bookingTabs">
-                            <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#todayPanel" onclick="loadDaySlots()">Today</button></li>
-                            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#upcomingPanel" onclick="loadHistory('upcoming')">Upcoming</button></li>
-                            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#ongoingPanel" onclick="loadHistory('ongoing')">Ongoing</button></li>
-                            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#completedPanel" onclick="loadHistory('completed')">Completed</button></li>
+                            <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab"
+                                    data-bs-target="#todayPanel" onclick="loadDaySlots()">Today</button></li>
+                            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab"
+                                    data-bs-target="#upcomingPanel" onclick="loadHistory('upcoming')">Upcoming</button>
+                            </li>
+                            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab"
+                                    data-bs-target="#ongoingPanel" onclick="loadHistory('ongoing')">Ongoing</button>
+                            </li>
+                            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab"
+                                    data-bs-target="#completedPanel"
+                                    onclick="loadHistory('completed')">Completed</button></li>
                         </ul>
                         <div class="tab-content p-4 bg-white">
-                            <div class="tab-pane fade show active" id="todayPanel"><div id="dayList"></div></div>
+                            <div class="tab-pane fade show active" id="todayPanel">
+                                <div id="dayList"></div>
+                            </div>
                             <div class="tab-pane fade" id="upcomingPanel">
-                                <div class="table-responsive"><table class="table align-middle"><tbody id="upcomingList"></tbody></table></div>
+                                <div class="table-responsive">
+                                    <table class="table align-middle">
+                                        <tbody id="upcomingList"></tbody>
+                                    </table>
+                                </div>
                             </div>
                             <div class="tab-pane fade" id="ongoingPanel">
-                                <div class="table-responsive"><table class="table align-middle"><tbody id="ongoingList"></tbody></table></div>
+                                <div class="table-responsive">
+                                    <table class="table align-middle">
+                                        <tbody id="ongoingList"></tbody>
+                                    </table>
+                                </div>
                             </div>
                             <div class="tab-pane fade" id="completedPanel">
-                                <div class="table-responsive"><table class="table align-middle"><tbody id="completedList"></tbody></table></div>
+                                <div class="table-responsive">
+                                    <table class="table align-middle">
+                                        <tbody id="completedList"></tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -362,6 +385,8 @@
             document.getElementById('edit_paid').value = document.getElementById('edit_price').value;
         }
 
+        // Locate the saveEntry function in your script and replace it with this:
+
         async function saveEntry(isEdit) {
             const id = isEdit ? document.getElementById('edit_id').value : null;
             const name = document.getElementById(isEdit ? 'edit_name' : 'userName').value.trim();
@@ -372,8 +397,16 @@
 
             if (!name || !phone || isNaN(price)) return Swal.fire("Required", "Fill all fields", "warning");
 
-            const start24 = get24hFromSelectors(document.getElementById(isEdit ? 'edit_h' : 'h_start').value, document.getElementById(isEdit ? 'edit_m' : 'm_start').value, document.getElementById(isEdit ? 'edit_ampm' : 'ampm_start').value);
-            const end24 = get24hFromSelectors(document.getElementById(isEdit ? 'edit_h_end' : 'h_end').value, document.getElementById(isEdit ? 'edit_m_end' : 'm_end').value, document.getElementById(isEdit ? 'edit_ampm_end' : 'ampm_end').value);
+            const start24 = get24hFromSelectors(
+                document.getElementById(isEdit ? 'edit_h' : 'h_start').value,
+                document.getElementById(isEdit ? 'edit_m' : 'm_start').value,
+                document.getElementById(isEdit ? 'edit_ampm' : 'ampm_start').value
+            );
+            const end24 = get24hFromSelectors(
+                document.getElementById(isEdit ? 'edit_h_end' : 'h_end').value,
+                document.getElementById(isEdit ? 'edit_m_end' : 'm_end').value,
+                document.getElementById(isEdit ? 'edit_ampm_end' : 'ampm_end').value
+            );
 
             if (start24 >= end24) return Swal.fire("Error", "End time must be after start", "error");
 
@@ -384,16 +417,31 @@
             if (res.error) {
                 Swal.fire("Error", res.error.message, "error");
             } else {
-                if (isEdit) bsEditModal.hide();
-                updateView();
-                Swal.fire({
-                    title: isEdit ? "Updated!" : "Saved!",
-                    icon: "success",
-                    showCancelButton: true,
-                    confirmButtonText: 'SEND WHATSAPP',
-                    confirmButtonColor: '#25D366'
-                }).then((r) => { if (r.isConfirmed) sendWhatsApp(name, phone, date, start24, end24, 'confirm', price, paid); });
-                if (!isEdit) resetForm();
+                if (isEdit) {
+                    bsEditModal.hide();
+                    // This reloads the page immediately after a successful update
+                    Swal.fire({
+                        title: "Updated!",
+                        text: "The page will now reload.",
+                        icon: "success",
+                        timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    updateView();
+                    Swal.fire({
+                        title: "Saved!",
+                        icon: "success",
+                        showCancelButton: true,
+                        confirmButtonText: 'SEND WHATSAPP',
+                        confirmButtonColor: '#25D366'
+                    }).then((r) => {
+                        if (r.isConfirmed) sendWhatsApp(name, phone, date, start24, end24, 'confirm', price, paid);
+                    });
+                    resetForm();
+                }
             }
         }
 
@@ -463,7 +511,7 @@
                 received += parseFloat(b.paid_amount || 0);
                 pending += (b.price - b.paid_amount);
                 return `<div class="p-3 bg-light border rounded mb-2 d-flex justify-content-between align-items-center shadow-sm">
-                    <div><span class="fw-bold text-success">${formatTo12H(b.start_time)} - ${formatTo12H(b.end_time)}</span><br><small>${b.customer_name} (Bal: ₹${b.price-b.paid_amount})</small></div>
+                    <div><span class="fw-bold text-success">${formatTo12H(b.start_time)} - ${formatTo12H(b.end_time)}</span><br><small>${b.customer_name} (Bal: ₹${b.price - b.paid_amount})</small></div>
                     <div class="d-flex gap-1">
                         <button class="action-btn" onclick="sendWhatsApp('${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','confirm',${b.price},${b.paid_amount})"><i class="bi bi-whatsapp text-success"></i></button>
                         <button class="action-btn text-warning" onclick="openEditModal('${b.id}','${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','${b.price}','${b.paid_amount}')"><i class="bi bi-pencil"></i></button>
@@ -476,13 +524,13 @@
         async function loadHistory(type) {
             const now = new Date();
             const todayStr = now.toISOString().split('T')[0];
-            const { data } = await supabaseClient.from('turf_bookings').select('*').order('booking_date', {ascending: false});
+            const { data } = await supabaseClient.from('turf_bookings').select('*').order('booking_date', { ascending: false });
             const list = document.getElementById(`${type}List`);
             list.innerHTML = data.filter(b => {
                 if (type === 'upcoming') return b.booking_date > todayStr;
                 if (type === 'ongoing') return b.booking_date === todayStr;
                 return b.booking_date < todayStr;
-            }).map(b => `<tr><td>${b.booking_date.slice(5)}</td><td>${formatTo12H(b.start_time)}</td><td>${b.customer_name}</td><td>₹${b.price}</td><td class="text-danger fw-bold">₹${b.price-b.paid_amount}</td><td><button class="btn btn-sm btn-outline-warning" onclick="openEditModal('${b.id}','${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','${b.price}','${b.paid_amount}')"><i class="bi bi-pencil"></i></button></td></tr>`).join('');
+            }).map(b => `<tr><td>${b.booking_date.slice(5)}</td><td>${formatTo12H(b.start_time)}</td><td>${b.customer_name}</td><td>₹${b.price}</td><td class="text-danger fw-bold">₹${b.price - b.paid_amount}</td><td><button class="btn btn-sm btn-outline-warning" onclick="openEditModal('${b.id}','${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','${b.price}','${b.paid_amount}')"><i class="bi bi-pencil"></i></button></td></tr>`).join('');
         }
 
         function openEditModal(id, n, p, d, s, e, price, paid) {
