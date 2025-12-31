@@ -297,10 +297,11 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <script>
-        if (sessionStorage.getItem('turf_session') !== 'active') {
-            window.location.href = 'login.html';
-        }
-    </script>
+    // Immediate redirect if no session exists
+    if (sessionStorage.getItem('turf_session') !== 'active') {
+        window.location.replace('/'); // Use replace so they can't click "back"
+    }
+</script>
     <script>
         let supabaseClient;
         let bsEditModal;

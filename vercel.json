@@ -1,0 +1,13 @@
+{
+  "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/login.html"
+    },
+    {
+      "source": "/admin",
+      "destination": "/admin.html"
+    }
+  ]
+}
