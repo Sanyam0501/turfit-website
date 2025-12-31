@@ -203,7 +203,8 @@
                                 <input type="number" id="paidAmount" class="form-control" value="0">
                             </div>
                         </div>
-                        <button class="btn btn-primary-custom w-100 py-3 fw-bold" onclick="saveEntry(false)">SAVE BOOKING</button>
+                        <button class="btn btn-primary-custom w-100 py-3 fw-bold" onclick="saveEntry(false)">SAVE
+                            BOOKING</button>
                     </div>
                 </div>
 
@@ -225,10 +226,17 @@
 
                     <div class="card p-0 overflow-hidden shadow-sm">
                         <ul class="nav nav-tabs px-3 bg-white" id="bookingTabs">
-                            <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#todayPanel" onclick="loadDaySlots()">Today</button></li>
-                            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#upcomingPanel" onclick="loadHistory('upcoming')">Upcoming</button></li>
-                            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#ongoingPanel" onclick="loadHistory('ongoing')">Ongoing</button></li>
-                            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#completedPanel" onclick="loadHistory('completed')">Completed</button></li>
+                            <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab"
+                                    data-bs-target="#todayPanel" onclick="loadDaySlots()">Today</button></li>
+                            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab"
+                                    data-bs-target="#upcomingPanel" onclick="loadHistory('upcoming')">Upcoming</button>
+                            </li>
+                            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab"
+                                    data-bs-target="#ongoingPanel" onclick="loadHistory('ongoing')">Ongoing</button>
+                            </li>
+                            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab"
+                                    data-bs-target="#completedPanel"
+                                    onclick="loadHistory('completed')">Completed</button></li>
                         </ul>
                         <div class="tab-content p-4 bg-white">
                             <div class="tab-pane fade show active" id="todayPanel">
@@ -346,7 +354,7 @@
             bsEditModal = new bootstrap.Modal(document.getElementById('editModal'));
 
             document.getElementById('pinEntry').addEventListener('input', checkPin);
-            
+
             // Using sessionStorage instead of localStorage for automatic logout on tab close
             if (sessionStorage.getItem('turf_session') === 'active') {
                 document.getElementById('lockScreen').style.display = 'none';
@@ -480,9 +488,9 @@
             }
         }
 
-        function logout() { 
-            sessionStorage.removeItem('turf_session'); 
-            location.reload(); 
+        function logout() {
+            sessionStorage.removeItem('turf_session');
+            location.reload();
         }
 
         function formatTo12H(timeStr) {
@@ -517,15 +525,49 @@
         }
 
         async function loadHistory(type) {
-            const now = new Date();
-            const todayStr = now.toISOString().split('T')[0];
-            const { data } = await supabaseClient.from('turf_bookings').select('*').order('booking_date', { ascending: false });
+            const now = new Date(); // Current local time
+
+            // Fetch all bookings (you can limit this if your database grows very large)
+            const { data } = await supabaseClient
+                .from('turf_bookings')
+                .select('*')
+                .order('booking_date', { ascending: false })
+                .order('start_time', { ascending: false });
+
+            if (!data) return;
+
             const list = document.getElementById(`${type}List`);
-            list.innerHTML = data.filter(b => {
-                if (type === 'upcoming') return b.booking_date > todayStr;
-                if (type === 'ongoing') return b.booking_date === todayStr;
-                return b.booking_date < todayStr;
-            }).map(b => `<tr><td>${b.booking_date.slice(5)}</td><td>${formatTo12H(b.start_time)}</td><td>${b.customer_name}</td><td>₹${b.price}</td><td class="text-danger fw-bold">₹${b.price - b.paid_amount}</td><td><button class="btn btn-sm btn-outline-warning" onclick="openEditModal('${b.id}','${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','${b.price}','${b.paid_amount}')"><i class="bi bi-pencil"></i></button></td></tr>`).join('');
+
+            const filteredData = data.filter(b => {
+                // Create Date objects for the start and end of the booking
+                const startDT = new Date(`${b.booking_date}T${b.start_time}`);
+                const endDT = new Date(`${b.booking_date}T${b.end_time}`);
+
+                if (type === 'upcoming') {
+                    return now < startDT;
+                } else if (type === 'ongoing') {
+                    return now >= startDT && now <= endDT;
+                } else if (type === 'completed') {
+                    return now > endDT;
+                }
+            });
+
+            list.innerHTML = filteredData.length ? filteredData.map(b => `
+        <tr>
+            <td>${new Date(b.booking_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</td>
+            <td><small class="fw-bold">${formatTo12H(b.start_time)}</small></td>
+            <td>${b.customer_name}</td>
+            <td>₹${b.price}</td>
+            <td class="${b.price - b.paid_amount > 0 ? 'text-danger' : 'text-success'} fw-bold">
+                ₹${b.price - b.paid_amount}
+            </td>
+            <td>
+                <button class="btn btn-sm btn-outline-warning" 
+                    onclick="openEditModal('${b.id}','${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','${b.price}','${b.paid_amount}')">
+                    <i class="bi bi-pencil"></i>
+                </button>
+            </td>
+        </tr>`).join('') : `<tr><td colspan="6" class="text-center py-3 text-muted">No ${type} bookings found.</td></tr>`;
         }
 
         function openEditModal(id, n, p, d, s, e, price, paid) {
