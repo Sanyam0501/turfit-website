@@ -76,33 +76,37 @@
     }
 
     async function checkPin() {
-        const pin = document.getElementById('pinEntry').value.trim();
+    const pin = document.getElementById('pinEntry').value.trim();
 
-        // Change length if your PIN is 4 or 6 digits
-        if (pin.length < 4) return;
+    // Trigger ONLY when the length reaches 4 (for PIN 0708)
+    if (pin.length !== 4) return; 
 
-        const { data, error } = await supabaseClient
-            .from('site_access')
-            .select('pin')
-            .eq('id', 1)
-            .single();
+    const { data, error } = await supabaseClient
+        .from('site_access')
+        .select('pin')
+        .eq('id', 1)
+        .single();
 
-        if (error || !data) {
-            Swal.fire("Error", "Unable to verify PIN", "error");
-            return;
-        }
+    if (error || !data) {
+        console.error("Supabase Error:", error);
+        Swal.fire("Error", "Unable to verify PIN", "error");
+        return;
+    }
 
-        // Convert DB pin to string to avoid type mismatch
-        const dbPin = String(data.pin).trim();
+    // Ensure we are comparing strings and trimming whitespace
+    const dbPin = String(data.pin).trim();
 
-        if (dbPin === pin) {
-            sessionStorage.setItem('turf_session', 'active');
-            window.location.href = 'admin.html';
-        } else {
+    if (dbPin === pin) {
+        sessionStorage.setItem('turf_session', 'active');
+        window.location.href = 'admin.html';
+    } else {
+        // Use a small delay so the user sees the 4th dot before clearing
+        setTimeout(() => {
             Swal.fire("Invalid PIN", "Access Denied", "error");
             document.getElementById('pinEntry').value = '';
-        }
+        }, 100);
     }
+}
 
     initLogin();
 </script>
