@@ -248,14 +248,6 @@
             return `${String(hour).padStart(2, '0')}:${m}:00`;
         }
 
-        async function checkOverlap(date, start, end, excludeId = null) {
-            let query = supabaseClient.from('turf_bookings').select('id, start_time, end_time').eq('booking_date', date);
-            if (excludeId) query = query.neq('id', excludeId);
-            const { data, error } = await query;
-            if (error) return false;
-            return data.some(b => (start < b.end_time && end > b.start_time));
-        }
-
         function setFullPayment() {
             const total = document.getElementById('edit_price').value;
             if(total) document.getElementById('edit_paid').value = total;
@@ -269,28 +261,29 @@
             const price = document.getElementById(isEdit ? 'edit_price' : 'bookingPrice').value;
             const paid = document.getElementById(isEdit ? 'edit_paid' : 'paidAmount').value || 0;
 
+            // Start Time
             const hS = document.getElementById(isEdit ? 'edit_h' : 'h_start').value;
             const mS = document.getElementById(isEdit ? 'edit_m' : 'm_start').value;
             const ampmS = document.getElementById(isEdit ? 'edit_ampm' : 'ampm_start').value;
             const start24 = get24hFromSelectors(hS, mS, ampmS);
 
+            // End Time
             const hE = document.getElementById(isEdit ? 'edit_h_end' : 'h_end').value;
             const mE = document.getElementById(isEdit ? 'edit_m_end' : 'm_end').value;
             const ampmE = document.getElementById(isEdit ? 'edit_ampm_end' : 'ampm_end').value;
             const end24 = get24hFromSelectors(hE, mE, ampmE);
 
-            if (!name || !phone || !price || !date) return Swal.fire("Required", "Fill all fields", "warning");
-            if (start24 >= end24) return Swal.fire("Invalid Time", "End time must be after start time", "error");
+            if (!name || !phone || !price) return Swal.fire("Required", "Fill all fields", "warning");
 
-            Swal.fire({ title: 'Checking Availability...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-            
-            const isOverlapping = await checkOverlap(date, start24, end24, id);
-            if (isOverlapping) {
-                Swal.close();
-                return Swal.fire("Overlap Error", "This slot is already booked!", "error");
-            }
-
-            const bookingData = { customer_name: name, phone_number: phone, booking_date: date, start_time: start24, end_time: end24, price: parseFloat(price), paid_amount: parseFloat(paid) };
+            const bookingData = { 
+                customer_name: name, 
+                phone_number: phone, 
+                booking_date: date, 
+                start_time: start24, 
+                end_time: end24, 
+                price: parseFloat(price), 
+                paid_amount: parseFloat(paid) 
+            };
             
             let res = id ? await supabaseClient.from('turf_bookings').update(bookingData).eq('id', id) : await supabaseClient.from('turf_bookings').insert([bookingData]);
 
@@ -298,15 +291,22 @@
                 Swal.fire("Error", res.error.message, "error");
             } else {
                 if (isEdit) bsEditModal.hide();
+                
                 Swal.fire({
                     title: isEdit ? "Updated!" : "Saved!",
+                    text: "Booking has been recorded successfully.",
                     icon: "success",
                     showCancelButton: true,
                     confirmButtonText: '<i class="bi bi-whatsapp"></i> SEND MESSAGE',
-                    confirmButtonColor: '#25D366'
+                    cancelButtonText: 'DONE',
+                    confirmButtonColor: '#25D366',
+                    cancelButtonColor: '#6c757d'
                 }).then((result) => {
-                    if (result.isConfirmed) sendWhatsApp(name, phone, date, start24, end24, 'confirm', price, paid);
+                    if (result.isConfirmed) {
+                        sendWhatsApp(name, phone, date, start24, end24, 'confirm', price, paid);
+                    }
                 });
+
                 if(!isEdit) resetForm();
                 updateView();
             }
@@ -316,18 +316,39 @@
             const id = document.getElementById('edit_id').value;
             const name = document.getElementById('edit_name').value;
             const phone = document.getElementById('edit_phone').value;
-            const confirmDel = await Swal.fire({ title: 'Delete?', text: "Cannot undo!", icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545' });
+
+            const confirmDel = await Swal.fire({
+                title: 'Delete Booking?',
+                text: "This action cannot be undone!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                confirmButtonText: 'Yes, Delete it!',
+                cancelButtonText: 'CANCEL'
+            });
 
             if (confirmDel.isConfirmed) {
                 const { error } = await supabaseClient.from('turf_bookings').delete().eq('id', id);
-                if (error) { Swal.fire("Error", error.message, "error"); } 
-                else {
+                if (error) {
+                    Swal.fire("Error", error.message, "error");
+                } else {
                     bsEditModal.hide();
                     updateView();
-                    Swal.fire({ title: "Deleted!", icon: "success", showCancelButton: true, confirmButtonText: 'WhatsApp Notification' }).then((r) => {
-                        if (r.isConfirmed) {
-                            const msg = `*BOOKING CANCELLED - TURFIT*\n\nHi *${name}*, Your booking has been cancelled.`;
-                            window.open(`https://wa.me/91${phone.replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`, '_blank');
+                    
+                    Swal.fire({
+                        title: "Deleted!",
+                        text: "Booking removed successfully.",
+                        icon: "success",
+                        showCancelButton: true,
+                        confirmButtonText: '<i class="bi bi-whatsapp"></i> SEND MESSAGE',
+                        cancelButtonText: 'DONE',
+                        confirmButtonColor: '#25D366',
+                        cancelButtonColor: '#6c757d'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            const cp = "91" + phone.replace(/\D/g, '');
+                            const msg = `*BOOKING CANCELLED - TURFIT*\n\nHi *${name}*,\nYour booking has been cancelled. Please contact us for more information.`;
+                            window.open(`https://wa.me/${cp}?text=${encodeURIComponent(msg)}`, '_blank');
                         }
                     });
                 }
@@ -338,13 +359,16 @@
             const cp = "91" + p.replace(/\D/g, '');
             const dateObj = new Date(d);
             const monthDay = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-            const s12 = formatTo12H(s), e12 = formatTo12H(e);
+            const s12 = formatTo12H(s);
+            const e12 = formatTo12H(e);
+            
             let msg = "";
             if (t === 'confirm') {
                 const bal = price - paid;
-                msg = `*TURFIT BOOKING INFORMATION*\n\nHi *${n}*\nDate: *${monthDay}*\nTime: ${s12} - ${e12}\n\n*Total:* ₹${price}\n*Paid:* ₹${paid}\n*Balance:* ₹${bal}\n\nThank you for choosing *TURFIT* !!`;
-            } else {
-                msg = `*PAYMENT REMINDER - TURFIT*\n\nHi *${n}*, Your slot on *${monthDay}* (${s12}) has a pending balance of ₹${paid}. Kindly clear it.`;
+                const adv = paid > 0 ? "" : "\n\n*Kindly Pay Advance ₹200 for Booking Confirmation.*";
+                msg = `*TURFIT BOOKING INFORMATION*\n\nHi *${n}*\nYour booking for *${monthDay}*\n${s12} - ${e12}\n\n*Total:* ₹${price}\n*Paid:* ₹${paid}\n*Balance:* ₹${bal}${adv}\n\n*RULES & REGULATIONS:*\n\n1. Spitting and Smoking is strictly prohibited inside the turf premises.\n2. Cricket/Football equipment are turf property.\n3. Early Arrival: Kindly wait outside if you arrive early.\n\nThank you for choosing *TURFIT* !!`;
+            } else if (t === 'remind') {
+                msg = `*PAYMENT REMINDER - TURFIT*\n\nHi *${n}*\nYour slot on *${monthDay}* (${s12}) is completed.\n\n*Pending Amount:* ₹${paid}\n\nKindly clear payment. Thank you!`;
             }
             window.open(`https://wa.me/${cp}?text=${encodeURIComponent(msg)}`, '_blank');
         }
@@ -381,10 +405,13 @@
         }
 
         function updateStats(data) {
-            let r = 0, p = 0;
-            data.forEach(b => { r += parseFloat(b.paid_amount || 0); p += (parseFloat(b.price || 0) - parseFloat(b.paid_amount || 0)); });
-            document.getElementById('statReceived').innerText = r.toLocaleString();
-            document.getElementById('statPending').innerText = p.toLocaleString();
+            let received = 0, pending = 0;
+            data.forEach(b => {
+                received += parseFloat(b.paid_amount || 0);
+                pending += (parseFloat(b.price || 0) - parseFloat(b.paid_amount || 0));
+            });
+            document.getElementById('statReceived').innerText = received.toLocaleString();
+            document.getElementById('statPending').innerText = pending.toLocaleString();
         }
 
         async function loadDaySlots() {
@@ -404,7 +431,9 @@
         }
 
         async function loadHistory(type) {
-            const now = new Date(), todayStr = now.toISOString().split('T')[0], currentTime = now.toTimeString().split(' ')[0];
+            const now = new Date();
+            const todayStr = now.toISOString().split('T')[0];
+            const currentTime = now.toTimeString().split(' ')[0];
             const { data } = await supabaseClient.from('turf_bookings').select('*').order('booking_date').order('start_time');
             const list = document.getElementById(`${type}List`);
             list.innerHTML = '';
@@ -435,15 +464,21 @@
             document.getElementById('edit_price').value = price;
             document.getElementById('edit_paid').value = paid;
 
-            let [shh, smm] = s.split(':'), sh = parseInt(shh);
+            // Start Time Selectors
+            let [shh, smm] = s.split(':');
+            let sh = parseInt(shh);
+            let s_ampm = sh >= 12 ? "PM" : "AM";
             document.getElementById('edit_h').value = sh % 12 || 12;
             document.getElementById('edit_m').value = smm;
-            document.getElementById('edit_ampm').value = sh >= 12 ? "PM" : "AM";
+            document.getElementById('edit_ampm').value = s_ampm;
 
-            let [ehh, emm] = e.split(':'), eh = parseInt(ehh);
+            // End Time Selectors
+            let [ehh, emm] = e.split(':');
+            let eh = parseInt(ehh);
+            let e_ampm = eh >= 12 ? "PM" : "AM";
             document.getElementById('edit_h_end').value = eh % 12 || 12;
             document.getElementById('edit_m_end').value = emm;
-            document.getElementById('edit_ampm_end').value = eh >= 12 ? "PM" : "AM";
+            document.getElementById('edit_ampm_end').value = e_ampm;
 
             bsEditModal.show();
         }
