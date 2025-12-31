@@ -150,7 +150,6 @@
             </div>
             <p class="mb-0 mt-2 opacity-75" id="currentDisplayDate"></p>
         </div>
-
         <div class="container mt-4 mb-5">
             <div class="row g-4">
                 <div class="col-lg-4">
@@ -515,7 +514,7 @@
 
         function createBookingItem(b) {
             return `<div class="p-3 bg-light border rounded mb-2 d-flex justify-content-between align-items-center shadow-sm">
-                <div><span class="fw-bold text-success">${formatTo12H(b.start_time)} - ${formatTo12H(b.end_time)}</span><br><small>${b.customer_name} (Pending: ₹${b.price - b.paid_amount})</small></div>
+                <div><span class="fw-bold text-success">${formatTo12H(b.start_time)} - ${formatTo12H(b.end_time)}</span><br><small><b>${b.customer_name}</b> (Pending: ₹${b.price - b.paid_amount})</small></div>
                 <div class="d-flex gap-1">
                     <button class="action-btn" onclick="sendWhatsApp('${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','confirm',${b.price},${b.paid_amount})"><i class="bi bi-whatsapp text-success"></i></button>
                     <button class="action-btn text-warning" onclick="openEditModal('${b.id}','${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','${b.price}','${b.paid_amount}')"><i class="bi bi-pencil"></i></button>
