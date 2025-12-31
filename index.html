@@ -243,25 +243,13 @@
                                 <div id="dayList"></div>
                             </div>
                             <div class="tab-pane fade" id="upcomingPanel">
-                                <div class="table-responsive">
-                                    <table class="table align-middle">
-                                        <tbody id="upcomingList"></tbody>
-                                    </table>
-                                </div>
+                                <div id="upcomingList"></div>
                             </div>
                             <div class="tab-pane fade" id="ongoingPanel">
-                                <div class="table-responsive">
-                                    <table class="table align-middle">
-                                        <tbody id="ongoingList"></tbody>
-                                    </table>
-                                </div>
+                                <div id="ongoingList"></div>
                             </div>
                             <div class="tab-pane fade" id="completedPanel">
-                                <div class="table-responsive">
-                                    <table class="table align-middle">
-                                        <tbody id="completedList"></tbody>
-                                    </table>
-                                </div>
+                                <div id="completedList"></div>
                             </div>
                         </div>
                     </div>
@@ -354,8 +342,6 @@
             bsEditModal = new bootstrap.Modal(document.getElementById('editModal'));
 
             document.getElementById('pinEntry').addEventListener('input', checkPin);
-
-            // Using sessionStorage instead of localStorage for automatic logout on tab close
             if (sessionStorage.getItem('turf_session') === 'active') {
                 document.getElementById('lockScreen').style.display = 'none';
                 document.getElementById('appContent').style.display = 'block';
@@ -482,17 +468,13 @@
             if (val.length >= 4) {
                 const { data } = await supabaseClient.from('site_access').select('pin').eq('id', 1).single();
                 if (data && data.pin === val) {
-                    sessionStorage.setItem('turf_session', 'active'); // Store in sessionStorage
+                    sessionStorage.setItem('turf_session', 'active');
                     location.reload();
                 }
             }
         }
 
-        function logout() {
-            sessionStorage.removeItem('turf_session');
-            location.reload();
-        }
-
+        function logout() { sessionStorage.removeItem('turf_session'); location.reload(); }
         function formatTo12H(timeStr) {
             if (!timeStr) return "";
             let [h, m] = timeStr.split(':');
@@ -505,6 +487,15 @@
             document.getElementById('currentDisplayDate').innerText = new Date(document.getElementById('bookDate').value).toDateString();
         }
 
+        function createBookingItem(b) {
+            return `<div class="p-3 bg-light border rounded mb-2 d-flex justify-content-between align-items-center shadow-sm">
+                <div><span class="fw-bold text-success">${formatTo12H(b.start_time)} - ${formatTo12H(b.end_time)}</span><br><small>${b.customer_name} (Bal: ₹${b.price - b.paid_amount})</small></div>
+                <div class="d-flex gap-1">
+                    <button class="action-btn" onclick="sendWhatsApp('${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','confirm',${b.price},${b.paid_amount})"><i class="bi bi-whatsapp text-success"></i></button>
+                    <button class="action-btn text-warning" onclick="openEditModal('${b.id}','${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','${b.price}','${b.paid_amount}')"><i class="bi bi-pencil"></i></button>
+                </div></div>`;
+        }
+
         async function loadDaySlots() {
             const date = document.getElementById('bookDate').value;
             const { data } = await supabaseClient.from('turf_bookings').select('*').eq('booking_date', date).order('start_time');
@@ -513,61 +504,29 @@
             container.innerHTML = data && data.length ? data.map(b => {
                 received += parseFloat(b.paid_amount || 0);
                 pending += (b.price - b.paid_amount);
-                return `<div class="p-3 bg-light border rounded mb-2 d-flex justify-content-between align-items-center shadow-sm">
-                    <div><span class="fw-bold text-success">${formatTo12H(b.start_time)} - ${formatTo12H(b.end_time)}</span><br><small>${b.customer_name} (Bal: ₹${b.price - b.paid_amount})</small></div>
-                    <div class="d-flex gap-1">
-                        <button class="action-btn" onclick="sendWhatsApp('${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','confirm',${b.price},${b.paid_amount})"><i class="bi bi-whatsapp text-success"></i></button>
-                        <button class="action-btn text-warning" onclick="openEditModal('${b.id}','${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','${b.price}','${b.paid_amount}')"><i class="bi bi-pencil"></i></button>
-                    </div></div>`;
+                return createBookingItem(b);
             }).join('') : '<div class="text-center py-4 text-muted small">No bookings.</div>';
             document.getElementById('statReceived').innerText = received.toLocaleString();
             document.getElementById('statPending').innerText = pending.toLocaleString();
         }
 
         async function loadHistory(type) {
-            const now = new Date(); // Current local time
-
-            // Fetch all bookings (you can limit this if your database grows very large)
-            const { data } = await supabaseClient
-                .from('turf_bookings')
-                .select('*')
-                .order('booking_date', { ascending: false })
-                .order('start_time', { ascending: false });
-
+            const now = new Date();
+            const { data } = await supabaseClient.from('turf_bookings').select('*').order('booking_date', { ascending: false }).order('start_time', { ascending: false });
+            const list = document.getElementById(`${type}List`);
+            
             if (!data) return;
 
-            const list = document.getElementById(`${type}List`);
-
-            const filteredData = data.filter(b => {
-                // Create Date objects for the start and end of the booking
+            const filtered = data.filter(b => {
                 const startDT = new Date(`${b.booking_date}T${b.start_time}`);
                 const endDT = new Date(`${b.booking_date}T${b.end_time}`);
 
-                if (type === 'upcoming') {
-                    return now < startDT;
-                } else if (type === 'ongoing') {
-                    return now >= startDT && now <= endDT;
-                } else if (type === 'completed') {
-                    return now > endDT;
-                }
+                if (type === 'upcoming') return now < startDT;
+                if (type === 'ongoing') return now >= startDT && now <= endDT;
+                if (type === 'completed') return now > endDT;
             });
 
-            list.innerHTML = filteredData.length ? filteredData.map(b => `
-        <tr>
-            <td>${new Date(b.booking_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</td>
-            <td><small class="fw-bold">${formatTo12H(b.start_time)}</small></td>
-            <td>${b.customer_name}</td>
-            <td>₹${b.price}</td>
-            <td class="${b.price - b.paid_amount > 0 ? 'text-danger' : 'text-success'} fw-bold">
-                ₹${b.price - b.paid_amount}
-            </td>
-            <td>
-                <button class="btn btn-sm btn-outline-warning" 
-                    onclick="openEditModal('${b.id}','${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','${b.price}','${b.paid_amount}')">
-                    <i class="bi bi-pencil"></i>
-                </button>
-            </td>
-        </tr>`).join('') : `<tr><td colspan="6" class="text-center py-3 text-muted">No ${type} bookings found.</td></tr>`;
+            list.innerHTML = filtered.length ? filtered.map(b => createBookingItem(b)).join('') : `<div class="text-center py-4 text-muted small">No ${type} bookings.</div>`;
         }
 
         function openEditModal(id, n, p, d, s, e, price, paid) {
