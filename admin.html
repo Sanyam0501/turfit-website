@@ -442,48 +442,61 @@
         }
 
         async function deleteBooking() {
-            const id = document.getElementById('edit_id').value;
-            const name = document.getElementById('edit_name').value;
-            const phone = document.getElementById('edit_phone').value;
-            const date = document.getElementById('edit_date').value;
+    const id = document.getElementById('edit_id').value;
+    const name = document.getElementById('edit_name').value;
+    const phone = document.getElementById('edit_phone').value;
+    const date = document.getElementById('edit_date').value;
 
-            // Get time from selectors to include in the message
-            const start24 = get24hFromSelectors(
-                document.getElementById('edit_h').value,
-                document.getElementById('edit_m').value,
-                document.getElementById('edit_ampm').value
-            );
-            const end24 = get24hFromSelectors(
-                document.getElementById('edit_h_end').value,
-                document.getElementById('edit_m_end').value,
-                document.getElementById('edit_ampm_end').value
-            );
+    // Get time from selectors for the message
+    const start24 = get24hFromSelectors(
+        document.getElementById('edit_h').value,
+        document.getElementById('edit_m').value,
+        document.getElementById('edit_ampm').value
+    );
+    const end24 = get24hFromSelectors(
+        document.getElementById('edit_h_end').value,
+        document.getElementById('edit_m_end').value,
+        document.getElementById('edit_ampm_end').value
+    );
 
-            const { isConfirmed } = await Swal.fire({
-                title: 'Delete Booking?',
-                text: "This will remove the entry and notify the customer.",
-                icon: 'warning',
+    // Step 1: Confirm Deletion
+    const { isConfirmed } = await Swal.fire({
+        title: 'Delete Booking?',
+        text: "This will remove the entry from the database.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, Delete it'
+    });
+
+    if (isConfirmed) {
+        const { error } = await supabaseClient.from('turf_bookings').delete().eq('id', id);
+
+        if (error) {
+            Swal.fire("Error", "Could not delete: " + error.message, "error");
+        } else {
+            bsEditModal.hide();
+            updateView(); // Refresh the lists and stats
+
+            // Step 2: Show Success message with an OPTIONAL WhatsApp button
+            Swal.fire({
+                title: "Deleted Successfully",
+                text: "The booking has been removed.",
+                icon: "success",
                 showCancelButton: true,
-                confirmButtonColor: '#d33',
-                confirmButtonText: 'Yes, Delete'
-            });
-
-            if (isConfirmed) {
-                const { error } = await supabaseClient.from('turf_bookings').delete().eq('id', id);
-
-                if (error) {
-                    Swal.fire("Error", "Could not delete: " + error.message, "error");
-                } else {
-                    bsEditModal.hide();
-                    updateView();
-
-                    // Trigger the WhatsApp Cancellation message
+                confirmButtonColor: '#25D366',
+                confirmButtonText: '<i class="bi bi-whatsapp"></i> Send Cancellation',
+                cancelButtonText: 'Close',
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Only opens if they click the green button
                     sendWhatsApp(name, phone, date, start24, end24, 'cancel');
-
-                    Swal.fire("Deleted!", "Booking removed and WhatsApp opened.", "success");
                 }
-            }
+            });
         }
+    }
+}
 
         function sendWhatsApp(n, p, d, s, e, t, price = 0, paid = 0) {
             const cp = "91" + p.replace(/\D/g, '');
@@ -651,7 +664,7 @@
                 ? dayData.map(b => createBookingItem(b)).join('')
                 : '<div class="text-center py-4 text-muted small">No bookings for this date.</div>';
         }
-        
+
         async function loadHistory(type) {
             const now = new Date();
             const { data } = await supabaseClient.from('turf_bookings').select('*').order('booking_date', { ascending: false }).order('start_time', { ascending: false });
