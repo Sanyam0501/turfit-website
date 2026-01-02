@@ -520,6 +520,7 @@
                     `Your booking for *${monthDay}*\n` +
                     `*Time:* ${s12} - ${e12}\n\n` +
                     `*Total:* ₹${price}\n\n` +
+                    `*Kindly Pay Advance ₹200 for Booking Confirmation.*\n\n` +
                     `*Location:* https://maps.app.goo.gl/xi1efYzFSVFyzJph6\n\n` +
                     `*RULES & REGULATIONS:*\n` +
                     `1. Spitting and Smoking is strictly prohibited inside the turf premises, pathway (outside turf) and the ramp. Fine: ₹300.\n` +
@@ -564,7 +565,8 @@
 
             const formattedDate = new Date(b.booking_date).toLocaleDateString('en-GB', {
                 day: '2-digit',
-                month: 'short'
+                month: 'short',
+                weekday: 'short'
             });
 
             // Payment Reminder button
