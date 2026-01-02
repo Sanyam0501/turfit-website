@@ -504,8 +504,8 @@
                 msg = `*BOOKING CANCELLED - TURFIT*\n\nHi *${n}*,\n\nThis is to inform you that your booking for ${monthDay} (${s12}) has been *CANCELLED*.\n\nIf you have already paid an advance, please contact us for the refund process.`;
             }
             else if (t === 'feedback') {
-        msg = `*FEEDBACK - TURFIT*\n\nHi *${n}*,\nThank you for playing at *TURFIT*! \n\nWe hope you enjoyed your game on ${monthDay}. Please share your experience with us on Google:\n\n ${reviewLink}\n\nSee you again soon!`;
-    }
+                msg = `*FEEDBACK - TURFIT*\n\nHi *${n}*,\nThank you for playing at *TURFIT*! \n\nWe hope you enjoyed your game on ${monthDay}. Please share your experience with us on Google:\n\n ${reviewLink}\n\nSee you again soon!`;
+            }
 
             window.open(`https://wa.me/${cp}?text=${encodeURIComponent(msg)}`, '_blank');
         }
@@ -528,29 +528,29 @@
         }
 
         function createBookingItem(b) {
-    const pendingBalance = b.price - b.paid_amount;
-    const isCompleted = new Date() > new Date(`${b.booking_date}T${b.end_time}`);
+            const pendingBalance = b.price - b.paid_amount;
+            const isCompleted = new Date() > new Date(`${b.booking_date}T${b.end_time}`);
 
-    const formattedDate = new Date(b.booking_date).toLocaleDateString('en-GB', {
-        day: '2-digit',
-        month: 'short'
-    });
+            const formattedDate = new Date(b.booking_date).toLocaleDateString('en-GB', {
+                day: '2-digit',
+                month: 'short'
+            });
 
-    // Payment Reminder button
-    const reminderBtn = (isCompleted && pendingBalance > 0) ? `
+            // Payment Reminder button
+            const reminderBtn = (isCompleted && pendingBalance > 0) ? `
         <button class="action-btn" title="Send Payment Reminder" 
             onclick="sendWhatsApp('${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','remind',${b.price},${pendingBalance})">
             <i class="bi bi-bell-fill text-danger"></i>
         </button>` : '';
 
-    // NEW: Feedback button (Only shows if booking is finished)
-    const feedbackBtn = isCompleted ? `
+            // NEW: Feedback button (Only shows if booking is finished)
+            const feedbackBtn = isCompleted ? `
         <button class="action-btn" title="Send Google Review Link" 
             onclick="sendWhatsApp('${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','feedback')">
             <i class="bi bi-star-fill text-warning"></i>
         </button>` : '';
 
-    return `
+            return `
         <div class="p-3 bg-white border rounded mb-2 d-flex justify-content-between align-items-center shadow-sm">
             <div>
                 <div class="d-flex align-items-center gap-2 mb-1">
@@ -574,20 +574,40 @@
                 </button>
             </div>
         </div>`;
-}
+        }
 
         async function loadDaySlots() {
-            const date = document.getElementById('bookDate').value;
-            const { data } = await supabaseClient.from('turf_bookings').select('*').eq('booking_date', date).order('start_time');
-            let received = 0, pending = 0;
+            const selectedDate = document.getElementById('bookDate').value;
+
+            // 1. Fetch only selected day bookings for the list
+            const { data: dayData } = await supabaseClient.from('turf_bookings')
+                .select('*')
+                .eq('booking_date', selectedDate)
+                .order('start_time');
+
+            // 2. Fetch ALL bookings from all time to calculate the top summary
+            const { data: allData } = await supabaseClient.from('turf_bookings')
+                .select('price, paid_amount');
+
+            let totalReceived = 0, totalPending = 0;
+
+            // Calculate totals from allData
+            if (allData) {
+                allData.forEach(b => {
+                    totalReceived += parseFloat(b.paid_amount || 0);
+                    totalPending += (parseFloat(b.price || 0) - parseFloat(b.paid_amount || 0));
+                });
+            }
+
+            // Update the Top Summary UI
+            document.getElementById('statReceived').innerText = totalReceived.toLocaleString();
+            document.getElementById('statPending').innerText = totalPending.toLocaleString();
+
+            // Update the List UI for the selected day
             const container = document.getElementById('dayList');
-            container.innerHTML = data && data.length ? data.map(b => {
-                received += parseFloat(b.paid_amount || 0);
-                pending += (b.price - b.paid_amount);
-                return createBookingItem(b);
-            }).join('') : '<div class="text-center py-4 text-muted small">No bookings.</div>';
-            document.getElementById('statReceived').innerText = received.toLocaleString();
-            document.getElementById('statPending').innerText = pending.toLocaleString();
+            container.innerHTML = dayData && dayData.length
+                ? dayData.map(b => createBookingItem(b)).join('')
+                : '<div class="text-center py-4 text-muted small">No bookings for this date.</div>';
         }
 
         async function loadHistory(type) {
