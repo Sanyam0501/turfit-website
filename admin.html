@@ -174,6 +174,23 @@
                 </div>
 
                 <div class="col-lg-8">
+                    <div class="d-flex justify-content-end mb-2">
+                        <select id="statsFilter" class="form-select form-select-sm w-auto" onchange="loadDaySlots()">
+                            <option value="all">All Time</option>
+                            <option value="today">Today</option>
+                            <option value="week">Past 1 Week</option>
+                            <option value="month">Past 1 Month</option>
+                            <option value="year">Past 1 Year</option>
+                            <option value="custom">Custom Range</option>
+                        </select>
+                    </div>
+
+                    <div id="customRangeInputs" class="d-none row g-2 mb-3">
+                        <div class="col-6"><input type="date" id="rangeStart" class="form-control form-control-sm"
+                                onchange="loadDaySlots()"></div>
+                        <div class="col-6"><input type="date" id="rangeEnd" class="form-control form-control-sm"
+                                onchange="loadDaySlots()"></div>
+                    </div>
                     <div class="row g-3 mb-3 text-center">
                         <div class="col-6">
                             <div class="summary-box shadow-sm">
@@ -578,38 +595,63 @@
 
         async function loadDaySlots() {
             const selectedDate = document.getElementById('bookDate').value;
+            const filterType = document.getElementById('statsFilter').value;
+            const customInputs = document.getElementById('customRangeInputs');
 
-            // 1. Fetch only selected day bookings for the list
+            // Show/Hide custom inputs
+            customInputs.classList.toggle('d-none', filterType !== 'custom');
+
+            // 1. Fetch only selected day bookings for the list view
             const { data: dayData } = await supabaseClient.from('turf_bookings')
                 .select('*')
                 .eq('booking_date', selectedDate)
                 .order('start_time');
 
-            // 2. Fetch ALL bookings from all time to calculate the top summary
-            const { data: allData } = await supabaseClient.from('turf_bookings')
-                .select('price, paid_amount');
+            // 2. Build the query for Statistics
+            let statsQuery = supabaseClient.from('turf_bookings').select('price, paid_amount, booking_date');
 
+            const now = new Date();
+            let startDate = new Date();
+
+            if (filterType === 'today') {
+                statsQuery = statsQuery.eq('booking_date', now.toISOString().split('T')[0]);
+            } else if (filterType === 'week') {
+                startDate.setDate(now.getDate() - 7);
+                statsQuery = statsQuery.gte('booking_date', startDate.toISOString().split('T')[0]);
+            } else if (filterType === 'month') {
+                startDate.setMonth(now.getMonth() - 1);
+                statsQuery = statsQuery.gte('booking_date', startDate.toISOString().split('T')[0]);
+            } else if (filterType === 'year') {
+                startDate.setFullYear(now.getFullYear() - 1);
+                statsQuery = statsQuery.gte('booking_date', startDate.toISOString().split('T')[0]);
+            } else if (filterType === 'custom') {
+                const s = document.getElementById('rangeStart').value;
+                const e = document.getElementById('rangeEnd').value;
+                if (s) statsQuery = statsQuery.gte('booking_date', s);
+                if (e) statsQuery = statsQuery.lte('booking_date', e);
+            }
+
+            const { data: statsData } = await statsQuery;
+
+            // 3. Calculate Totals
             let totalReceived = 0, totalPending = 0;
-
-            // Calculate totals from allData
-            if (allData) {
-                allData.forEach(b => {
+            if (statsData) {
+                statsData.forEach(b => {
                     totalReceived += parseFloat(b.paid_amount || 0);
                     totalPending += (parseFloat(b.price || 0) - parseFloat(b.paid_amount || 0));
                 });
             }
 
-            // Update the Top Summary UI
+            // Update UI
             document.getElementById('statReceived').innerText = totalReceived.toLocaleString();
             document.getElementById('statPending').innerText = totalPending.toLocaleString();
 
-            // Update the List UI for the selected day
             const container = document.getElementById('dayList');
             container.innerHTML = dayData && dayData.length
                 ? dayData.map(b => createBookingItem(b)).join('')
                 : '<div class="text-center py-4 text-muted small">No bookings for this date.</div>';
         }
-
+        
         async function loadHistory(type) {
             const now = new Date();
             const { data } = await supabaseClient.from('turf_bookings').select('*').order('booking_date', { ascending: false }).order('start_time', { ascending: false });
