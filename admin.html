@@ -470,6 +470,7 @@
 
         function sendWhatsApp(n, p, d, s, e, t, price = 0, paid = 0) {
             const cp = "91" + p.replace(/\D/g, '');
+            const reviewLink = "https://maps.app.goo.gl/Sj7HA377roArncdC9";
             const monthDay = new Date(d).toLocaleDateString('en-US', {
                 weekday: 'long',
                 month: 'short',
@@ -502,6 +503,9 @@
             else if (t === 'cancel') {
                 msg = `*BOOKING CANCELLED - TURFIT*\n\nHi *${n}*,\n\nThis is to inform you that your booking for ${monthDay} (${s12}) has been *CANCELLED*.\n\nIf you have already paid an advance, please contact us for the refund process.`;
             }
+            else if (t === 'feedback') {
+        msg = `*FEEDBACK - TURFIT*\n\nHi *${n}*,\nThank you for playing at *TURFIT*! \n\nWe hope you enjoyed your game on ${monthDay}. Please share your experience with us on Google:\n\n ${reviewLink}\n\nSee you again soon!`;
+    }
 
             window.open(`https://wa.me/${cp}?text=${encodeURIComponent(msg)}`, '_blank');
         }
@@ -524,23 +528,29 @@
         }
 
         function createBookingItem(b) {
-            const pendingBalance = b.price - b.paid_amount;
-            const isCompleted = new Date() > new Date(`${b.booking_date}T${b.end_time}`);
+    const pendingBalance = b.price - b.paid_amount;
+    const isCompleted = new Date() > new Date(`${b.booking_date}T${b.end_time}`);
 
-            // Format date as "DD MMM" (e.g., 05 Oct)
-            const formattedDate = new Date(b.booking_date).toLocaleDateString('en-GB', {
-                day: '2-digit',
-                month: 'short'
-            });
+    const formattedDate = new Date(b.booking_date).toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: 'short'
+    });
 
-            // Create the Payment Reminder button only if balance > 0 and booking is finished
-            const reminderBtn = (isCompleted && pendingBalance > 0) ? `
+    // Payment Reminder button
+    const reminderBtn = (isCompleted && pendingBalance > 0) ? `
         <button class="action-btn" title="Send Payment Reminder" 
             onclick="sendWhatsApp('${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','remind',${b.price},${pendingBalance})">
             <i class="bi bi-bell-fill text-danger"></i>
         </button>` : '';
 
-            return `
+    // NEW: Feedback button (Only shows if booking is finished)
+    const feedbackBtn = isCompleted ? `
+        <button class="action-btn" title="Send Google Review Link" 
+            onclick="sendWhatsApp('${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','feedback')">
+            <i class="bi bi-star-fill text-warning"></i>
+        </button>` : '';
+
+    return `
         <div class="p-3 bg-white border rounded mb-2 d-flex justify-content-between align-items-center shadow-sm">
             <div>
                 <div class="d-flex align-items-center gap-2 mb-1">
@@ -554,6 +564,7 @@
                 <small class="text-muted">Pending: ₹${pendingBalance}</small>
             </div>
             <div class="d-flex gap-1">
+                ${feedbackBtn}
                 ${reminderBtn}
                 <button class="action-btn" onclick="sendWhatsApp('${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','confirm',${b.price},${b.paid_amount})">
                     <i class="bi bi-whatsapp text-success"></i>
@@ -563,7 +574,7 @@
                 </button>
             </div>
         </div>`;
-        }
+}
 
         async function loadDaySlots() {
             const date = document.getElementById('bookDate').value;
