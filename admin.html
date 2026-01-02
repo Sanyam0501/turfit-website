@@ -297,11 +297,11 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <script>
-    // Immediate redirect if no session exists
-    if (sessionStorage.getItem('turf_session') !== 'active') {
-        window.location.replace('/'); // Use replace so they can't click "back"
-    }
-</script>
+        // Immediate redirect if no session exists
+        if (sessionStorage.getItem('turf_session') !== 'active') {
+            window.location.replace('/'); // Use replace so they can't click "back"
+        }
+    </script>
     <script>
         let supabaseClient;
         let bsEditModal;
@@ -473,8 +473,10 @@
             const monthDay = new Date(d).toLocaleDateString('en-US', {
                 weekday: 'long',
                 month: 'short',
-                day: 'numeric'
+                day: 'numeric',
+                year: 'numeric'
             });
+
             const s12 = formatTo12H(s);
             const e12 = formatTo12H(e);
             const bal = price - paid;
@@ -482,14 +484,23 @@
             let msg = "";
 
             if (t === 'confirm') {
-                msg = `*TURFIT BOOKING INFORMATION*\n\nHi *${n}*\nYour booking for *${monthDay}*\n${s12} - ${e12}\n\n*Total:* ₹${price}\n*Paid:* ₹${paid}\n*Balance:* ₹${bal}${paid > 0 ? "" : "\n\n*Kindly Pay Advance ₹200 for Booking Confirmation.*"}\n\n*Rules:* No Smoking/Spitting. Early access charged extra.\n\nThank you for choosing *TURFIT* !!`;
+                msg = `*TURFIT BOOKING INFORMATION*\n\n` +
+                    `Hi *${n}*\n` +
+                    `Your booking for *${monthDay}*\n` +
+                    `${s12} - ${e12}\n\n` +
+                    `*Total:* ₹${price}\n\n` +
+                    `*RULES & REGULATIONS:*\n` +
+                    `1. Spitting and Smoking is strictly prohibited inside the turf premises, pathway and ramp. Fine: ₹300.\n` +
+                    `2. Equipment is turf property. Removing them without permission is theft. Fine: ₹500.\n` +
+                    `3. Early Arrival: Kindly wait outside. Early access is charged extra.\n\n` +
+                    `*Read Full T&C:* https://ebqukydndivisiafpdls.supabase.co/storage/v1/object/public/tnc/TNC_TURFIT.pdf\n\n` +
+                    `Thank you for choosing *TURFIT* !!`;
             }
             else if (t === 'remind') {
-                msg = `*PAYMENT REMINDER - TURFIT*\n\nHi *${n}*\nYour slot on *${monthDay}* (${s12}) is completed.\n\n*Pending Balance:* ₹${paid}\nKindly clear the payment at your earliest convenience.`;
+                msg = `*PAYMENT REMINDER - TURFIT*\n\nHi *${n}*\nYour slot on *${monthDay}* (${s12}) is completed.\n\n*Pending Balance:* ₹${paid}\nKindly clear the payment at your earliest convenience.\n\n*Full T&C:* https://ebqukydndivisiafpdls.supabase.co/storage/v1/object/public/tnc/TNC_TURFIT.pdf`;
             }
             else if (t === 'cancel') {
-                // NEW: Cancellation Message with Date and Time
-                msg = `*BOOKING CANCELLED - TURFIT*\n\nHi *${n}*,\n\nThis is to inform you that your booking has been *CANCELLED*.\n\n*Date:* ${monthDay}\n*Time:* ${s12} - ${e12}\n\nIf you have already paid an advance, please contact us for the refund process.\n\nRegards,\n*TURFIT Management*`;
+                msg = `*BOOKING CANCELLED - TURFIT*\n\nHi *${n}*,\n\nThis is to inform you that your booking for ${monthDay} (${s12}) has been *CANCELLED*.\n\nIf you have already paid an advance, please contact us for the refund process.`;
             }
 
             window.open(`https://wa.me/${cp}?text=${encodeURIComponent(msg)}`, '_blank');
