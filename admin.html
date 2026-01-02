@@ -560,6 +560,7 @@
         }
 
         function createBookingItem(b) {
+            const totalamt = b.price;
             const pendingBalance = b.price - b.paid_amount;
             const isCompleted = new Date() > new Date(`${b.booking_date}T${b.end_time}`);
 
@@ -593,6 +594,8 @@
                     </span>
                 </div>
                 <small class="text-dark"><strong>${b.customer_name}</strong></small>
+                <br>
+                <small class="text-muted">Total: ₹${totalamt}</small>
                 <br>
                 <small class="text-muted">Pending: ₹${pendingBalance}</small>
             </div>
