@@ -379,38 +379,34 @@
                 document.getElementById(isEdit ? 'edit_ampm_end' : 'ampm_end').value
             );
 
-            if (start24 >= end24) return Swal.fire("Error", "End time must be after start", "error");
+            // Normalize midnight for comparison
+            const normStart = start24;
+            const normEnd = end24 === "00:00:00" ? "24:00:00" : end24;
 
-            // --- CLASH CHECK LOGIC START ---
-            // Query existing bookings for the same date
-            let query = supabaseClient
-                .from('turf_bookings')
-                .select('id, customer_name, start_time, end_time')
-                .eq('booking_date', date);
+            if (normStart >= normEnd) return Swal.fire("Error", "End time must be after start", "error");
 
-            // If editing, exclude the current booking from the clash check
+            // --- CLASH CHECK ---
+            let query = supabaseClient.from('turf_bookings').select('id, customer_name, start_time, end_time').eq('booking_date', date);
             if (isEdit) query = query.neq('id', id);
 
             const { data: existingBookings, error: fetchError } = await query;
-
             if (fetchError) return Swal.fire("Error", "Could not verify availability", "error");
 
-            // Check for overlap: (StartA < EndB) AND (EndA > StartB)
             const clash = existingBookings.find(b => {
-                return (start24 < b.end_time && end24 > b.start_time);
+                const bStart = b.start_time;
+                const bEnd = b.end_time === "00:00:00" ? "24:00:00" : b.end_time;
+                return (normStart < bEnd && normEnd > bStart);
             });
 
             if (clash) {
                 return Swal.fire({
                     title: "Slot Unavailable",
-                    text: `This time clashes with a booking by ${clash.customer_name} (${formatTo12H(clash.start_time)} - ${formatTo12H(clash.end_time)})`,
+                    text: `This time clashes with ${clash.customer_name} (${formatTo12H(clash.start_time)} - ${formatTo12H(clash.end_time)})`,
                     icon: "error"
                 });
             }
-            // --- CLASH CHECK LOGIC END ---
 
             const bookingData = { customer_name: name, phone_number: phone, booking_date: date, start_time: start24, end_time: end24, price, paid_amount: paid };
-
             let res = id ? await supabaseClient.from('turf_bookings').update(bookingData).eq('id', id) : await supabaseClient.from('turf_bookings').insert([bookingData]);
 
             if (res.error) {
@@ -418,13 +414,7 @@
             } else {
                 if (isEdit) {
                     bsEditModal.hide();
-                    Swal.fire({
-                        title: "Updated!",
-                        text: "The page will now reload.",
-                        icon: "success",
-                        timer: 1500,
-                        showConfirmButton: false
-                    }).then(() => { location.reload(); });
+                    Swal.fire({ title: "Updated!", icon: "success", timer: 1500, showConfirmButton: false }).then(() => { location.reload(); });
                 } else {
                     updateView();
                     Swal.fire({
@@ -433,70 +423,68 @@
                         showCancelButton: true,
                         confirmButtonText: 'SEND WHATSAPP',
                         confirmButtonColor: '#25D366'
-                    }).then((r) => {
-                        if (r.isConfirmed) sendWhatsApp(name, phone, date, start24, end24, 'confirm', price, paid);
-                    });
+                    }).then((r) => { if (r.isConfirmed) sendWhatsApp(name, phone, date, start24, end24, 'confirm', price, paid); });
                     resetForm();
                 }
             }
         }
 
         async function deleteBooking() {
-    const id = document.getElementById('edit_id').value;
-    const name = document.getElementById('edit_name').value;
-    const phone = document.getElementById('edit_phone').value;
-    const date = document.getElementById('edit_date').value;
+            const id = document.getElementById('edit_id').value;
+            const name = document.getElementById('edit_name').value;
+            const phone = document.getElementById('edit_phone').value;
+            const date = document.getElementById('edit_date').value;
 
-    // Get time from selectors for the message
-    const start24 = get24hFromSelectors(
-        document.getElementById('edit_h').value,
-        document.getElementById('edit_m').value,
-        document.getElementById('edit_ampm').value
-    );
-    const end24 = get24hFromSelectors(
-        document.getElementById('edit_h_end').value,
-        document.getElementById('edit_m_end').value,
-        document.getElementById('edit_ampm_end').value
-    );
+            // Get time from selectors for the message
+            const start24 = get24hFromSelectors(
+                document.getElementById('edit_h').value,
+                document.getElementById('edit_m').value,
+                document.getElementById('edit_ampm').value
+            );
+            const end24 = get24hFromSelectors(
+                document.getElementById('edit_h_end').value,
+                document.getElementById('edit_m_end').value,
+                document.getElementById('edit_ampm_end').value
+            );
 
-    // Step 1: Confirm Deletion
-    const { isConfirmed } = await Swal.fire({
-        title: 'Delete Booking?',
-        text: "This will remove the entry from the database.",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#6c757d',
-        confirmButtonText: 'Yes, Delete it'
-    });
-
-    if (isConfirmed) {
-        const { error } = await supabaseClient.from('turf_bookings').delete().eq('id', id);
-
-        if (error) {
-            Swal.fire("Error", "Could not delete: " + error.message, "error");
-        } else {
-            bsEditModal.hide();
-            updateView(); // Refresh the lists and stats
-
-            // Step 2: Show Success message with an OPTIONAL WhatsApp button
-            Swal.fire({
-                title: "Deleted Successfully",
-                text: "The booking has been removed.",
-                icon: "success",
+            // Step 1: Confirm Deletion
+            const { isConfirmed } = await Swal.fire({
+                title: 'Delete Booking?',
+                text: "This will remove the entry from the database.",
+                icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#25D366',
-                confirmButtonText: '<i class="bi bi-whatsapp"></i> Send Cancellation',
-                cancelButtonText: 'Close',
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    // Only opens if they click the green button
-                    sendWhatsApp(name, phone, date, start24, end24, 'cancel');
-                }
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, Delete it'
             });
+
+            if (isConfirmed) {
+                const { error } = await supabaseClient.from('turf_bookings').delete().eq('id', id);
+
+                if (error) {
+                    Swal.fire("Error", "Could not delete: " + error.message, "error");
+                } else {
+                    bsEditModal.hide();
+                    updateView(); // Refresh the lists and stats
+
+                    // Step 2: Show Success message with an OPTIONAL WhatsApp button
+                    Swal.fire({
+                        title: "Deleted Successfully",
+                        text: "The booking has been removed.",
+                        icon: "success",
+                        showCancelButton: true,
+                        confirmButtonColor: '#25D366',
+                        confirmButtonText: '<i class="bi bi-whatsapp"></i> Send Cancellation',
+                        cancelButtonText: 'Close',
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            // Only opens if they click the green button
+                            sendWhatsApp(name, phone, date, start24, end24, 'cancel');
+                        }
+                    });
+                }
+            }
         }
-    }
-}
 
         function sendWhatsApp(n, p, d, s, e, t, price = 0, paid = 0) {
             const cp = "91" + p.replace(/\D/g, '');
@@ -680,7 +668,12 @@
 
             const filtered = data.filter(b => {
                 const startDT = new Date(`${b.booking_date}T${b.start_time}`);
-                const endDT = new Date(`${b.booking_date}T${b.end_time}`);
+                let endDT = new Date(`${b.booking_date}T${b.end_time}`);
+
+                // If end time is midnight, it actually refers to the start of the NEXT day
+                if (b.end_time === "00:00:00") {
+                    endDT.setDate(endDT.getDate() + 1);
+                }
 
                 if (type === 'upcoming') return now < startDT;
                 if (type === 'ongoing') return now >= startDT && now <= endDT;
