@@ -562,8 +562,12 @@
         function createBookingItem(b) {
             const totalamt = b.price;
             const pendingBalance = b.price - b.paid_amount;
-            const isCompleted = new Date() > new Date(`${b.booking_date}T${b.end_time}`);
-
+            const now = new Date();
+            let endDT = new Date(`${b.booking_date}T${b.end_time}`);
+            if (b.end_time === "00:00:00") {
+                endDT.setDate(endDT.getDate() + 1);
+            }
+            const isCompleted = now > endDT;
             const formattedDate = new Date(b.booking_date).toLocaleDateString('en-GB', {
                 day: '2-digit',
                 month: 'short',
