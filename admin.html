@@ -415,17 +415,27 @@
             } else {
                 if (isEdit) {
                     bsEditModal.hide();
-                    Swal.fire({ title: "Updated!", icon: "success", timer: 1500, showConfirmButton: false }).then(() => { location.reload(); });
+                    Swal.fire({ title: "Updated!", icon: "success", timer: 1000, showConfirmButton: false })
+                        .then(() => { location.reload(); });
                 } else {
-                    updateView();
+                    // Updated logic for New Bookings
                     Swal.fire({
                         title: "Saved!",
+                        text: "Booking recorded successfully.",
                         icon: "success",
                         showCancelButton: true,
                         confirmButtonText: 'SEND WHATSAPP',
-                        confirmButtonColor: '#25D366'
-                    }).then((r) => { if (r.isConfirmed) sendWhatsApp(name, phone, date, start24, end24, 'confirm', price, paid); });
-                    resetForm();
+                        confirmButtonColor: '#25D366',
+                        cancelButtonText: 'CLOSE & RELOAD'
+                    }).then((r) => {
+                        if (r.isConfirmed) {
+                            sendWhatsApp(name, phone, date, start24, end24, 'confirm', price, paid);
+                            // Add a small delay then reload so they can actually trigger the WhatsApp window
+                            setTimeout(() => { location.reload(); }, 1000);
+                        } else {
+                            location.reload();
+                        }
+                    });
                 }
             }
         }
@@ -466,21 +476,22 @@
                     Swal.fire("Error", "Could not delete: " + error.message, "error");
                 } else {
                     bsEditModal.hide();
-                    updateView(); // Refresh the lists and stats
 
-                    // Step 2: Show Success message with an OPTIONAL WhatsApp button
+                    // Updated Success Logic
                     Swal.fire({
-                        title: "Deleted Successfully",
+                        title: "Deleted!",
                         text: "The booking has been removed.",
                         icon: "success",
                         showCancelButton: true,
                         confirmButtonColor: '#25D366',
-                        confirmButtonText: '<i class="bi bi-whatsapp"></i> Send Cancellation',
-                        cancelButtonText: 'Close',
+                        confirmButtonText: 'SEND CANCELLATION (WA)',
+                        cancelButtonText: 'CLOSE'
                     }).then((result) => {
                         if (result.isConfirmed) {
-                            // Only opens if they click the green button
                             sendWhatsApp(name, phone, date, start24, end24, 'cancel');
+                            setTimeout(() => { location.reload(); }, 1000);
+                        } else {
+                            location.reload();
                         }
                     });
                 }
