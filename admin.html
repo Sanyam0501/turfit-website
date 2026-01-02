@@ -361,7 +361,8 @@
         async function saveEntry(isEdit) {
             const id = isEdit ? document.getElementById('edit_id').value : null;
             const name = document.getElementById(isEdit ? 'edit_name' : 'userName').value.trim();
-            const phone = document.getElementById(isEdit ? 'edit_phone' : 'userPhone').value.trim();
+            let phone = document.getElementById(isEdit ? 'edit_phone' : 'userPhone').value.trim();
+            phone = phone.replace(/^(\+91)/, "");
             const date = document.getElementById(isEdit ? 'edit_date' : 'bookDate').value;
             const price = parseFloat(document.getElementById(isEdit ? 'edit_price' : 'bookingPrice').value);
             const paid = parseFloat(document.getElementById(isEdit ? 'edit_paid' : 'paidAmount').value) || 0;
@@ -686,7 +687,7 @@
         function openEditModal(id, n, p, d, s, e, price, paid) {
             document.getElementById('edit_id').value = id;
             document.getElementById('edit_name').value = n;
-            document.getElementById('edit_phone').value = p;
+            document.getElementById('edit_phone').value = p.replace(/^(\+91)/, "");;
             document.getElementById('edit_date').value = d;
             document.getElementById('edit_price').value = price;
             document.getElementById('edit_paid').value = paid;
