@@ -210,6 +210,18 @@
                                 <div class="summary-val text-danger">₹<span id="statPending">0</span></div>
                             </div>
                         </div>
+                        <div class="col-6">
+                            <div class="summary-box shadow-sm">
+                                <div class="small fw-bold text-muted">Cash Received</div>
+                                <div class="summary-val">₹<span id="cashReceived">0</span></div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="summary-box shadow-sm">
+                                <div class="small fw-bold text-muted">UPI Received</div>
+                                <div class="summary-val">₹<span id="UPIReceived">0</span></div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="card p-0 overflow-hidden shadow-sm">
@@ -672,17 +684,26 @@
             const { data: statsData } = await statsQuery;
 
             // 3. Calculate Totals
-            let totalReceived = 0, totalPending = 0;
+            let totalReceived = 0, totalPending = 0, cashTotal = 0, upiTotal = 0;
             if (statsData) {
                 statsData.forEach(b => {
-                    totalReceived += parseFloat(b.paid_amount || 0);
-                    totalPending += (parseFloat(b.price || 0) - parseFloat(b.paid_amount || 0));
+                    const price = parseFloat(b.price || 0);
+                    const cash = parseFloat(b.paid_cash || 0);
+                    const upi = parseFloat(b.paid_upi || 0);
+                    const paid = cash + upi; // Total paid for this specific booking
+
+                    totalReceived += paid;
+                    cashTotal += cash;
+                    upiTotal += upi;
+                    totalPending += (price - paid);
                 });
             }
 
             // Update UI
             document.getElementById('statReceived').innerText = totalReceived.toLocaleString();
             document.getElementById('statPending').innerText = totalPending.toLocaleString();
+            document.getElementById('cashReceived').innerText = cashTotal.toLocaleString();
+            document.getElementById('UPIReceived').innerText = upiTotal.toLocaleString();
 
             const container = document.getElementById('dayList');
             container.innerHTML = dayData && dayData.length
