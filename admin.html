@@ -163,9 +163,15 @@
                                 <label class="form-label small fw-bold text-muted">TOTAL PRICE</label>
                                 <input type="number" id="bookingPrice" class="form-control">
                             </div>
-                            <div class="col-6 mb-3">
-                                <label class="form-label small fw-bold text-muted">PAID AMOUNT</label>
-                                <input type="number" id="paidAmount" class="form-control" value="0">
+                            <div class="row">
+                                <div class="col-6 mb-3">
+                                    <label class="form-label small fw-bold text-muted">CASH PAID</label>
+                                    <input type="number" id="paidCash" class="form-control" value="0">
+                                </div>
+                                <div class="col-6 mb-3">
+                                    <label class="form-label small fw-bold text-muted">UPI PAID</label>
+                                    <input type="number" id="paidUpi" class="form-control" value="0">
+                                </div>
                             </div>
                         </div>
                         <button class="btn btn-primary-custom w-100 py-3 fw-bold" onclick="saveEntry(false)">SAVE
@@ -293,12 +299,12 @@
                             <input type="number" id="edit_price" class="form-control border-primary">
                         </div>
                         <div class="col-4">
-                            <label class="small fw-bold text-muted">Paid</label>
-                            <input type="number" id="edit_paid" class="form-control border-success">
+                            <label class="small fw-bold text-muted">Cash</label>
+                            <input type="number" id="edit_paid_cash" class="form-control border-success" value="0">
                         </div>
                         <div class="col-4">
-                            <label class="small opacity-0">Action</label>
-                            <button class="btn btn-outline-success w-100" onclick="setFullPayment()">FULL</button>
+                            <label class="small fw-bold text-muted">UPI</label>
+                            <input type="number" id="edit_paid_upi" class="form-control border-info" value="0">
                         </div>
                     </div>
                 </div>
@@ -365,10 +371,10 @@
             phone = phone.replace(/^(\+91)/, "");
             const date = document.getElementById(isEdit ? 'edit_date' : 'bookDate').value;
             const price = parseFloat(document.getElementById(isEdit ? 'edit_price' : 'bookingPrice').value);
-            const paid = parseFloat(document.getElementById(isEdit ? 'edit_paid' : 'paidAmount').value) || 0;
-
+            const cash = parseFloat(document.getElementById(isEdit ? 'edit_paid_cash' : 'paidCash').value) || 0;
+            const upi = parseFloat(document.getElementById(isEdit ? 'edit_paid_upi' : 'paidUpi').value) || 0;
+            const totalPaid = cash + upi;
             if (!name || !phone || isNaN(price)) return Swal.fire("Required", "Fill all fields", "warning");
-
             const start24 = get24hFromSelectors(
                 document.getElementById(isEdit ? 'edit_h' : 'h_start').value,
                 document.getElementById(isEdit ? 'edit_m' : 'm_start').value,
@@ -407,9 +413,18 @@
                 });
             }
 
-            const bookingData = { customer_name: name, phone_number: phone, booking_date: date, start_time: start24, end_time: end24, price, paid_amount: paid };
+            const bookingData = {
+                customer_name: name,
+                phone_number: phone,
+                booking_date: date,
+                start_time: start24,
+                end_time: end24,
+                price,
+                paid_amount: totalPaid, // Sum for backwards compatibility
+                paid_cash: cash,
+                paid_upi: upi
+            };
             let res = id ? await supabaseClient.from('turf_bookings').update(bookingData).eq('id', id) : await supabaseClient.from('turf_bookings').insert([bookingData]);
-
             if (res.error) {
                 Swal.fire("Error", res.error.message, "error");
             } else {
@@ -609,9 +624,10 @@
                 <button class="action-btn" onclick="sendWhatsApp('${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','confirm',${b.price},${b.paid_amount})">
                     <i class="bi bi-whatsapp text-success"></i>
                 </button>
-                <button class="action-btn text-warning" onclick="openEditModal('${b.id}','${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','${b.price}','${b.paid_amount}')">
-                    <i class="bi bi-pencil"></i>
-                </button>
+                // Change the pencil button line to include b.paid_cash and b.paid_upi
+<button class="action-btn text-warning" onclick="openEditModal('${b.id}','${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','${b.price}','${b.paid_amount}', '${b.paid_cash}', '${b.paid_upi}')">
+    <i class="bi bi-pencil"></i>
+</button>
             </div>
         </div>`;
         }
@@ -699,13 +715,14 @@
             list.innerHTML = filtered.length ? filtered.map(b => createBookingItem(b)).join('') : `<div class="text-center py-4 text-muted small">No ${type} bookings.</div>`;
         }
 
-        function openEditModal(id, n, p, d, s, e, price, paid) {
+        function openEditModal(id, n, p, d, s, e, price, paid, cash, upi) {
             document.getElementById('edit_id').value = id;
             document.getElementById('edit_name').value = n;
             document.getElementById('edit_phone').value = p.replace(/^(\+91)/, "");;
             document.getElementById('edit_date').value = d;
             document.getElementById('edit_price').value = price;
-            document.getElementById('edit_paid').value = paid;
+            document.getElementById('edit_paid_cash').value = cash || 0;
+            document.getElementById('edit_paid_upi').value = upi || 0;
             let [sh, sm] = s.split(':');
             document.getElementById('edit_h').value = parseInt(sh) % 12 || 12;
             document.getElementById('edit_m').value = sm;
