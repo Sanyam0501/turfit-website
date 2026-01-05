@@ -406,22 +406,25 @@
                     icon: "error"
                 });
             }
-
+            const bookingId = isEdit ? document.getElementById('edit_id').value : null;
             const bookingData = { customer_name: name, phone_number: phone, booking_date: date, start_time: start24, end_time: end24, price, paid_amount: paid };
             let res = id ? await supabaseClient.from('turf_bookings').update(bookingData).eq('id', id) : await supabaseClient.from('turf_bookings').insert([bookingData]);
 
             if (res.error) {
                 Swal.fire("Error", res.error.message, "error");
             } else {
+                const finalId = isEdit ? bookingId : res.data[0].id;
+
+                const googleData = { ...bookingData, id: finalId };
+
                 const GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbyfjxr3hgmRSSx-G7Y9CA0Vj-5X0OOvBSbEDiwHNPAi2-KwbWaDRaqAlzq-cF8EyN0/exec";
 
-                // We don't use 'await' here so it doesn't slow down the UI
                 fetch(GOOGLE_SHEET_URL, {
                     method: 'POST',
-                    mode: 'no-cors', // Important for Apps Script
+                    mode: 'no-cors',
                     cache: 'no-cache',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(bookingData)
+                    body: JSON.stringify(googleData)
                 }).catch(err => console.error("Google Sheets Error:", err));
                 if (isEdit) {
                     bsEditModal.hide();
@@ -485,6 +488,11 @@
                 if (error) {
                     Swal.fire("Error", "Could not delete: " + error.message, "error");
                 } else {
+                    fetch("https://script.google.com/macros/s/AKfycbyfjxr3hgmRSSx-G7Y9CA0Vj-5X0OOvBSbEDiwHNPAi2-KwbWaDRaqAlzq-cF8EyN0/exec", {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify({ id: id, action: 'delete' })
+            });
                     bsEditModal.hide();
 
                     // Updated Success Logic
