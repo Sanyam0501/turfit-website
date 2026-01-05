@@ -659,7 +659,7 @@
 
             // 2. Build the query for Statistics
             let statsQuery = supabaseClient.from('turf_bookings')
-        .select('price, paid_amount, paid_cash, paid_upi, booking_date');
+                .select('price, paid_amount, paid_cash, paid_upi, booking_date');
 
             const now = new Date();
             let startDate = new Date();
@@ -691,7 +691,9 @@
                     const price = parseFloat(b.price || 0);
                     const cash = parseFloat(b.paid_cash || 0);
                     const upi = parseFloat(b.paid_upi || 0);
-                    const paid = cash + upi; // Total paid for this specific booking
+
+                    // Note: We calculate 'paid' as sum of cash + upi to ensure it matches the breakdown
+                    const paid = cash + upi;
 
                     totalReceived += paid;
                     cashTotal += cash;
@@ -700,7 +702,7 @@
                 });
             }
 
-            // Update UI
+            // 4. Update UI
             document.getElementById('statReceived').innerText = totalReceived.toLocaleString();
             document.getElementById('statPending').innerText = totalPending.toLocaleString();
             document.getElementById('cashReceived').innerText = cashTotal.toLocaleString();
