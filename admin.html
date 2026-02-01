@@ -348,6 +348,15 @@
                   <div id="ongoingList"></div>
                 </div>
                 <div class="tab-pane fade" id="completedPanel">
+                  <div class="d-flex justify-content-end mb-2">
+                    <button
+                      id="btnPendingFilter"
+                      class="btn btn-sm btn-outline-danger"
+                      onclick="togglePendingFilter()"
+                    >
+                      <i class="bi bi-funnel"></i> Show Pending Only
+                    </button>
+                  </div>
                   <div id="completedList"></div>
                 </div>
               </div>
@@ -476,6 +485,7 @@
     <script>
       let supabaseClient;
       let bsEditModal;
+      let pendingFilterActive = false;
 
       async function init() {
         const res = await fetch("/api/get-public-key");
@@ -978,7 +988,13 @@
 
           if (type === "upcoming") return now < startDT;
           if (type === "ongoing") return now >= startDT && now <= endDT;
-          if (type === "completed") return now > endDT;
+          if (type === "completed") {
+            const isCompleted = now > endDT;
+            if (pendingFilterActive) {
+              return isCompleted && b.price - b.paid_amount > 0;
+            }
+            return isCompleted;
+          }
         });
 
         list.innerHTML = filtered.length
