@@ -966,6 +966,21 @@
             : '<div class="text-center py-4 text-muted small">No bookings for this date.</div>';
       }
 
+      function togglePendingFilter() {
+        pendingFilterActive = !pendingFilterActive;
+        const btn = document.getElementById("btnPendingFilter");
+        if (pendingFilterActive) {
+          btn.classList.remove("btn-outline-danger");
+          btn.classList.add("btn-danger");
+          btn.innerHTML = '<i class="bi bi-funnel-fill"></i> Show All';
+        } else {
+          btn.classList.remove("btn-danger");
+          btn.classList.add("btn-outline-danger");
+          btn.innerHTML = '<i class="bi bi-funnel"></i> Show Pending Only';
+        }
+        loadHistory("completed");
+      }
+
       async function loadHistory(type) {
         const now = new Date();
         const { data } = await supabaseClient
