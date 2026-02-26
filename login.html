@@ -12,9 +12,6 @@
     <!-- SweetAlert -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <!-- Supabase -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
     <style>
         body {
             background: #1b4332;
@@ -51,22 +48,11 @@
 </div>
 
 <script>
-    let supabaseClient;
-
     // Always clear old session on login page
     sessionStorage.removeItem('turf_session');
 
     async function initLogin() {
         try {
-            const res = await fetch('/api/get-public-key');
-            if (!res.ok) throw new Error("Config load failed");
-
-            const keys = await res.json();
-            supabaseClient = supabase.createClient(
-                keys.SUPABASE_URL_PUBLIC,
-                keys.SUPABASE_ANON_KEY
-            );
-
             document
                 .getElementById('pinEntry')
                 .addEventListener('input', checkPin);
@@ -87,29 +73,22 @@
     if (e && e.type === 'input' && pin.length !== 4) return;
     if (!pin) return;
 
-    const { data, error } = await supabaseClient
-        .from('site_access')
-        .select('pin')
-        .eq('id', 1)
-        .single();
+    try {
+        const res = await fetch('/api/login', {
+            method: 'POST',
+            body: JSON.stringify({ pin })
+        });
 
-    if (error) {
-        console.error("Supabase Error:", error);
-        // If it's the 0 rows error, tell the user the DB is misconfigured
-        if (error.code === 'PGRST116') {
-            Swal.fire("System Error", "PIN record not found in database (ID 1 missing).", "error");
+        const data = await res.json();
+
+        if (res.ok && data.token) {
+            sessionStorage.setItem('turf_session', data.token);
+            window.location.href = 'admin.html';
         } else {
-            Swal.fire("Error", "Unable to verify PIN: " + error.message, "error");
+            throw new Error("Invalid PIN");
         }
-        document.getElementById('pinEntry').value = '';
-        return;
-    }
-
-    if (data && String(data.pin).trim() === pin) {
-        sessionStorage.setItem('turf_session', 'active');
-        window.location.href = 'admin.html';
-    } else {
-        Swal.fire("Invalid PIN", "Access Denied", "error");
+    } catch (err) {
+        Swal.fire("Access Denied", "Incorrect Security PIN", "error");
         document.getElementById('pinEntry').value = '';
     }
 }
@@ -117,5 +96,6 @@
     initLogin();
 </script>
 
+<script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>

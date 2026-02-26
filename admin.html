@@ -478,7 +478,7 @@
 
     <script>
       // Immediate redirect if no session exists
-      if (sessionStorage.getItem("turf_session") !== "active") {
+      if (!sessionStorage.getItem("turf_session")) {
         window.location.replace("/"); // Use replace so they can't click "back"
       }
     </script>
