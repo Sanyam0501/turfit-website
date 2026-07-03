@@ -371,9 +371,11 @@
                   <div id="completedList"></div>
                 </div>
                 <div class="tab-pane fade" id="revenuePanel">
-                  <div class="row g-2 mb-2 align-items-center">
-                    <label class="col-auto col-form-label small fw-bold text-muted">DATE RANGE:</label>
-                    <div class="col">
+                  <div class="row g-2 mb-3 align-items-center">
+                    <div class="col-12 col-md-auto">
+                      <label class="col-form-label small fw-bold text-muted">DATE RANGE:</label>
+                    </div>
+                    <div class="col-md">
                       <input
                         type="date"
                         id="revenueRangeStart"
@@ -381,8 +383,7 @@
                         onchange="loadRevenueData()"
                       />
                     </div>
-                    <div class="col-auto"><span class="text-muted">-</span></div>
-                    <div class="col">
+                    <div class="col-md">
                       <input
                         type="date"
                         id="revenueRangeEnd"
