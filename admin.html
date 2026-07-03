@@ -1105,11 +1105,25 @@
           customEndEl.value = toISODateString(end);
         }
 
+        const dateLabel = document.getElementById('revenueDateRangeLabel');
+
+        // --- Date Validation Check ---
+        if (start > end) {
+          dateLabel.innerHTML = `<span class="text-danger fw-bold">"From" date cannot be after "To" date. Please select a valid range.</span>`;
+          // Clear the summary boxes as the range is invalid
+          document.getElementById("revenueTotal").innerText = '0';
+          document.getElementById("revenuePending").innerText = '0';
+          document.getElementById("revenueCash").innerText = '0';
+          document.getElementById("revenueUpi").innerText = '0';
+          return; // Stop execution to prevent fetching data with an invalid range
+        }
+
         // Update the date range label
         const options = { day: 'numeric', month: 'long', year: 'numeric' };
         const formattedStart = start.toLocaleDateString('en-GB', options);
         const formattedEnd = end.toLocaleDateString('en-GB', options);
-        document.getElementById('revenueDateRangeLabel').innerText = `Data from ${formattedStart} to ${formattedEnd}`;
+        dateLabel.className = 'text-center text-muted small mb-3'; // Reset styles
+        dateLabel.innerText = `Data from ${formattedStart} to ${formattedEnd}`;
 
         // Fetch data for the selected range. We can use the values directly from the inputs.
         const { data, error } = await supabaseClient
