@@ -614,6 +614,12 @@
         updateView();
         addDateValidation();
         checkForUnpaidCompleted(); // Check for notifications on load
+
+        // Set up a recurring check every minute for real-time updates
+        setInterval(() => {
+          checkForUnpaidCompleted();
+          refreshLiveTabs();
+        }, 60000); // 60000ms = 1 minute
       }
 
       function populateSelectors() {
@@ -1107,6 +1113,19 @@
           : `<div class="text-center py-4 text-muted small">No ${type} bookings.</div>`;
         
         initialLoad = false; // Subsequent loads will fetch more data if needed
+      }
+
+      function refreshLiveTabs() {
+        // This function will refresh the ongoing and completed tabs to move
+        // bookings between them as they finish, without a full page reload.
+        const activeTab = document.querySelector('#bookingTabs .nav-link.active');
+        if (!activeTab) return;
+
+        const activePanelId = activeTab.getAttribute('data-bs-target');
+
+        // Only refresh the lists if the user is on a relevant tab to be efficient
+        if (activePanelId === '#ongoingPanel') loadHistory('ongoing');
+        if (activePanelId === '#completedPanel') loadHistory('completed');
       }
 
       async function checkForUnpaidCompleted() {
