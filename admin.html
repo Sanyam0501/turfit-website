@@ -257,6 +257,8 @@
               </div>
             </div> -->
 
+            <p id="dailyStatsLabel" class="text-center text-muted mb-2"></p>
+
             <div class="row g-3 mb-4 text-center">
               <div class="col-6 col-md-3">
                 <div class="summary-box shadow-sm">
@@ -894,9 +896,23 @@
 
       function updateView() {
         loadDaySlots();
-        document.getElementById("currentDisplayDate").innerText = new Date(
-          document.getElementById("bookDate").value
-        ).toDateString();
+
+        const selectedDateValue = document.getElementById("bookDate").value;
+        // Use 'T00:00:00' to parse as local time and avoid timezone bugs
+        const selectedDate = new Date(selectedDateValue + 'T00:00:00');
+        
+        document.getElementById("currentDisplayDate").innerText = selectedDate.toDateString();
+
+        // Update the label for the daily stats boxes
+        const dailyStatsLabel = document.getElementById("dailyStatsLabel");
+        const todayStr = toISODateString(new Date());
+        
+        if (selectedDateValue === todayStr) {
+            dailyStatsLabel.innerText = "This is today's data";
+        } else {
+            const formattedDate = selectedDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' });
+            dailyStatsLabel.innerText = `This data is for ${formattedDate}`;
+        }
       }
 
       function createBookingItem(b) {
