@@ -296,7 +296,7 @@
             </div>
 
             <div class="card p-0 overflow-hidden shadow-sm">
-              <ul class="nav nav-tabs px-3 bg-white" id="bookingTabs">
+              <ul class="nav nav-tabs nav-fill px-3 bg-white" id="bookingTabs">
                 <li class="nav-item">
                   <button 
                     class="nav-link active"
@@ -600,17 +600,11 @@
         );
         bsEditModal = new bootstrap.Modal(document.getElementById("editModal"));
 
-      // Set today's date for the main booking form without timezone issues
-      const today = new Date();
-      const year = today.getFullYear();
-      const month = String(today.getMonth() + 1).padStart(2, '0');
-      const day = String(today.getDate()).padStart(2, '0');
-      document.getElementById("bookDate").value = `${year}-${month}-${day}`;
-
         document.getElementById("appContent").style.display = "block";
         populateSelectors();
         document.getElementById("bookDate").valueAsDate = new Date();
         updateView();
+        addDateValidation();
       }
 
       function populateSelectors() {
@@ -1149,6 +1143,17 @@
         document.getElementById("revenueUpi").innerText = current.upi.toLocaleString();
         document.getElementById("revenuePending").innerText = current.pending.toLocaleString();
 
+      }
+
+      function addDateValidation() {
+        const todayString = toISODateString(new Date());
+        const revenueStart = document.getElementById('revenueRangeStart');
+        const revenueEnd = document.getElementById('revenueRangeEnd');
+
+        revenueStart.max = todayString;
+        revenueEnd.max = todayString;
+        revenueStart.addEventListener('change', () => revenueEnd.min = revenueStart.value);
+        revenueEnd.addEventListener('change', () => revenueStart.max = revenueEnd.value);
       }
 
       async function loadBreakdownTables() {
