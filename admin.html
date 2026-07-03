@@ -1336,6 +1336,9 @@
         // Programmatically switch to the revenue tab
         const revenueTabTrigger = document.querySelector('button[data-bs-target="#revenuePanel"]');
         new bootstrap.Tab(revenueTabTrigger).show();
+
+        // FIX: Manually call the data loading function since onclick is not triggered
+        loadRevenueData();
       }
 
       function hideMobileRevenueView() {
