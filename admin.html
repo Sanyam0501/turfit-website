@@ -417,8 +417,11 @@
                     <div class="col-6">
                       <div class="summary-box shadow-sm" id="growthBox">
                         <div class="small fw-bold text-muted" id="revenueComparisonLabel">vs. Prior Period</div>
-                        <div class="summary-val" id="revenueGrowth">
-                          <span id="revenueGrowthValue">0</span>%
+                        <div class="d-flex align-items-baseline justify-content-center gap-2">
+                            <div class="summary-val" id="revenueGrowth">
+                                <span id="revenueGrowthValue">0</span>%
+                            </div>
+                            <div class="small text-muted" id="previousPeriodRevenue">₹0</div>
                         </div>
                       </div>
                     </div>
@@ -1179,6 +1182,8 @@
         document.getElementById("revenueTotal").innerText = current.total.toLocaleString();
         document.getElementById("revenueCash").innerText = current.cash.toLocaleString();
         document.getElementById("revenueUpi").innerText = current.upi.toLocaleString();
+
+        document.getElementById("previousPeriodRevenue").innerText = `₹${previous.total.toLocaleString()}`;
 
         const growthEl = document.getElementById("revenueGrowthValue");
         const growthBox = document.getElementById("revenueGrowth");
