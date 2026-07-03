@@ -404,6 +404,8 @@
                     </div>
                   </div>
 
+                  <p id="revenueDateRangeLabel" class="text-center text-muted small mb-3"></p>
+
                   <!-- Revenue Stats -->
                   <div class="row g-3 mb-4 text-center">
                     <div class="col-4">
@@ -1118,6 +1120,12 @@
           prevEnd = new Date(end);
           prevEnd.setDate(end.getDate() - diff - 1);
         }
+
+        // Update the date range label
+        const options = { day: 'numeric', month: 'long', year: 'numeric' };
+        const formattedStart = start.toLocaleDateString('en-GB', options);
+        const formattedEnd = end.toLocaleDateString('en-GB', options);
+        document.getElementById('revenueDateRangeLabel').innerText = `Data from ${formattedStart} to ${formattedEnd}`;
 
         const formatDate = (d) => d.toISOString().split("T")[0];
 
