@@ -433,6 +433,10 @@
 
                   <hr class="my-4" />
 
+                  <div class="d-md-none text-center mb-3">
+                    <button id="toggleSplitBtn" class="btn btn-sm btn-outline-secondary" onclick="toggleSplitView()">Show Cash/UPI Split</button>
+                  </div>
+
                   <ul class="nav nav-tabs nav-fill mb-3" id="revenueBreakdownTabs">
                     <li class="nav-item">
                       <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#monthly-breakdown">Month-on-Month</button>
@@ -448,10 +452,10 @@
                         <table class="table table-striped table-hover small">
                           <thead>
                             <tr>
-                            <th class="text-center">Month</th>
-                            <th class="text-center">Total Revenue</th>
-                            <th class="text-center">Cash</th>
-                            <th class="text-center">UPI</th>
+                              <th class="text-center">Month</th>
+                              <th class="text-center">Total Revenue</th>
+                              <th class="text-center split-col d-none d-md-table-cell">Cash</th>
+                              <th class="text-center split-col d-none d-md-table-cell">UPI</th>
                               <th class="text-center">Bookings</th>
                             </tr>
                           </thead>
@@ -1248,8 +1252,8 @@
             return `<tr>
               <td class="text-center"><strong>${monthName}</strong></td>
               <td class="text-center">₹${month.revenue.toLocaleString()}</td>
-              <td class="text-center">₹${month.cash.toLocaleString()}</td>
-              <td class="text-center">₹${month.upi.toLocaleString()}</td>
+              <td class="text-center split-col d-none d-md-table-cell">₹${month.cash.toLocaleString()}</td>
+              <td class="text-center split-col d-none d-md-table-cell">₹${month.upi.toLocaleString()}</td>
               <td class="text-center">${month.bookings}</td>
             </tr>`;
           })
@@ -1310,8 +1314,8 @@
             return `<tr>
               <td class="text-center"><strong>${weekLabel}</strong></td>
               <td class="text-center">₹${week.revenue.toLocaleString()}</td>
-              <td class="text-center">₹${week.cash.toLocaleString()}</td>
-              <td class="text-center">₹${week.upi.toLocaleString()}</td>
+              <td class="text-center split-col d-none d-md-table-cell">₹${week.cash.toLocaleString()}</td>
+              <td class="text-center split-col d-none d-md-table-cell">₹${week.upi.toLocaleString()}</td>
               <td class="text-center">${week.bookings}</td>
             </tr>`;
           })
@@ -1326,7 +1330,7 @@
 
         tableContainer.innerHTML = `<div class="table-responsive">
           <table class="table table-striped table-hover small">
-            <thead><tr><th class="text-center">Week</th><th class="text-center">Total Revenue</th><th class="text-center">Cash</th><th class="text-center">UPI</th><th class="text-center">Bookings</th></tr></thead>
+            <thead><tr><th class="text-center">Week</th><th class="text-center">Total Revenue</th><th class="text-center split-col d-none d-md-table-cell">Cash</th><th class="text-center split-col d-none d-md-table-cell">UPI</th><th class="text-center">Bookings</th></tr></thead>
             <tbody>${tableRows}</tbody>
           </table>
         </div>
@@ -1350,6 +1354,20 @@
         document.getElementById("edit_m_end").value = em;
         document.getElementById("edit_ampm_end").value = eh >= 12 ? "PM" : "AM";
         bsEditModal.show();
+      }
+
+      function toggleSplitView() {
+        const btn = document.getElementById('toggleSplitBtn');
+        const columns = document.querySelectorAll('.split-col');
+        const isHidden = columns[0].classList.contains('d-none');
+
+        if (isHidden) {
+          columns.forEach(col => col.classList.remove('d-none'));
+          btn.textContent = 'Hide Cash/UPI Split';
+        } else {
+          columns.forEach(col => col.classList.add('d-none'));
+          btn.textContent = 'Show Cash/UPI Split';
+        }
       }
 
       function toISODateString(date) {
