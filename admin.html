@@ -107,6 +107,15 @@
         background: var(--admin-green);
         color: white;
       }
+
+      .notification-dot {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+      }
     </style>
   </head>
 
@@ -1145,8 +1154,8 @@
         const existingDot = completedTab.querySelector('.notification-dot');
 
         if (hasUnpaid && !existingDot) {
-            completedTab.style.position = 'relative';
-            completedTab.insertAdjacentHTML('beforeend', '<span class="notification-dot position-absolute top-0 start-100 translate-middle p-2 bg-danger border border-light rounded-circle"></span>');
+            completedTab.style.position = 'relative'; // Needed for absolute positioning of the dot
+            completedTab.insertAdjacentHTML('beforeend', '<span class="notification-dot bg-danger"></span>');
         } else if (!hasUnpaid && existingDot) {
             existingDot.remove();
         }
