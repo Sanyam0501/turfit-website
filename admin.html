@@ -600,8 +600,14 @@
         );
         bsEditModal = new bootstrap.Modal(document.getElementById("editModal"));
 
-        document.getElementById("appContent").style.display = "block";
+      // Set today's date for the main booking form without timezone issues
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const day = String(today.getDate()).padStart(2, '0');
+      document.getElementById("bookDate").value = `${year}-${month}-${day}`;
 
+        document.getElementById("appContent").style.display = "block";
         populateSelectors();
         document.getElementById("bookDate").valueAsDate = new Date();
         updateView();
@@ -1101,8 +1107,8 @@
           start = new Date(today.getFullYear(), today.getMonth(), 1);
           end = today;
           // Set the date pickers to the default range
-          customStartEl.value = start.toISOString().split("T")[0];
-          customEndEl.value = end.toISOString().split("T")[0];
+          customStartEl.value = toISODateString(start);
+          customEndEl.value = toISODateString(end);
         }
 
         // Update the date range label
@@ -1310,6 +1316,13 @@
         document.getElementById("edit_m_end").value = em;
         document.getElementById("edit_ampm_end").value = eh >= 12 ? "PM" : "AM";
         bsEditModal.show();
+      }
+
+      function toISODateString(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
       }
 
       function resetForm() {
