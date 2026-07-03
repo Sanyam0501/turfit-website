@@ -116,13 +116,19 @@
         <div
           class="container d-flex justify-content-between align-items-center"
         >
-          <div style="width: 40px"></div>
+          <div style="min-width: 80px">
+            <button class="btn btn-sm btn-outline-light d-lg-none" onclick="showRevenueTab()">
+              <i class="bi bi-graph-up-arrow"></i> Revenue
+            </button>
+          </div>
           <h2 class="fw-bold m-0">
-            <i class="me-2"></i>TURFIT MANAGER
+            TURFIT MANAGER
           </h2>
-          <button class="btn btn-sm btn-outline-light" onclick="logout()">
-            Logout
-          </button>
+          <div style="min-width: 80px" class="text-end">
+            <button class="btn btn-sm btn-outline-light" onclick="logout()">
+              Logout
+            </button>
+          </div>
         </div>
         <p class="mb-0 mt-2 opacity-75" id="currentDisplayDate"></p>
       </div>
@@ -337,7 +343,7 @@
                     Completed
                   </button>
                 </li>
-                <li class="nav-item">
+                <li class="nav-item d-none d-lg-block">
                   <button
                     class="nav-link"
                     data-bs-toggle="tab"
@@ -1210,10 +1216,10 @@
               year: "numeric",
             });
             return `<tr>
-              <td><strong>${monthName}</strong></td>
-              <td class="text-end">₹${month.revenue.toLocaleString()}</td>
-              <td class="text-end">₹${month.cash.toLocaleString()}</td>
-              <td class="text-end">₹${month.upi.toLocaleString()}</td>
+              <td class="text-center"><strong>${monthName}</strong></td>
+              <td class="text-center">₹${month.revenue.toLocaleString()}</td>
+              <td class="text-center">₹${month.cash.toLocaleString()}</td>
+              <td class="text-center">₹${month.upi.toLocaleString()}</td>
               <td class="text-center">${month.bookings}</td>
             </tr>`;
           })
@@ -1272,10 +1278,10 @@
             const weekLabel = `${week.startDate.toLocaleDateString('en-GB', format)} - ${weekEnd.toLocaleDateString('en-GB', format)}`;
 
             return `<tr>
-              <td><strong>${weekLabel}</strong></td>
-              <td class="text-end">₹${week.revenue.toLocaleString()}</td>
-              <td class="text-end">₹${week.cash.toLocaleString()}</td>
-              <td class="text-end">₹${week.upi.toLocaleString()}</td>
+              <td class="text-center"><strong>${weekLabel}</strong></td>
+              <td class="text-center">₹${week.revenue.toLocaleString()}</td>
+              <td class="text-center">₹${week.cash.toLocaleString()}</td>
+              <td class="text-center">₹${week.upi.toLocaleString()}</td>
               <td class="text-center">${week.bookings}</td>
             </tr>`;
           })
@@ -1314,6 +1320,12 @@
         document.getElementById("edit_m_end").value = em;
         document.getElementById("edit_ampm_end").value = eh >= 12 ? "PM" : "AM";
         bsEditModal.show();
+      }
+
+      function showRevenueTab() {
+        const revenueTabTrigger = document.querySelector('button[data-bs-target="#revenuePanel"]');
+        const tab = new bootstrap.Tab(revenueTabTrigger);
+        tab.show();
       }
 
       function toISODateString(date) {
