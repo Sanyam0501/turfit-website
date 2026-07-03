@@ -371,22 +371,9 @@
                   <div id="completedList"></div>
                 </div>
                 <div class="tab-pane fade" id="revenuePanel">
-                  <div class="d-flex justify-content-end mb-3">
-                    <select
-                      id="revenueFilter"
-                      class="form-select form-select-sm w-auto"
-                      onchange="loadRevenueData()"
-                    >
-                      <option value="mtd" selected>This Month (MTD)</option>
-                      <option value="last_month">Last Month</option>
-                      <option value="last_7_days">Last 7 Days</option>
-                      <option value="last_30_days">Last 30 Days</option>
-                      <option value="custom">Custom Range</option>
-                    </select>
-                  </div>
-
-                  <div id="revenueCustomRange" class="d-none row g-2 mb-3">
-                    <div class="col-6">
+                  <div class="row g-2 mb-2 align-items-center">
+                    <label class="col-auto col-form-label small fw-bold text-muted">DATE RANGE:</label>
+                    <div class="col">
                       <input
                         type="date"
                         id="revenueRangeStart"
@@ -394,7 +381,8 @@
                         onchange="loadRevenueData()"
                       />
                     </div>
-                    <div class="col-6">
+                    <div class="col-auto"><span class="text-muted">-</span></div>
+                    <div class="col">
                       <input
                         type="date"
                         id="revenueRangeEnd"
@@ -434,21 +422,34 @@
 
                   <hr class="my-4" />
 
-                  <div>
-                    <h5 class="fw-bold mb-3">Monthly Revenue Breakdown</h5>
-                    <div class="table-responsive">
-                      <table class="table table-striped table-hover small">
-                        <thead>
-                          <tr>
-                            <th>Month</th>
-                            <th class="text-end">Total Revenue</th>
-                            <th class="text-end">Cash</th>
-                            <th class="text-end">UPI</th>
-                            <th class="text-center">Bookings</th>
-                          </tr>
-                        </thead>
-                        <tbody id="monthlyRevenueTableBody"></tbody>
-                      </table>
+                  <ul class="nav nav-tabs nav-fill mb-3" id="revenueBreakdownTabs">
+                    <li class="nav-item">
+                      <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#monthly-breakdown">Month-on-Month</button>
+                    </li>
+                    <li class="nav-item">
+                      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#weekly-breakdown">Week-on-Week</button>
+                    </li>
+                  </ul>
+
+                  <div class="tab-content">
+                    <div class="tab-pane fade show active" id="monthly-breakdown">
+                      <div class="table-responsive">
+                        <table class="table table-striped table-hover small">
+                          <thead>
+                            <tr>
+                              <th>Month</th>
+                              <th class="text-end">Total Revenue</th>
+                              <th class="text-end">Cash</th>
+                              <th class="text-end">UPI</th>
+                              <th class="text-center">Bookings</th>
+                            </tr>
+                          </thead>
+                          <tbody id="monthlyRevenueTableBody"></tbody>
+                        </table>
+                      </div>
+                    </div>
+                    <div class="tab-pane fade" id="weekly-breakdown">
+                      <div id="weeklyRevenueTableContainer"></div>
                     </div>
                   </div>
                 </div>
@@ -1072,53 +1073,25 @@
       }
 
       async function loadRevenueData() {
-        const filter = document.getElementById("revenueFilter").value;
-        const customRangeDiv = document.getElementById("revenueCustomRange");
-        loadMonthlyRevenueBreakdown(); // Also load the monthly table
-        customRangeDiv.classList.toggle("d-none", filter !== "custom");
+        loadBreakdownTables(); // Load both monthly and weekly tables
 
-        const now = new Date();
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        let start, end;
+        const customStartEl = document.getElementById("revenueRangeStart");
+        const customEndEl = document.getElementById("revenueRangeEnd");
 
-        let start, end, prevStart, prevEnd;
-
-        if (filter === "mtd") {
+        if (customStartEl.value && customEndEl.value) {
+          // Use user-selected range
+          start = new Date(customStartEl.value);
+          end = new Date(customEndEl.value);
+        } else {
+          // Default to This Month (MTD) on initial load
+          const now = new Date();
+          const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
           start = new Date(today.getFullYear(), today.getMonth(), 1);
           end = today;
-          prevStart = new Date(start.getFullYear(), start.getMonth() - 1, 1);
-          prevEnd = new Date(end.getFullYear(), end.getMonth() - 1, end.getDate());
-        } else if (filter === "last_month") {
-          start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-          end = new Date(today.getFullYear(), today.getMonth(), 0);
-          prevStart = new Date(start.getFullYear(), start.getMonth() - 1, 1);
-          prevEnd = new Date(end.getFullYear(), end.getMonth() - 1, 0);
-        } else if (filter === "last_7_days") {
-          start = new Date(today);
-          start.setDate(today.getDate() - 6);
-          end = today;
-          prevStart = new Date(start);
-          prevStart.setDate(start.getDate() - 7);
-          prevEnd = new Date(end);
-          prevEnd.setDate(end.getDate() - 7);
-        } else if (filter === "last_30_days") {
-          start = new Date(today);
-          start.setDate(today.getDate() - 29);
-          end = today;
-          prevStart = new Date(start);
-          prevStart.setDate(start.getDate() - 30);
-          prevEnd = new Date(end);
-          prevEnd.setDate(end.getDate() - 30);
-        } else if (filter === "custom") {
-          const customStart = document.getElementById("revenueRangeStart").value;
-          const customEnd = document.getElementById("revenueRangeEnd").value;
-          if (!customStart || !customEnd) return; // Wait for both dates
-          start = new Date(customStart);
-          end = new Date(customEnd);
-          const diff = (end - start) / (1000 * 60 * 60 * 24);
-          prevStart = new Date(start);
-          prevStart.setDate(start.getDate() - diff - 1);
-          prevEnd = new Date(end);
-          prevEnd.setDate(end.getDate() - diff - 1);
+          // Set the date pickers to the default range
+          customStartEl.value = start.toISOString().split("T")[0];
+          customEndEl.value = end.toISOString().split("T")[0];
         }
 
         // Update the date range label
@@ -1132,8 +1105,8 @@
         // Fetch data for both periods in one go
         const { data, error } = await supabaseClient
           .from("turf_bookings")
-          .select("booking_date, paid_cash, paid_upi")
-          .gte("booking_date", formatDate(prevStart))
+          .select("booking_date, paid_cash, paid_upi, price")
+          .gte("booking_date", formatDate(start))
           .lte("booking_date", formatDate(end));
 
         if (error) {
@@ -1143,20 +1116,12 @@
 
         // Calculate revenues for each period
         let current = { total: 0, cash: 0, upi: 0 };
-        let previous = { total: 0, cash: 0, upi: 0 };
-
-        const startStr = formatDate(start);
-        const endStr = formatDate(end);
 
         data.forEach((b) => {
           const paid = (b.paid_cash || 0) + (b.paid_upi || 0);
-          if (b.booking_date >= startStr && b.booking_date <= endStr) {
-            current.total += paid;
-            current.cash += b.paid_cash || 0;
-            current.upi += b.paid_upi || 0;
-          } else {
-            previous.total += paid;
-          }
+          current.total += paid;
+          current.cash += b.paid_cash || 0;
+          current.upi += b.paid_upi || 0;
         });
 
         // Update UI
@@ -1166,11 +1131,16 @@
 
       }
 
-      async function loadMonthlyRevenueBreakdown() {
+      async function loadBreakdownTables() {
         const { data, error } = await supabaseClient
           .from("turf_bookings")
           .select("booking_date, paid_cash, paid_upi")
           .order("booking_date", { ascending: false });
+        
+        loadMonthlyRevenueBreakdown(data, error);
+        loadWeeklyRevenueBreakdown(data, error);
+      }
+      function loadMonthlyRevenueBreakdown(data, error) {
 
         if (error) {
           console.error("Error fetching monthly breakdown:", error);
@@ -1221,6 +1191,68 @@
             </tr>`;
           })
           .join("");
+      }
+
+      function loadWeeklyRevenueBreakdown(data, error) {
+        if (error) {
+          console.error("Error fetching weekly breakdown:", error);
+          return;
+        }
+
+        const weeklyData = {};
+
+        data.forEach((b) => {
+          const date = new Date(b.booking_date);
+          date.setHours(0, 0, 0, 0);
+          // Get Monday of the week
+          const day = date.getDay();
+          const diff = date.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+          const weekStart = new Date(date.setDate(diff));
+          const weekKey = weekStart.toISOString().split("T")[0];
+
+          if (!weeklyData[weekKey]) {
+            weeklyData[weekKey] = {
+              revenue: 0,
+              cash: 0,
+              upi: 0,
+              bookings: 0,
+              startDate: weekStart,
+            };
+          }
+
+          const cash = b.paid_cash || 0;
+          const upi = b.paid_upi || 0;
+          weeklyData[weekKey].revenue += cash + upi;
+          weeklyData[weekKey].cash += cash;
+          weeklyData[weekKey].upi += upi;
+          weeklyData[weekKey].bookings++;
+        });
+
+        const tableContainer = document.getElementById("weeklyRevenueTableContainer");
+        const tableRows = Object.values(weeklyData)
+          .sort((a, b) => b.startDate - a.startDate) // Sort by most recent week
+          .map((week) => {
+            const weekEnd = new Date(week.startDate);
+            weekEnd.setDate(weekEnd.getDate() + 6);
+            const format = { month: 'short', day: 'numeric' };
+            const weekLabel = `${week.startDate.toLocaleDateString('en-GB', format)} - ${weekEnd.toLocaleDateString('en-GB', format)}`;
+
+            return `<tr>
+              <td><strong>${weekLabel}</strong></td>
+              <td class="text-end">₹${week.revenue.toLocaleString()}</td>
+              <td class="text-end">₹${week.cash.toLocaleString()}</td>
+              <td class="text-end">₹${week.upi.toLocaleString()}</td>
+              <td class="text-center">${week.bookings}</td>
+            </tr>`;
+          })
+          .join("");
+
+        tableContainer.innerHTML = `<div class="table-responsive">
+          <table class="table table-striped table-hover small">
+            <thead><tr><th>Week</th><th class="text-end">Total Revenue</th><th class="text-end">Cash</th><th class="text-end">UPI</th><th class="text-center">Bookings</th></tr></thead>
+            <tbody>${tableRows}</tbody>
+          </table>
+        </div>`;
       }
 
       function openEditModal(id, n, p, d, s, e, price, paid, cash, upi) {
