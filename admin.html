@@ -1215,10 +1215,10 @@
               year: "numeric",
             });
             return `<tr>
-              <td><strong>${monthName}</strong></td>
-              <td class="text-end">₹${month.revenue.toLocaleString()}</td>
-              <td class="text-end">₹${month.cash.toLocaleString()}</td>
-              <td class="text-end">₹${month.upi.toLocaleString()}</td>
+              <td class="text-center"><strong>${monthName}</strong></td>
+              <td class="text-center">₹${month.revenue.toLocaleString()}</td>
+              <td class="text-center">₹${month.cash.toLocaleString()}</td>
+              <td class="text-center">₹${month.upi.toLocaleString()}</td>
               <td class="text-center">${month.bookings}</td>
             </tr>`;
           })
@@ -1277,10 +1277,10 @@
             const weekLabel = `${week.startDate.toLocaleDateString('en-GB', format)} - ${weekEnd.toLocaleDateString('en-GB', format)}`;
 
             return `<tr>
-              <td><strong>${weekLabel}</strong></td>
-              <td class="text-end">₹${week.revenue.toLocaleString()}</td>
-              <td class="text-end">₹${week.cash.toLocaleString()}</td>
-              <td class="text-end">₹${week.upi.toLocaleString()}</td>
+              <td class="text-center"><strong>${weekLabel}</strong></td>
+              <td class="text-center">₹${week.revenue.toLocaleString()}</td>
+              <td class="text-center">₹${week.cash.toLocaleString()}</td>
+              <td class="text-center">₹${week.upi.toLocaleString()}</td>
               <td class="text-center">${week.bookings}</td>
             </tr>`;
           })
