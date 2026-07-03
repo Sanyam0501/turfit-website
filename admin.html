@@ -416,7 +416,7 @@
                     </div>
                     <div class="col-6">
                       <div class="summary-box shadow-sm" id="growthBox">
-                        <div class="small fw-bold text-muted">vs. Prior Period</div>
+                        <div class="small fw-bold text-muted" id="revenueComparisonLabel">vs. Prior Period</div>
                         <div class="summary-val" id="revenueGrowth">
                           <span id="revenueGrowthValue">0</span>%
                         </div>
@@ -1126,6 +1126,14 @@
           prevEnd = new Date(end);
           prevEnd.setDate(end.getDate() - diff - 1);
         }
+
+        const formatComparisonDate = (d) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+        const comparisonText = `vs. ${formatComparisonDate(prevStart)} - ${formatComparisonDate(prevEnd)}`;
+        document.getElementById('revenueComparisonLabel').innerText = comparisonText;
+
+
+
+
 
         const formatDate = (d) => d.toISOString().split("T")[0];
 
