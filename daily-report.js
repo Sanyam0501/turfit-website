@@ -62,7 +62,7 @@ export default async function handler(req, res) {
 
     // 6. Send the email
     await resend.emails.send({
-      from: 'Turfit Report <onboarding@resend.dev>', 
+      from: 'Turfit Report <jainsanyam0405@gmail.com>', 
       to: process.env.ADMIN_EMAIL,
       subject: subject,
       html: htmlBody,
