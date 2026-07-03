@@ -257,8 +257,16 @@
               </div>
             </div> -->
 
-            <div class="row g-3 mb-3 text-center">
-              <div class="col-6">
+            <div class="row g-3 mb-4 text-center">
+              <div class="col-6 col-md-3">
+                <div class="summary-box shadow-sm">
+                  <div class="small fw-bold text-muted">Total Received</div>
+                  <div class="summary-val">
+                    ₹<span id="statReceived">0</span>
+                  </div>
+                </div>
+              </div>
+              <div class="col-6 col-md-3">
                 <div
                   class="summary-box shadow-sm"
                   style="border-left-color: #dc3545"
@@ -271,17 +279,17 @@
               </div>
               <div class="col-6 col-md-3">
                 <div class="summary-box shadow-sm">
-                  <div class="small fw-bold text-muted">Received</div>
+                  <div class="small fw-bold text-muted">Cash</div>
                   <div class="summary-val">
-                    ₹<span id="statReceived">0</span>
+                    ₹<span id="cashReceived">0</span>
                   </div>
                 </div>
               </div>
               <div class="col-6 col-md-3">
                 <div class="summary-box shadow-sm">
-                  <div class="small fw-bold text-muted">Cash</div>
+                  <div class="small fw-bold text-muted">UPI</div>
                   <div class="summary-val">
-                    ₹<span id="cashReceived">0</span>
+                    ₹<span id="upiReceived">0</span>
                   </div>
                 </div>
               </div>
@@ -988,6 +996,8 @@
           totalPending.toLocaleString();
         document.getElementById("cashReceived").innerText =
           cashTotal.toLocaleString();
+        document.getElementById("upiReceived").innerText =
+          upiTotal.toLocaleString();
 
         const container = document.getElementById("dayList");
         container.innerHTML =
