@@ -256,6 +256,26 @@
                 />
               </div>
             </div>
+
+            <!-- Monthly Revenue & Growth -->
+            <div class="row g-3 mb-4 text-center">
+              <div class="col-6">
+                <div class="summary-box shadow-sm">
+                  <div class="small fw-bold text-muted">This Month's Revenue</div>
+                  <div class="summary-val">
+                    ₹<span id="statMonthlyRevenue">0</span>
+                  </div>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="summary-box shadow-sm" id="growthBox">
+                  <div class="small fw-bold text-muted">Monthly Growth</div>
+                  <div class="summary-val" id="statGrowth">
+                    <span id="statGrowthValue">0</span>%
+                  </div>
+                </div>
+              </div>
+            </div>
             <div class="row g-3 mb-3 text-center">
               <div class="col-6">
                 <div class="summary-box shadow-sm">
@@ -789,6 +809,7 @@
 
       function updateView() {
         loadDaySlots();
+        loadMonthlyStats();
         document.getElementById("currentDisplayDate").innerText = new Date(
           document.getElementById("bookDate").value
         ).toDateString();
@@ -1015,6 +1036,69 @@
         list.innerHTML = filtered.length
           ? filtered.map((b) => createBookingItem(b)).join("")
           : `<div class="text-center py-4 text-muted small">No ${type} bookings.</div>`;
+      }
+
+      async function loadMonthlyStats() {
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const currentMonth = now.getMonth(); // 0-11
+
+        // 1. Get start/end dates for current and previous months
+        const firstDayCurrentMonth = new Date(currentYear, currentMonth, 1)
+          .toISOString()
+          .split("T")[0];
+        const lastDayCurrentMonth = new Date(currentYear, currentMonth + 1, 0)
+          .toISOString()
+          .split("T")[0];
+
+        const firstDayPrevMonth = new Date(currentYear, currentMonth - 1, 1)
+          .toISOString()
+          .split("T")[0];
+        const lastDayPrevMonth = new Date(currentYear, currentMonth, 0)
+          .toISOString()
+          .split("T")[0];
+
+        // 2. Fetch data for both months
+        const { data: bookings, error } = await supabaseClient
+          .from("turf_bookings")
+          .select("booking_date, paid_cash, paid_upi")
+          .gte("booking_date", firstDayPrevMonth)
+          .lte("booking_date", lastDayCurrentMonth);
+
+        if (error) {
+          console.error("Error fetching monthly stats:", error);
+          return;
+        }
+
+        // 3. Calculate revenues
+        let currentMonthRevenue = 0;
+        let prevMonthRevenue = 0;
+
+        bookings.forEach((b) => {
+          const paid = (b.paid_cash || 0) + (b.paid_upi || 0);
+          if (b.booking_date >= firstDayCurrentMonth) {
+            currentMonthRevenue += paid;
+          } else {
+            prevMonthRevenue += paid;
+          }
+        });
+
+        // 4. Calculate Growth
+        let growth = 0;
+        if (prevMonthRevenue > 0) {
+          growth =
+            ((currentMonthRevenue - prevMonthRevenue) / prevMonthRevenue) * 100;
+        } else if (currentMonthRevenue > 0) {
+          growth = 100; // Or Infinity, 100% is cleaner for UI
+        }
+
+        // 5. Update UI
+        document.getElementById("statMonthlyRevenue").innerText = currentMonthRevenue.toLocaleString();
+        const growthEl = document.getElementById("statGrowthValue");
+        growthEl.innerText = growth.toFixed(1);
+        growthEl.parentElement.className = 'summary-val'; // Reset class
+        if (growth > 0) growthEl.parentElement.classList.add('text-success');
+        if (growth < 0) growthEl.parentElement.classList.add('text-danger');
       }
 
       function openEditModal(id, n, p, d, s, e, price, paid, cash, upi) {
