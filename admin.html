@@ -597,6 +597,7 @@
       let pendingFilterActive = false;
       let weeksToShow = 10; // State for weekly breakdown
       let allBookingsData = []; // Cache for breakdown data
+      let initialLoad = true;
 
       async function init() {
         const res = await fetch("/api/get-public-key");
@@ -612,6 +613,7 @@
         document.getElementById("bookDate").valueAsDate = new Date();
         updateView();
         addDateValidation();
+        checkForUnpaidCompleted(); // Check for notifications on load
       }
 
       function populateSelectors() {
@@ -1072,6 +1074,7 @@
         const { data } = await supabaseClient
           .from("turf_bookings")
           .select("*")
+          .limit(initialLoad ? 100 : 500) // Optimization: load fewer on first load
           .order("booking_date", { ascending: false })
           .order("start_time", { ascending: false });
         const list = document.getElementById(`${type}List`);
@@ -1079,6 +1082,7 @@
         if (!data) return;
 
         const filtered = data.filter((b) => {
+          // Use T00:00:00 to avoid timezone issues with date parsing
           const startDT = new Date(`${b.booking_date}T${b.start_time}`);
           let endDT = new Date(`${b.booking_date}T${b.end_time}`);
 
@@ -1101,6 +1105,34 @@
         list.innerHTML = filtered.length
           ? filtered.map((b) => createBookingItem(b)).join("")
           : `<div class="text-center py-4 text-muted small">No ${type} bookings.</div>`;
+        
+        initialLoad = false; // Subsequent loads will fetch more data if needed
+      }
+
+      async function checkForUnpaidCompleted() {
+        const now = new Date();
+        const { data, error } = await supabaseClient
+          .from("turf_bookings")
+          .select("booking_date, end_time, price, paid_amount")
+          .gt('price', 'paid_amount'); // Optimization: only fetch potentially unpaid bookings
+
+        if (error) return console.error("Error checking for unpaid bookings:", error);
+
+        const hasUnpaid = data.some(b => {
+            let endDT = new Date(`${b.booking_date}T${b.end_time}`);
+            if (b.end_time === "00:00:00") endDT.setDate(endDT.getDate() + 1);
+            return now > endDT; // Check if it's completed
+        });
+
+        const completedTab = document.querySelector('button[data-bs-target="#completedPanel"]');
+        const existingDot = completedTab.querySelector('.notification-dot');
+
+        if (hasUnpaid && !existingDot) {
+            completedTab.style.position = 'relative';
+            completedTab.insertAdjacentHTML('beforeend', '<span class="notification-dot position-absolute top-0 start-100 translate-middle p-2 bg-danger border border-light rounded-circle"></span>');
+        } else if (!hasUnpaid && existingDot) {
+            existingDot.remove();
+        }
       }
 
       async function loadRevenueData() {
@@ -1355,6 +1387,13 @@
         document.getElementById("edit_ampm_end").value = eh >= 12 ? "PM" : "AM";
         bsEditModal.show();
       }
+      
+      // Override the default saveEntry to re-check for notifications after an update
+      const originalSaveEntry = saveEntry;
+      saveEntry = async (...args) => {
+          await originalSaveEntry(...args);
+          checkForUnpaidCompleted();
+      };
 
       function toggleSplitView() {
         const btn = document.getElementById('toggleSplitBtn');
