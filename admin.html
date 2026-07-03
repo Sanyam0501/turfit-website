@@ -580,6 +580,8 @@
       let supabaseClient;
       let bsEditModal;
       let pendingFilterActive = false;
+      let weeksToShow = 10; // State for weekly breakdown
+      let allBookingsData = []; // Cache for breakdown data
 
       async function init() {
         const res = await fetch("/api/get-public-key");
@@ -1137,19 +1139,26 @@
           .select("booking_date, paid_cash, paid_upi")
           .order("booking_date", { ascending: false });
         
-        loadMonthlyRevenueBreakdown(data, error);
-        loadWeeklyRevenueBreakdown(data, error);
-      }
-      function loadMonthlyRevenueBreakdown(data, error) {
-
         if (error) {
-          console.error("Error fetching monthly breakdown:", error);
+          console.error("Error fetching breakdown data:", error);
+          document.getElementById("monthlyRevenueTableBody").innerHTML = '<tr><td colspan="5" class="text-center text-danger">Could not load data.</td></tr>';
+          document.getElementById("weeklyRevenueTableContainer").innerHTML = '<p class="text-center text-danger">Could not load data.</p>';
+          return;
+        }
+        allBookingsData = data; // Cache the data
+        loadMonthlyRevenueBreakdown();
+        loadWeeklyRevenueBreakdown();
+      }
+      function loadMonthlyRevenueBreakdown() {
+
+        if (!allBookingsData) {
+          console.error("Breakdown data not loaded.");
           return;
         }
 
         const monthlyData = {};
 
-        data.forEach((b) => {
+        allBookingsData.forEach((b) => {
           const date = new Date(b.booking_date);
           // Create a key like "2023-10"
           const monthKey = `${date.getFullYear()}-${String(
@@ -1193,9 +1202,15 @@
           .join("");
       }
 
-      function loadWeeklyRevenueBreakdown(data, error) {
-        if (error) {
-          console.error("Error fetching weekly breakdown:", error);
+      function showMoreWeeks() {
+        weeksToShow += 10; // Increase the number of weeks to show
+        loadWeeklyRevenueBreakdown(); // Re-render the table
+      }
+
+      function loadWeeklyRevenueBreakdown() {
+        const data = allBookingsData;
+        if (!data) {
+          console.error("Breakdown data not loaded for weekly view.");
           return;
         }
 
@@ -1229,8 +1244,9 @@
         });
 
         const tableContainer = document.getElementById("weeklyRevenueTableContainer");
-        const tableRows = Object.values(weeklyData)
-          .sort((a, b) => b.startDate - a.startDate) // Sort by most recent week
+        const sortedWeeks = Object.values(weeklyData).sort((a, b) => b.startDate - a.startDate);
+        const tableRows = sortedWeeks
+          .slice(0, weeksToShow) // Limit to the number of weeks to show
           .map((week) => {
             const weekEnd = new Date(week.startDate);
             weekEnd.setDate(weekEnd.getDate() + 6);
@@ -1247,12 +1263,20 @@
           })
           .join("");
 
+        let showMoreButton = '';
+        if (sortedWeeks.length > weeksToShow) {
+            showMoreButton = `<div class="text-center mt-3">
+                <button class="btn btn-sm btn-outline-secondary" onclick="showMoreWeeks()">Show More</button>
+            </div>`;
+        }
+
         tableContainer.innerHTML = `<div class="table-responsive">
           <table class="table table-striped table-hover small">
             <thead><tr><th>Week</th><th class="text-end">Total Revenue</th><th class="text-end">Cash</th><th class="text-end">UPI</th><th class="text-center">Bookings</th></tr></thead>
             <tbody>${tableRows}</tbody>
           </table>
-        </div>`;
+        </div>
+        ${showMoreButton}`;
       }
 
       function openEditModal(id, n, p, d, s, e, price, paid, cash, upi) {
