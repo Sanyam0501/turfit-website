@@ -18,15 +18,17 @@ export default async function handler(req, res) {
   const resend = new Resend(process.env.RESEND_API_KEY);
 
   try {
-    // 3. Calculate today's date (since the report runs at the end of the day)
+    // 3. Calculate yesterday's date
     const today = new Date();
-    const todayString = today.toISOString().split('T')[0];
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayString = yesterday.toISOString().split('T')[0];
 
-    // 4. Fetch pending bookings from the current day
+    // 4. Fetch pending bookings from the previous day
     const { data: pendingBookings, error } = await supabase
       .from('turf_bookings')
       .select('customer_name, phone_number, price, paid_amount, start_time')
-      .eq('booking_date', todayString)
+      .eq('booking_date', yesterdayString)
       .gt('price', 'paid_amount');
 
     if (error) {
@@ -42,7 +44,7 @@ export default async function handler(req, res) {
       return `<li><strong>${b.customer_name}</strong> (${startTime12H}): ₹${pending} pending</li>`;
     }).join('');
 
-    const reportDate = today.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    const reportDate = yesterday.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
     const subject = `Turfit Daily Report: ₹${totalPending} Pending for ${reportDate}`;
 
     const htmlBody = `
@@ -55,14 +57,14 @@ export default async function handler(req, res) {
       <ul>
         ${bookingsList}
       </ul>
-      ` : '<p>No pending payments for today. Great job!</p>'}
+      ` : '<p>No pending payments for yesterday. Great job!</p>'}
       <hr>
       <p><em>This is an automated report.</em></p>
     `;
 
     // 6. Send the email
     await resend.emails.send({
-      from: 'Turfit Report <jainsanyam0405@gmail.com>', 
+      from: 'Turfit Report <onboarding@resend.dev>',
       to: process.env.ADMIN_EMAIL,
       subject: subject,
       html: htmlBody,
