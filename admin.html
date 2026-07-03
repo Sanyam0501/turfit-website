@@ -223,10 +223,10 @@
           </div>
 
           <div class="col-lg-8">
-            <div class="d-flex justify-content-end mb-2">
+            <!-- <div class="d-flex justify-content-end mb-2">
               <select
                 id="statsFilter"
-                class="form-select form-select-sm w-auto"
+                class="form-select form-select-sm w-auto d-none"
                 onchange="loadDaySlots()"
               >
                 <option value="all">All Time</option>
@@ -236,9 +236,9 @@
                 <option value="year">Past 1 Year</option>
                 <option value="custom">Custom Range</option>
               </select>
-            </div>
+            </div> -->
 
-            <div id="customRangeInputs" class="d-none row g-2 mb-3">
+            <!-- <div id="customRangeInputs" class="d-none row g-2 mb-3">
               <div class="col-6">
                 <input
                   type="date"
@@ -255,36 +255,9 @@
                   onchange="loadDaySlots()"
                 />
               </div>
-            </div>
+            </div> -->
 
-            <!-- Monthly Revenue & Growth -->
-            <div class="row g-3 mb-4 text-center">
-              <div class="col-6">
-                <div class="summary-box shadow-sm">
-                  <div class="small fw-bold text-muted">This Month's Revenue</div>
-                  <div class="summary-val">
-                    ₹<span id="statMonthlyRevenue">0</span>
-                  </div>
-                </div>
-              </div>
-              <div class="col-6">
-                <div class="summary-box shadow-sm" id="growthBox">
-                  <div class="small fw-bold text-muted">Monthly Growth</div>
-                  <div class="summary-val" id="statGrowth">
-                    <span id="statGrowthValue">0</span>%
-                  </div>
-                </div>
-              </div>
-            </div>
             <div class="row g-3 mb-3 text-center">
-              <div class="col-6">
-                <div class="summary-box shadow-sm">
-                  <div class="small fw-bold text-muted">Received</div>
-                  <div class="summary-val">
-                    ₹<span id="statReceived">0</span>
-                  </div>
-                </div>
-              </div>
               <div class="col-6">
                 <div
                   class="summary-box shadow-sm"
@@ -296,19 +269,19 @@
                   </div>
                 </div>
               </div>
-              <div class="col-6">
+              <div class="col-6 col-md-3">
                 <div class="summary-box shadow-sm">
-                  <div class="small fw-bold text-muted">Cash Received</div>
+                  <div class="small fw-bold text-muted">Received</div>
                   <div class="summary-val">
-                    ₹<span id="cashReceived">0</span>
+                    ₹<span id="statReceived">0</span>
                   </div>
                 </div>
               </div>
-              <div class="col-6">
+              <div class="col-6 col-md-3">
                 <div class="summary-box shadow-sm">
-                  <div class="small fw-bold text-muted">UPI Received</div>
+                  <div class="small fw-bold text-muted">Cash</div>
                   <div class="summary-val">
-                    ₹<span id="UPIReceived">0</span>
+                    ₹<span id="cashReceived">0</span>
                   </div>
                 </div>
               </div>
@@ -317,7 +290,7 @@
             <div class="card p-0 overflow-hidden shadow-sm">
               <ul class="nav nav-tabs px-3 bg-white" id="bookingTabs">
                 <li class="nav-item">
-                  <button
+                  <button 
                     class="nav-link active"
                     data-bs-toggle="tab"
                     data-bs-target="#todayPanel"
@@ -356,6 +329,16 @@
                     Completed
                   </button>
                 </li>
+                <li class="nav-item">
+                  <button
+                    class="nav-link"
+                    data-bs-toggle="tab"
+                    data-bs-target="#revenuePanel"
+                    onclick="loadRevenueData()"
+                  >
+                    <i class="bi bi-graph-up-arrow"></i> Revenue
+                  </button>
+                </li>
               </ul>
               <div class="tab-content p-4 bg-white">
                 <div class="tab-pane fade show active" id="todayPanel">
@@ -378,6 +361,74 @@
                     </button>
                   </div>
                   <div id="completedList"></div>
+                </div>
+                <div class="tab-pane fade" id="revenuePanel">
+                  <div class="d-flex justify-content-end mb-3">
+                    <select
+                      id="revenueFilter"
+                      class="form-select form-select-sm w-auto"
+                      onchange="loadRevenueData()"
+                    >
+                      <option value="mtd" selected>This Month (MTD)</option>
+                      <option value="last_month">Last Month</option>
+                      <option value="last_7_days">Last 7 Days</option>
+                      <option value="last_30_days">Last 30 Days</option>
+                      <option value="custom">Custom Range</option>
+                    </select>
+                  </div>
+
+                  <div id="revenueCustomRange" class="d-none row g-2 mb-3">
+                    <div class="col-6">
+                      <input
+                        type="date"
+                        id="revenueRangeStart"
+                        class="form-control form-control-sm"
+                        onchange="loadRevenueData()"
+                      />
+                    </div>
+                    <div class="col-6">
+                      <input
+                        type="date"
+                        id="revenueRangeEnd"
+                        class="form-control form-control-sm"
+                        onchange="loadRevenueData()"
+                      />
+                    </div>
+                  </div>
+
+                  <!-- Revenue Stats -->
+                  <div class="row g-3 mb-4 text-center">
+                    <div class="col-6">
+                      <div class="summary-box shadow-sm">
+                        <div class="small fw-bold text-muted">Total Revenue</div>
+                        <div class="summary-val">
+                          ₹<span id="revenueTotal">0</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-6">
+                      <div class="summary-box shadow-sm" id="growthBox">
+                        <div class="small fw-bold text-muted">vs. Prior Period</div>
+                        <div class="summary-val" id="revenueGrowth">
+                          <span id="revenueGrowthValue">0</span>%
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-6">
+                      <div class="summary-box shadow-sm">
+                        <div class="small fw-bold text-muted">Cash</div>
+                        <div class="summary-val">
+                          ₹<span id="revenueCash">0</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-6">
+                      <div class="summary-box shadow-sm">
+                        <div class="small fw-bold text-muted">UPI</div>
+                        <div class="summary-val">₹<span id="revenueUpi">0</span></div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -809,7 +860,6 @@
 
       function updateView() {
         loadDaySlots();
-        loadMonthlyStats();
         document.getElementById("currentDisplayDate").innerText = new Date(
           document.getElementById("bookDate").value
         ).toDateString();
@@ -896,77 +946,38 @@
 
       async function loadDaySlots() {
         const selectedDate = document.getElementById("bookDate").value;
-        const filterType = document.getElementById("statsFilter").value;
-        const customInputs = document.getElementById("customRangeInputs");
 
-        // Show/Hide custom inputs
-        customInputs.classList.toggle("d-none", filterType !== "custom");
-
-        // 1. Fetch only selected day bookings for the list view
-        const { data: dayData } = await supabaseClient
+        // 1. Fetch bookings and calculate stats for the selected date
+        const { data, error } = await supabaseClient
           .from("turf_bookings")
           .select("*")
           .eq("booking_date", selectedDate)
           .order("start_time");
 
-        // 2. Build the query for Statistics
-        let statsQuery = supabaseClient
-          .from("turf_bookings")
-          .select("price, paid_amount, paid_cash, paid_upi, booking_date");
-
-        const now = new Date();
-        let startDate = new Date();
-
-        if (filterType === "today") {
-          statsQuery = statsQuery.eq(
-            "booking_date",
-            now.toISOString().split("T")[0]
-          );
-        } else if (filterType === "week") {
-          startDate.setDate(now.getDate() - 7);
-          statsQuery = statsQuery.gte(
-            "booking_date",
-            startDate.toISOString().split("T")[0]
-          );
-        } else if (filterType === "month") {
-          startDate.setMonth(now.getMonth() - 1);
-          statsQuery = statsQuery.gte(
-            "booking_date",
-            startDate.toISOString().split("T")[0]
-          );
-        } else if (filterType === "year") {
-          startDate.setFullYear(now.getFullYear() - 1);
-          statsQuery = statsQuery.gte(
-            "booking_date",
-            startDate.toISOString().split("T")[0]
-          );
-        } else if (filterType === "custom") {
-          const s = document.getElementById("rangeStart").value;
-          const e = document.getElementById("rangeEnd").value;
-          if (s) statsQuery = statsQuery.gte("booking_date", s);
-          if (e) statsQuery = statsQuery.lte("booking_date", e);
+        if (error) {
+          console.error("Error fetching day slots:", error);
+          return;
         }
 
-        const { data: statsData } = await statsQuery;
-
-        // 3. Calculate Totals
+        // 2. Calculate Totals for the selected day
         let totalReceived = 0,
           totalPending = 0,
           cashTotal = 0,
           upiTotal = 0;
-        if (statsData) {
-          statsData.forEach((b) => {
+
+        if (data) {
+          data.forEach((b) => {
             const price = parseFloat(b.price || 0);
             const cash = parseFloat(b.paid_cash || 0);
             const upi = parseFloat(b.paid_upi || 0);
-
-            // Note: We calculate 'paid' as sum of cash + upi to ensure it matches the breakdown
             const paid = cash + upi;
 
             totalReceived += paid;
             cashTotal += cash;
             upiTotal += upi;
-            totalPending += price - paid;
+            if (price > paid) {
+              totalPending += price - paid;
+            }
           });
         }
 
@@ -977,13 +988,11 @@
           totalPending.toLocaleString();
         document.getElementById("cashReceived").innerText =
           cashTotal.toLocaleString();
-        document.getElementById("UPIReceived").innerText =
-          upiTotal.toLocaleString();
 
         const container = document.getElementById("dayList");
         container.innerHTML =
-          dayData && dayData.length
-            ? dayData.map((b) => createBookingItem(b)).join("")
+          data && data.length
+            ? data.map((b) => createBookingItem(b)).join("")
             : '<div class="text-center py-4 text-muted small">No bookings for this date.</div>';
       }
 
@@ -1038,67 +1047,112 @@
           : `<div class="text-center py-4 text-muted small">No ${type} bookings.</div>`;
       }
 
-      async function loadMonthlyStats() {
+      async function loadRevenueData() {
+        const filter = document.getElementById("revenueFilter").value;
+        const customRangeDiv = document.getElementById("revenueCustomRange");
+        customRangeDiv.classList.toggle("d-none", filter !== "custom");
+
         const now = new Date();
-        const currentYear = now.getFullYear();
-        const currentMonth = now.getMonth(); // 0-11
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-        // 1. Get start/end dates for current and previous months
-        const firstDayCurrentMonth = new Date(currentYear, currentMonth, 1)
-          .toISOString()
-          .split("T")[0];
-        const lastDayCurrentMonth = new Date(currentYear, currentMonth + 1, 0)
-          .toISOString()
-          .split("T")[0];
+        let start, end, prevStart, prevEnd;
 
-        const firstDayPrevMonth = new Date(currentYear, currentMonth - 1, 1)
-          .toISOString()
-          .split("T")[0];
-        const lastDayPrevMonth = new Date(currentYear, currentMonth, 0)
-          .toISOString()
-          .split("T")[0];
+        if (filter === "mtd") {
+          start = new Date(today.getFullYear(), today.getMonth(), 1);
+          end = today;
+          prevStart = new Date(start.getFullYear(), start.getMonth() - 1, 1);
+          prevEnd = new Date(end.getFullYear(), end.getMonth() - 1, end.getDate());
+        } else if (filter === "last_month") {
+          start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+          end = new Date(today.getFullYear(), today.getMonth(), 0);
+          prevStart = new Date(start.getFullYear(), start.getMonth() - 1, 1);
+          prevEnd = new Date(end.getFullYear(), end.getMonth() - 1, 0);
+        } else if (filter === "last_7_days") {
+          start = new Date(today);
+          start.setDate(today.getDate() - 6);
+          end = today;
+          prevStart = new Date(start);
+          prevStart.setDate(start.getDate() - 7);
+          prevEnd = new Date(end);
+          prevEnd.setDate(end.getDate() - 7);
+        } else if (filter === "last_30_days") {
+          start = new Date(today);
+          start.setDate(today.getDate() - 29);
+          end = today;
+          prevStart = new Date(start);
+          prevStart.setDate(start.getDate() - 30);
+          prevEnd = new Date(end);
+          prevEnd.setDate(end.getDate() - 30);
+        } else if (filter === "custom") {
+          const customStart = document.getElementById("revenueRangeStart").value;
+          const customEnd = document.getElementById("revenueRangeEnd").value;
+          if (!customStart || !customEnd) return; // Wait for both dates
+          start = new Date(customStart);
+          end = new Date(customEnd);
+          const diff = (end - start) / (1000 * 60 * 60 * 24);
+          prevStart = new Date(start);
+          prevStart.setDate(start.getDate() - diff - 1);
+          prevEnd = new Date(end);
+          prevEnd.setDate(end.getDate() - diff - 1);
+        }
 
-        // 2. Fetch data for both months
-        const { data: bookings, error } = await supabaseClient
+        const formatDate = (d) => d.toISOString().split("T")[0];
+
+        // Fetch data for both periods in one go
+        const { data, error } = await supabaseClient
           .from("turf_bookings")
           .select("booking_date, paid_cash, paid_upi")
-          .gte("booking_date", firstDayPrevMonth)
-          .lte("booking_date", lastDayCurrentMonth);
+          .gte("booking_date", formatDate(prevStart))
+          .lte("booking_date", formatDate(end));
 
         if (error) {
-          console.error("Error fetching monthly stats:", error);
+          console.error("Error fetching revenue data:", error);
           return;
         }
 
-        // 3. Calculate revenues
-        let currentMonthRevenue = 0;
-        let prevMonthRevenue = 0;
+        // Calculate revenues for each period
+        let current = { total: 0, cash: 0, upi: 0 };
+        let previous = { total: 0, cash: 0, upi: 0 };
 
-        bookings.forEach((b) => {
+        const startStr = formatDate(start);
+        const endStr = formatDate(end);
+
+        data.forEach((b) => {
           const paid = (b.paid_cash || 0) + (b.paid_upi || 0);
-          if (b.booking_date >= firstDayCurrentMonth) {
-            currentMonthRevenue += paid;
+          if (b.booking_date >= startStr && b.booking_date <= endStr) {
+            current.total += paid;
+            current.cash += b.paid_cash || 0;
+            current.upi += b.paid_upi || 0;
           } else {
-            prevMonthRevenue += paid;
+            previous.total += paid;
           }
         });
 
-        // 4. Calculate Growth
+        // Calculate Growth
         let growth = 0;
-        if (prevMonthRevenue > 0) {
-          growth =
-            ((currentMonthRevenue - prevMonthRevenue) / prevMonthRevenue) * 100;
-        } else if (currentMonthRevenue > 0) {
+        if (previous.total > 0) {
+          growth = ((current.total - previous.total) / previous.total) * 100;
+        } else if (current.total > 0) {
           growth = 100; // Or Infinity, 100% is cleaner for UI
         }
 
-        // 5. Update UI
-        document.getElementById("statMonthlyRevenue").innerText = currentMonthRevenue.toLocaleString();
-        const growthEl = document.getElementById("statGrowthValue");
+        // Update UI
+        document.getElementById("revenueTotal").innerText = current.total.toLocaleString();
+        document.getElementById("revenueCash").innerText = current.cash.toLocaleString();
+        document.getElementById("revenueUpi").innerText = current.upi.toLocaleString();
+
+        const growthEl = document.getElementById("revenueGrowthValue");
+        const growthBox = document.getElementById("revenueGrowth");
         growthEl.innerText = growth.toFixed(1);
-        growthEl.parentElement.className = 'summary-val'; // Reset class
-        if (growth > 0) growthEl.parentElement.classList.add('text-success');
-        if (growth < 0) growthEl.parentElement.classList.add('text-danger');
+        growthBox.className = "summary-val"; // Reset class
+        if (growth > 0) {
+          growthBox.classList.add("text-success");
+          growthEl.innerText = `+${growth.toFixed(1)}`;
+        } else if (growth < 0) {
+          growthBox.classList.add("text-danger");
+        } else {
+          // neutral
+        }
       }
 
       function openEditModal(id, n, p, d, s, e, price, paid, cash, upi) {
