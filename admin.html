@@ -396,7 +396,7 @@
 
                   <!-- Revenue Stats -->
                   <div class="row g-3 mb-4 text-center">
-                    <div class="col-4">
+                    <div class="col-6 col-md-3">
                       <div class="summary-box shadow-sm">
                         <div class="small fw-bold text-muted">Total Revenue</div>
                         <div class="summary-val">
@@ -404,7 +404,15 @@
                         </div>
                       </div>
                     </div>
-                    <div class="col-4">
+                    <div class="col-6 col-md-3">
+                      <div class="summary-box shadow-sm" style="border-left-color: #dc3545">
+                        <div class="small fw-bold text-muted">Pending</div>
+                        <div class="summary-val text-danger">
+                          ₹<span id="revenuePending">0</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-6 col-md-3">
                       <div class="summary-box shadow-sm">
                         <div class="small fw-bold text-muted">Cash</div>
                         <div class="summary-val">
@@ -412,7 +420,7 @@
                         </div>
                       </div>
                     </div>
-                    <div class="col-4">
+                    <div class="col-6 col-md-3">
                       <div class="summary-box shadow-sm">
                         <div class="small fw-bold text-muted">UPI</div>
                         <div class="summary-val">₹<span id="revenueUpi">0</span></div>
@@ -1083,8 +1091,9 @@
 
         if (customStartEl.value && customEndEl.value) {
           // Use user-selected range
-          start = new Date(customStartEl.value);
-          end = new Date(customEndEl.value);
+          // By adding 'T00:00:00', we ensure it's parsed as local time, avoiding timezone shifts.
+          start = new Date(customStartEl.value + 'T00:00:00');
+          end = new Date(customEndEl.value + 'T00:00:00');
         } else {
           // Default to This Month (MTD) on initial load
           const now = new Date();
@@ -1117,19 +1126,24 @@
         }
 
         // Calculate revenues for each period
-        let current = { total: 0, cash: 0, upi: 0 };
+        let current = { total: 0, cash: 0, upi: 0, pending: 0 };
 
         data.forEach((b) => {
+          const price = parseFloat(b.price || 0);
           const paid = (b.paid_cash || 0) + (b.paid_upi || 0);
           current.total += paid;
           current.cash += b.paid_cash || 0;
           current.upi += b.paid_upi || 0;
+          if (price > paid) {
+            current.pending += price - paid;
+          }
         });
 
         // Update UI
         document.getElementById("revenueTotal").innerText = current.total.toLocaleString();
         document.getElementById("revenueCash").innerText = current.cash.toLocaleString();
         document.getElementById("revenueUpi").innerText = current.upi.toLocaleString();
+        document.getElementById("revenuePending").innerText = current.pending.toLocaleString();
 
       }
 
