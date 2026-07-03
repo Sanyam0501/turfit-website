@@ -118,7 +118,7 @@
         >
           <div style="width: 40px"></div>
           <h2 class="fw-bold m-0">
-            <i class="bi bi-whatsapp me-2"></i>TURFIT MANAGER
+            <i class="me-2"></i>TURFIT MANAGER
           </h2>
           <button class="btn btn-sm btn-outline-light" onclick="logout()">
             Logout
@@ -435,6 +435,26 @@
                         <div class="small fw-bold text-muted">UPI</div>
                         <div class="summary-val">₹<span id="revenueUpi">0</span></div>
                       </div>
+                    </div>
+                  </div>
+
+                  <hr class="my-4" />
+
+                  <div>
+                    <h5 class="fw-bold mb-3">Monthly Revenue Breakdown</h5>
+                    <div class="table-responsive">
+                      <table class="table table-striped table-hover small">
+                        <thead>
+                          <tr>
+                            <th>Month</th>
+                            <th class="text-end">Total Revenue</th>
+                            <th class="text-end">Cash</th>
+                            <th class="text-end">UPI</th>
+                            <th class="text-center">Bookings</th>
+                          </tr>
+                        </thead>
+                        <tbody id="monthlyRevenueTableBody"></tbody>
+                      </table>
                     </div>
                   </div>
                 </div>
@@ -1060,6 +1080,7 @@
       async function loadRevenueData() {
         const filter = document.getElementById("revenueFilter").value;
         const customRangeDiv = document.getElementById("revenueCustomRange");
+        loadMonthlyRevenueBreakdown(); // Also load the monthly table
         customRangeDiv.classList.toggle("d-none", filter !== "custom");
 
         const now = new Date();
@@ -1163,6 +1184,63 @@
         } else {
           // neutral
         }
+      }
+
+      async function loadMonthlyRevenueBreakdown() {
+        const { data, error } = await supabaseClient
+          .from("turf_bookings")
+          .select("booking_date, paid_cash, paid_upi")
+          .order("booking_date", { ascending: false });
+
+        if (error) {
+          console.error("Error fetching monthly breakdown:", error);
+          return;
+        }
+
+        const monthlyData = {};
+
+        data.forEach((b) => {
+          const date = new Date(b.booking_date);
+          // Create a key like "2023-10"
+          const monthKey = `${date.getFullYear()}-${String(
+            date.getMonth() + 1
+          ).padStart(2, "0")}`;
+
+          if (!monthlyData[monthKey]) {
+            monthlyData[monthKey] = {
+              revenue: 0,
+              cash: 0,
+              upi: 0,
+              bookings: 0,
+              date: new Date(date.getFullYear(), date.getMonth(), 1),
+            };
+          }
+
+          const cash = b.paid_cash || 0;
+          const upi = b.paid_upi || 0;
+          monthlyData[monthKey].revenue += cash + upi;
+          monthlyData[monthKey].cash += cash;
+          monthlyData[monthKey].upi += upi;
+          monthlyData[monthKey].bookings++;
+        });
+
+        const tableBody = document.getElementById("monthlyRevenueTableBody");
+        tableBody.innerHTML = Object.values(monthlyData)
+          .sort((a, b) => b.date - a.date) // Sort by most recent month
+          .map((month) => {
+            const monthName = month.date.toLocaleString("default", {
+              month: "long",
+              year: "numeric",
+            });
+            return `<tr>
+              <td><strong>${monthName}</strong></td>
+              <td class="text-end">₹${month.revenue.toLocaleString()}</td>
+              <td class="text-end">₹${month.cash.toLocaleString()}</td>
+              <td class="text-end">₹${month.upi.toLocaleString()}</td>
+              <td class="text-center">${month.bookings}</td>
+            </tr>`;
+          })
+          .join("");
       }
 
       function openEditModal(id, n, p, d, s, e, price, paid, cash, upi) {
