@@ -776,11 +776,9 @@
               );
 
               // Add a small delay then reload so the WhatsApp tab can open
-              setTimeout(() => {
-                location.reload();
-              }, 1500);
+              setTimeout(updateView, 1500);
             } else {
-              location.reload();
+              updateView();
             }
           });
         }
@@ -838,11 +836,9 @@
             }).then((result) => {
               if (result.isConfirmed) {
                 sendWhatsApp(name, phone, date, start24, end24, "cancel");
-                setTimeout(() => {
-                  location.reload();
-                }, 1000);
+                setTimeout(updateView, 1000);
               } else {
-                location.reload();
+                updateView();
               }
             });
           }
@@ -1132,12 +1128,14 @@
         const now = new Date();
         const { data, error } = await supabaseClient
           .from("turf_bookings")
-          .select("booking_date, end_time, price, paid_amount")
-          .gt('price', 'paid_amount'); // Optimization: only fetch potentially unpaid bookings
+          .select("booking_date, end_time, price, paid_cash, paid_upi");
 
         if (error) return console.error("Error checking for unpaid bookings:", error);
 
         const hasUnpaid = data.some(b => {
+            const paid = (b.paid_cash || 0) + (b.paid_upi || 0);
+            if (b.price <= paid) return false; // Skip if fully paid
+
             let endDT = new Date(`${b.booking_date}T${b.end_time}`);
             if (b.end_time === "00:00:00") endDT.setDate(endDT.getDate() + 1);
             return now > endDT; // Check if it's completed
@@ -1433,13 +1431,6 @@
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const day = String(date.getDate()).padStart(2, '0');
         return `${year}-${month}-${day}`;
-      }
-
-      function resetForm() {
-        ["userName", "userPhone", "bookingPrice"].forEach(
-          (id) => (document.getElementById(id).value = "")
-        );
-        document.getElementById("paidAmount").value = "0";
       }
 
       init();
