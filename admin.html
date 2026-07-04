@@ -762,13 +762,16 @@
           // ... inside saveEntry function ...
         } else {
           // Updated logic for New Bookings
+          if (isEdit) {
+            bsEditModal.hide();
+          }
           Swal.fire({
             title: "Saved!",
             text: "Booking recorded successfully.",
             icon: "success",
             showCancelButton: true,
             confirmButtonText: "SEND WHATSAPP",
-            confirmButtonColor: "#25D366",
+            confirmButtonColor: isEdit ? "#0d6efd" : "#25D366", // Use different color for update
             cancelButtonText: "CLOSE & RELOAD",
           }).then((r) => {
             if (r.isConfirmed) {
@@ -787,7 +790,8 @@
               // Add a small delay then reload so the WhatsApp tab can open
               setTimeout(updateView, 1500);
             } else {
-              updateView();
+              // This block runs on "CLOSE & RELOAD"
+              window.location.reload();
             }
           });
         }
