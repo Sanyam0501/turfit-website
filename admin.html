@@ -479,7 +479,7 @@
                             <th class="phone-col d-none d-md-table-cell text-center">Phone</th>
                             <th class="text-center">Date</th>
                             <th class="text-center">Slot</th>
-                            <th class="text-end price-col d-none d-md-table-cell">Price</th>
+                            <th class="text-center price-col d-none d-md-table-cell">Price</th>
                           </tr>
                         </thead>
                         <tbody id="revenueBookingListBody"></tbody>
@@ -1345,7 +1345,7 @@
       function renderRevenueBookingList() {
         const listBody = document.getElementById("revenueBookingListBody");
         if (revenueDataCache && revenueDataCache.length > 0) {
-          listBody.innerHTML = revenueDataCache.sort((a, b) => new Date(b.booking_date) - new Date(a.booking_date)).map(booking => `<tr><td class="py-2 text-center">${booking.customer_name}</td><td class="phone-col d-none d-md-table-cell py-2 text-center">${booking.phone_number || '-'}</td><td class="py-2 text-center">${new Date(booking.booking_date + 'T00:00:00').toLocaleDateString('en-GB', {day: '2-digit', month: 'short'})}</td><td class="py-2 text-center">${formatTo12H(booking.start_time)} - ${formatTo12H(booking.end_time)}</td><td class="text-end price-col d-none d-md-table-cell py-2">₹${(booking.price || 0).toLocaleString()}</td></tr>`).join('');
+          listBody.innerHTML = revenueDataCache.sort((a, b) => new Date(b.booking_date) - new Date(a.booking_date)).map(booking => `<tr><td class="py-2 text-center">${booking.customer_name}</td><td class="phone-col d-none d-md-table-cell py-2 text-center">${booking.phone_number || '-'}</td><td class="py-2 text-center">${new Date(booking.booking_date + 'T00:00:00').toLocaleDateString('en-GB', {day: '2-digit', month: 'short'})}</td><td class="py-2 text-center">${formatTo12H(booking.start_time)} - ${formatTo12H(booking.end_time)}</td><td class="text-center price-col d-none d-md-table-cell py-2">₹${(booking.price || 0).toLocaleString()}</td></tr>`).join('');
         } else {
           listBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">No bookings found in this date range.</td></tr>';
         }
