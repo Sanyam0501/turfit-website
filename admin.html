@@ -391,6 +391,7 @@
                         type="date"
                         id="revenueRangeStart"
                         class="form-control form-control-sm"
+                        onchange="loadRevenueData()"
                       />
                     </div>
                     <div class="col-md">
@@ -398,15 +399,8 @@
                         type="date"
                         id="revenueRangeEnd"
                         class="form-control form-control-sm"
+                        onchange="loadRevenueData()"
                       />
-                    </div>
-                    <div class="col-12 col-md-auto">
-                      <button
-                        class="btn btn-primary-custom btn-sm w-100"
-                        onclick="loadRevenueData()"
-                      >
-                        Show Bookings
-                      </button>
                     </div>
                   </div>
 
@@ -448,23 +442,6 @@
 
                   <hr class="my-4" />
 
-                  <div id="revenueBookingListContainer" style="display: none;">
-                    <h6 class="fw-bold mb-3">Bookings in this Range</h6>
-                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                      <table class="table table-sm table-hover small">
-                        <thead>
-                          <tr>
-                            <th>Customer</th>
-                            <th>Phone</th>
-                            <th>Date</th>
-                            <th>Slot</th>
-                            <th class="text-end">Price</th>
-                          </tr>
-                        </thead>
-                        <tbody id="revenueBookingListBody"></tbody>
-                      </table>
-                    </div>
-                  </div>
                   <div class="d-md-none text-center mb-3">
                     <button id="toggleSplitBtn" class="btn btn-sm btn-outline-secondary" onclick="toggleSplitView()">Show Cash/UPI Split</button>
                   </div>
@@ -631,12 +608,12 @@
       let allBookingsData = []; // Cache for breakdown data
       let initialLoad = true;
 
-      let revenueDataCache = []; // Cache for revenue tab bookings
-
       async function init() {
+        const res = await fetch("/api/get-public-key");
+        const keys = await res.json();
         supabaseClient = supabase.createClient(
-          "<%= process.env.NEXT_PUBLIC_SUPABASE_URL %>",
-          "<%= process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY %>"
+          keys.SUPABASE_URL_PUBLIC,
+          keys.SUPABASE_ANON_KEY
         );
         bsEditModal = new bootstrap.Modal(document.getElementById("editModal"));
 
@@ -703,10 +680,10 @@
         const date = document.getElementById(
           isEdit ? "edit_date" : "bookDate"
         ).value;
-        const price =
+        const price = parseFloat(
           document.getElementById(isEdit ? "edit_price" : "bookingPrice").value
-        ;
-        const cash = 
+        );
+        const cash =
           parseFloat(
             document.getElementById(isEdit ? "edit_paid_cash" : "paidCash")
               .value
@@ -716,7 +693,7 @@
             document.getElementById(isEdit ? "edit_paid_upi" : "paidUpi").value
           ) || 0;
         const totalPaid = cash + upi;
-        if (!name || !phone || !price)
+        if (!name || !phone || isNaN(price))
           return Swal.fire("Required", "Fill all fields", "warning");
         const start24 = get24hFromSelectors(
           document.getElementById(isEdit ? "edit_h" : "h_start").value,
@@ -769,7 +746,7 @@
           booking_date: date,
           start_time: start24,
           end_time: end24,
-          price: parseFloat(price),
+          price,
           paid_amount: totalPaid, // Sum for backwards compatibility
           paid_cash: cash,
           paid_upi: upi,
@@ -1189,11 +1166,8 @@
       }
 
       async function loadRevenueData() {
-        // This function is now the main entry point when the tab is clicked.
-        await loadRevenueSummary(); // Load summary first
-        loadBreakdownTables(); // Then load breakdown tables
-      }
-      async function loadRevenueSummary() {
+        loadBreakdownTables(); // Load both monthly and weekly tables
+
         let start, end;
         const customStartEl = document.getElementById("revenueRangeStart");
         const customEndEl = document.getElementById("revenueRangeEnd");
@@ -1212,12 +1186,6 @@
           // Set the date pickers to the default range
           customStartEl.value = toISODateString(start);
           customEndEl.value = toISODateString(end);
-
-          // On initial load, also hide the booking list and reset the button
-          document.getElementById('revenueBookingListContainer').style.display = 'none';
-          const btn = document.getElementById('toggleRevenueListBtn');
-          btn.innerText = 'Show Bookings';
-          btn.classList.remove('btn-secondary');
         }
 
         const dateLabel = document.getElementById('revenueDateRangeLabel');
@@ -1230,7 +1198,6 @@
           document.getElementById("revenuePending").innerText = '0';
           document.getElementById("revenueCash").innerText = '0';
           document.getElementById("revenueUpi").innerText = '0';
-          revenueDataCache = []; // Clear cache on invalid range
           return; // Stop execution to prevent fetching data with an invalid range
         }
 
@@ -1244,7 +1211,7 @@
         // Fetch data for the selected range. We can use the values directly from the inputs.
         const { data, error } = await supabaseClient
           .from("turf_bookings")
-          .select("customer_name, phone_number, booking_date, start_time, end_time, price, paid_cash, paid_upi")
+          .select("booking_date, paid_cash, paid_upi, price")
           .gte("booking_date", customStartEl.value)
           .lte("booking_date", customEndEl.value);
 
@@ -1252,8 +1219,6 @@
           console.error("Error fetching revenue data:", error);
           return;
         }
-
-        revenueDataCache = data; // Cache the fetched data
 
         // Calculate revenues for each period
         let current = { total: 0, cash: 0, upi: 0, pending: 0 };
@@ -1274,34 +1239,7 @@
         document.getElementById("revenueCash").innerText = current.cash.toLocaleString();
         document.getElementById("revenueUpi").innerText = current.upi.toLocaleString();
         document.getElementById("revenuePending").innerText = current.pending.toLocaleString();
-      }
 
-      function toggleRevenueBookingList() {
-        const container = document.getElementById('revenueBookingListContainer');
-        const btn = document.getElementById('toggleRevenueListBtn');
-        const isVisible = container.style.display !== 'none';
-
-        if (isVisible) {
-          container.style.display = 'none';
-          btn.innerText = 'Show Bookings';
-          btn.classList.remove('btn-secondary');
-          btn.classList.add('btn-primary-custom');
-        } else {
-          renderRevenueBookingList(); // Render the list using cached data
-          container.style.display = 'block';
-          btn.innerText = 'Hide Bookings';
-          btn.classList.remove('btn-primary-custom');
-          btn.classList.add('btn-secondary');
-        }
-      }
-
-      function renderRevenueBookingList() {
-        const listBody = document.getElementById("revenueBookingListBody");
-        if (revenueDataCache && revenueDataCache.length > 0) {
-          listBody.innerHTML = revenueDataCache.map(booking => `<tr><td>${booking.customer_name}</td><td>${booking.phone_number || '-'}</td><td>${new Date(booking.booking_date + 'T00:00:00').toLocaleDateString('en-GB', {day: '2-digit', month: 'short'})}</td><td>${formatTo12H(booking.start_time)} - ${formatTo12H(booking.end_time)}</td><td class="text-end">₹${(booking.price || 0).toLocaleString()}</td></tr>`).join('');
-        } else {
-          listBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">No bookings found in this date range.</td></tr>';
-        }
       }
 
       function addDateValidation() {
