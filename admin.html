@@ -450,16 +450,21 @@
                   <div id="revenueBookingListContainer" style="display: none">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                       <h6 class="fw-bold m-0">Bookings in this Range</h6>
-                      <button id="togglePriceBtn" class="btn btn-sm btn-outline-secondary" onclick="togglePriceView()">
-                        Hide Price
-                      </button>
+                      <div class="btn-group btn-group-sm">
+                        <button id="togglePhoneBtn" class="btn btn-outline-secondary" onclick="togglePhoneView()">
+                          Show Phone
+                        </button>
+                        <button id="togglePriceBtn" class="btn btn-outline-secondary" onclick="togglePriceView()">
+                          Show Price
+                        </button>
+                      </div>
                     </div>
                     <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
                       <table class="table table-sm table-hover small">
                         <thead>
                           <tr>
                             <th>Customer</th>
-                            <th>Phone</th>
+                            <th class="phone-col" style="display: none;">Phone</th>
                             <th>Date</th>
                             <th>Slot</th>
                             <th class="text-end price-col">Price</th>
@@ -945,14 +950,31 @@
         return `${h % 12 || 12}:${m} ${h >= 12 ? "PM" : "AM"}`;
       }
 
+      function formatDateWithOrdinal(date) {
+        const weekday = date.toLocaleDateString('en-GB', { weekday: 'long' });
+        const day = date.getDate();
+        const month = date.toLocaleDateString('en-GB', { month: 'long' });
+        const year = date.getFullYear();
+
+        const getOrdinalSuffix = (d) => {
+          if (d > 3 && d < 21) return 'th';
+          switch (d % 10) {
+            case 1:  return "st";
+            case 2:  return "nd";
+            case 3:  return "rd";
+            default: return "th";
+          }
+        };
+        
+        return `${weekday}, ${day}${getOrdinalSuffix(day)} ${month} ${year}`;
+      }
+
       function updateView() {
         loadDaySlots();
 
         const selectedDateValue = document.getElementById("bookDate").value;
-        // Use 'T00:00:00' to parse as local time and avoid timezone bugs
         const selectedDate = new Date(selectedDateValue + 'T00:00:00');
-        
-        document.getElementById("currentDisplayDate").innerText = selectedDate.toDateString();
+        document.getElementById("currentDisplayDate").innerText = formatDateWithOrdinal(selectedDate);
 
         // Update the label for the daily stats boxes
         const dailyStatsLabel = document.getElementById("dailyStatsLabel");
@@ -1311,9 +1333,22 @@
       function renderRevenueBookingList() {
         const listBody = document.getElementById("revenueBookingListBody");
         if (revenueDataCache && revenueDataCache.length > 0) {
-          listBody.innerHTML = revenueDataCache.sort((a, b) => new Date(b.booking_date) - new Date(a.booking_date)).map(booking => `<tr><td>${booking.customer_name}</td><td>${booking.phone_number || '-'}</td><td>${new Date(booking.booking_date + 'T00:00:00').toLocaleDateString('en-GB', {day: '2-digit', month: 'short'})}</td><td>${formatTo12H(booking.start_time)} - ${formatTo12H(booking.end_time)}</td><td class="text-end price-col">₹${(booking.price || 0).toLocaleString()}</td></tr>`).join('');
+          listBody.innerHTML = revenueDataCache.sort((a, b) => new Date(b.booking_date) - new Date(a.booking_date)).map(booking => `<tr><td>${booking.customer_name}</td><td class="phone-col" style="display: none;">${booking.phone_number || '-'}</td><td>${new Date(booking.booking_date + 'T00:00:00').toLocaleDateString('en-GB', {day: '2-digit', month: 'short'})}</td><td>${formatTo12H(booking.start_time)} - ${formatTo12H(booking.end_time)}</td><td class="text-end price-col" style="display: none;">₹${(booking.price || 0).toLocaleString()}</td></tr>`).join('');
         } else {
-          listBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">No bookings found in this date range.</td></tr>';
+          listBody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-3">No bookings found in this date range.</td></tr>';
+        }
+      }
+
+      function togglePhoneView() {
+        const btn = document.getElementById('togglePhoneBtn');
+        const columns = document.querySelectorAll('.phone-col');
+        const isHidden = columns[0].style.display === 'none';
+        if (isHidden) {
+          columns.forEach(col => col.style.display = '');
+          btn.textContent = 'Hide Phone';
+        } else {
+          columns.forEach(col => col.style.display = 'none');
+          btn.textContent = 'Show Phone';
         }
       }
 
