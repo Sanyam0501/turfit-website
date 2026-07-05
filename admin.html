@@ -391,7 +391,6 @@
                         type="date"
                         id="revenueRangeStart"
                         class="form-control form-control-sm"
-                        onchange="loadRevenueData()"
                       />
                     </div>
                     <div class="col-md">
@@ -399,8 +398,15 @@
                         type="date"
                         id="revenueRangeEnd"
                         class="form-control form-control-sm"
-                        onchange="loadRevenueData()"
                       />
+                    </div>
+                    <div class="col-12 col-md-auto">
+                      <button
+                        class="btn btn-primary-custom btn-sm w-100"
+                        onclick="loadRevenueData()"
+                      >
+                        Show Bookings
+                      </button>
                     </div>
                   </div>
 
