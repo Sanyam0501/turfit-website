@@ -86,10 +86,11 @@
             sessionStorage.setItem('turf_session', data.token);
             window.location.href = 'admin.html';
         } else {
-            throw new Error("Invalid PIN");
+            // Use the error message from the server, or a default one
+            throw new Error(data.error || "Invalid PIN");
         }
     } catch (err) {
-        Swal.fire("Access Denied", "Incorrect Security PIN", "error");
+        Swal.fire("Access Denied", err.message, "error");
         document.getElementById('pinEntry').value = '';
     }
 }
