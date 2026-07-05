@@ -34,6 +34,11 @@
             color: white;
             outline: none;
         }
+
+        /* SweetAlert custom class to prevent background shift */
+        body.swal2-shown:not(.swal2-no-backdrop):not(.swal2-toast-shown) {
+            overflow-y: auto !important;
+        }
     </style>
 </head>
 
