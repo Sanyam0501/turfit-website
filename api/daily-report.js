@@ -10,12 +10,12 @@ function formatTo12H(timeStr) {
 
 export default async function handler(req, res) {
   // Allow only Vercel Cron
-  // if (
-  //   process.env.CRON_SECRET &&
-  //   req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`
-  // ) {
-  //   return res.status(401).json({ error: "Unauthorized access not granted" });
-  // }
+  if (
+    process.env.CRON_SECRET &&
+    req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`
+  ) {
+    return res.status(401).json({ error: "Unauthorized access not granted" });
+  }
 
   try {
     const supabase = createClient(
@@ -115,8 +115,8 @@ export default async function handler(req, res) {
               <thead>
                 <tr>
                   <th style="text-align: left; padding: 12px; background-color: #f2f2f2; border-bottom: 1px solid #ddd; width: 40%;">Customer</th>
-                  <th style="text-align: left; padding: 12px; background-color: #f2f2f2; border-bottom: 1px solid #ddd;">Booking</th>
-                  <th style="text-align: right; padding: 12px; background-color: #f2f2f2; border-bottom: 1px solid #ddd;">Pending</th>
+                  <th style="text-align: left; padding: 12px; background-color: #f2f2f2; border-bottom: 1px solid #ddd;">Booking Date & Time</th>
+                  <th style="text-align: right; padding: 12px; background-color: #f2f2f2; border-bottom: 1px solid #ddd;">Pending Amount</th>
                 </tr>
               </thead>
               <tbody>
