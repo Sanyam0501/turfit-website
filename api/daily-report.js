@@ -68,33 +68,56 @@ export default async function handler(req, res) {
       year: "numeric",
     });
 
-    let textContent = `Pending Payments till ${yesterdayFormatted}\n\n`;
+    let html;
 
     if (pendingBookings.length === 0) {
-      textContent += "✅ No pending payments found.\n";
+      html = `
+        <body style="font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f9f9f9;">
+          <div style="max-width: 600px; margin: auto; background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h2 style="color: #1b4332; border-bottom: 2px solid #eee; padding-bottom: 10px;">Pending Payments Report</h2>
+            <p style="font-size: 16px; color: #555;">As of ${yesterdayFormatted}</p>
+            <p style="font-size: 16px; color: #28a745; font-weight: bold;">✅ No pending payments found.</p>
+          </div>
+        </body>
+      `;
     } else {
-      const separator = "-".repeat(40) + "\n";
-      textContent += "Customer".padEnd(25) + "Pending\n";
-      textContent += separator;
+      const tableRows = pendingBookings
+        .map(
+          (b) => `
+        <tr>
+          <td style="padding: 12px; border-bottom: 1px solid #eee;">${b.customer}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right;">₹${b.pending.toLocaleString()}</td>
+        </tr>
+      `
+        )
+        .join("");
 
-      pendingBookings.forEach((b) => {
-        const customerName =
-          b.customer.length > 22 ? b.customer.substring(0, 22) + "…" : b.customer;
-        textContent +=
-          customerName.padEnd(25) + `₹${b.pending.toLocaleString()}\n`;
-      });
-
-      textContent += separator;
-      textContent +=
-        "Total Pending".padEnd(25) + `₹${totalPending.toLocaleString()}\n`;
+      html = `
+        <body style="font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f9f9f9;">
+          <div style="max-width: 600px; margin: auto; background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h2 style="color: #1b4332; border-bottom: 2px solid #eee; padding-bottom: 10px;">Pending Payments Report</h2>
+            <p style="font-size: 16px; color: #555;">As of ${yesterdayFormatted}</p>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px;">
+              <thead>
+                <tr>
+                  <th style="text-align: left; padding: 12px; background-color: #f2f2f2; border-bottom: 1px solid #ddd;">Customer</th>
+                  <th style="text-align: right; padding: 12px; background-color: #f2f2f2; border-bottom: 1px solid #ddd;">Pending</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${tableRows}
+              </tbody>
+              <tfoot>
+                <tr style="font-weight: bold;">
+                  <td style="padding: 12px; border-top: 2px solid #333;">Total Pending</td>
+                  <td style="padding: 12px; border-top: 2px solid #333; text-align: right; color: #d9534f;">₹${totalPending.toLocaleString()}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </body>
+      `;
     }
-
-    // Use pre-formatted text in HTML for a consistent, clean look
-    const html = `
-    <div style="font-family:Courier New, monospace;white-space:pre-wrap;font-size:15px;">
-    ${textContent}
-    </div>
-    `;
 
     const transporter = nodemailer.createTransport({
       service: "gmail",
@@ -107,7 +130,7 @@ export default async function handler(req, res) {
     await transporter.sendMail({
       from: process.env.GMAIL_USER,
       to: process.env.ADMIN_EMAIL,
-      subject: `Pending Payments till ${yesterdayFormatted}`,
+      subject: `TURFIT Pending Payments - ${todayFormatted}`,
       html,
     });
 
