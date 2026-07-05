@@ -1276,6 +1276,12 @@
         document.getElementById("revenueCash").innerText = current.cash.toLocaleString();
         document.getElementById("revenueUpi").innerText = current.upi.toLocaleString();
         document.getElementById("revenuePending").innerText = current.pending.toLocaleString();
+
+        // If the booking list is currently visible, refresh it automatically.
+        const listContainer = document.getElementById('revenueBookingListContainer');
+        if (listContainer.style.display !== 'none') {
+          renderRevenueBookingList();
+        }
       }
 
       function toggleRevenueBookingList() {
