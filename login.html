@@ -44,6 +44,7 @@
     <h4 class="fw-bold mb-4">TURFIT ACCESS</h4>
     <input type="password" id="pinEntry" class="pin-input" maxlength="6" autofocus placeholder="••••••">
     <p class="mt-3 opacity-75 small">Enter Security PIN</p>
+    <p id="attemptsMessage" class="small text-danger mt-2" style="display: none; height: 20px;"></p>
     <button id="loginBtn" class="btn btn-outline-light mt-2 px-4 rounded-pill">LOGIN</button>
 </div>
 
@@ -68,11 +69,15 @@
 
     async function checkPin(e) {
     const pin = document.getElementById('pinEntry').value.trim();
+    const attemptsMessageEl = document.getElementById('attemptsMessage');
+
+    // Hide any previous messages on new input
+    attemptsMessageEl.style.display = 'none';
 
     // Only run the database check when exactly 4 digits are entered
     if (e && e.type === 'input' && pin.length !== 4) return;
     if (!pin) return;
-
+    
     try {
         const res = await fetch('/api/login', {
             method: 'POST',
@@ -86,12 +91,22 @@
             sessionStorage.setItem('turf_session', data.token);
             window.location.href = 'admin.html';
         } else {
+            document.getElementById('pinEntry').value = '';
+            // Check for the final lockout message from the server
+            if (res.status === 429) {
+                throw new Error(data.error || "Too many requests");
+            }
+            // Show remaining attempts if available
+            if (data.attemptsRemaining !== undefined && data.attemptsRemaining > 0) {
+                attemptsMessageEl.innerText = `${data.attemptsRemaining} ${data.attemptsRemaining === 1 ? 'try' : 'tries'} remaining.`;
+                attemptsMessageEl.style.display = 'block';
+                return; // Don't show the Swal popup, just the inline message
+            }
             // Use the error message from the server, or a default one
             throw new Error(data.error || "Invalid PIN");
         }
     } catch (err) {
         Swal.fire("Access Denied", err.message, "error");
-        document.getElementById('pinEntry').value = '';
     }
 }
 

@@ -47,7 +47,11 @@ export default async function handler(req, res) {
     loginAttempts[ip].count++;
     loginAttempts[ip].timestamp = Date.now();
 
-    return res.status(401).json({ error: 'Invalid PIN' });
+    const attemptsRemaining = MAX_ATTEMPTS - loginAttempts[ip].count;
+    return res.status(401).json({ 
+      error: 'Invalid PIN',
+      attemptsRemaining: attemptsRemaining 
+    });
   } catch (e) {
     return res.status(500).json({ error: 'Server error' });
   }
