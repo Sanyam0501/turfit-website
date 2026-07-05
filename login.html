@@ -47,7 +47,7 @@
 <div class="text-center">
     <i class="bi bi-shield-lock-fill mb-3" style="font-size:3rem;"></i>
     <h4 class="fw-bold mb-4">TURFIT ACCESS</h4>
-    <input type="password" id="pinEntry" class="pin-input" maxlength="6" autofocus placeholder="••••••">
+    <input type="password" id="pinEntry" class="pin-input" maxlength="6" placeholder="••••••">
     <p class="mt-3 opacity-75 small">Enter Security PIN</p>
     <p id="attemptsMessage" class="small text-danger mt-2" style="display: none; height: 20px;"></p>
     <button id="loginBtn" class="btn btn-outline-light mt-2 px-4 rounded-pill">LOGIN</button>
@@ -111,8 +111,17 @@
             throw new Error(data.error || "Invalid PIN");
         }
     } catch (err) {
-        Swal.fire("Access Denied", err.message, "error");
-    }
+    const input = document.getElementById("pinEntry");
+    input.blur();      // Remove focus so Safari doesn't move the page
+
+    Swal.fire({
+        title: "Access Denied",
+        text: err.message,
+        icon: "error"
+    }).then(() => {
+        input.focus(); // Optional: focus again after closing
+    });
+}
 }
 
     initLogin();
