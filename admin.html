@@ -448,6 +448,21 @@
 
                   <hr class="my-4" />
 
+                  <h6 class="fw-bold mb-3">Bookings in this Range</h6>
+                  <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                    <table class="table table-sm table-hover small">
+                      <thead>
+                        <tr>
+                          <th>Customer</th>
+                          <th>Phone</th>
+                          <th>Date</th>
+                          <th>Slot</th>
+                          <th class="text-end">Price</th>
+                        </tr>
+                      </thead>
+                      <tbody id="revenueBookingListBody"></tbody>
+                    </table>
+                  </div>
                   <div class="d-md-none text-center mb-3">
                     <button id="toggleSplitBtn" class="btn btn-sm btn-outline-secondary" onclick="toggleSplitView()">Show Cash/UPI Split</button>
                   </div>
@@ -1217,7 +1232,7 @@
         // Fetch data for the selected range. We can use the values directly from the inputs.
         const { data, error } = await supabaseClient
           .from("turf_bookings")
-          .select("booking_date, paid_cash, paid_upi, price")
+          .select("customer_name, phone_number, booking_date, start_time, end_time, price, paid_cash, paid_upi")
           .gte("booking_date", customStartEl.value)
           .lte("booking_date", customEndEl.value);
 
@@ -1245,6 +1260,24 @@
         document.getElementById("revenueCash").innerText = current.cash.toLocaleString();
         document.getElementById("revenueUpi").innerText = current.upi.toLocaleString();
         document.getElementById("revenuePending").innerText = current.pending.toLocaleString();
+
+        // NEW: Render the list of bookings
+        const listBody = document.getElementById("revenueBookingListBody");
+        if (data && data.length > 0) {
+          listBody.innerHTML = data
+            .sort((a, b) => new Date(b.booking_date) - new Date(a.booking_date)) // Sort by most recent
+            .map(booking => `
+              <tr>
+                <td>${booking.customer_name}</td>
+                <td>${booking.phone_number || '-'}</td>
+                <td>${new Date(booking.booking_date + 'T00:00:00').toLocaleDateString('en-GB', {day: '2-digit', month: 'short'})}</td>
+                <td>${formatTo12H(booking.start_time)} - ${formatTo12H(booking.end_time)}</td>
+                <td class="text-end">₹${(booking.price || 0).toLocaleString()}</td>
+              </tr>
+            `).join('');
+        } else {
+          listBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">No bookings found in this date range.</td></tr>';
+        }
 
       }
 
