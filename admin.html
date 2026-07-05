@@ -447,8 +447,13 @@
 
                   <hr class="my-4" />
 
-                  <div id="revenueBookingListContainer" style="display: none;">
-                    <h6 class="fw-bold mb-3">Bookings in this Range</h6>
+                  <div id="revenueBookingListContainer" style="display: none">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                      <h6 class="fw-bold m-0">Bookings in this Range</h6>
+                      <button id="togglePriceBtn" class="btn btn-sm btn-outline-secondary" onclick="togglePriceView()">
+                        Hide Price
+                      </button>
+                    </div>
                     <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
                       <table class="table table-sm table-hover small">
                         <thead>
@@ -457,7 +462,7 @@
                             <th>Phone</th>
                             <th>Date</th>
                             <th>Slot</th>
-                            <th class="text-end">Price</th>
+                            <th class="text-end price-col">Price</th>
                           </tr>
                         </thead>
                         <tbody id="revenueBookingListBody"></tbody>
@@ -1306,9 +1311,22 @@
       function renderRevenueBookingList() {
         const listBody = document.getElementById("revenueBookingListBody");
         if (revenueDataCache && revenueDataCache.length > 0) {
-          listBody.innerHTML = revenueDataCache.sort((a, b) => new Date(b.booking_date) - new Date(a.booking_date)).map(booking => `<tr><td>${booking.customer_name}</td><td>${booking.phone_number || '-'}</td><td>${new Date(booking.booking_date + 'T00:00:00').toLocaleDateString('en-GB', {day: '2-digit', month: 'short'})}</td><td>${formatTo12H(booking.start_time)} - ${formatTo12H(booking.end_time)}</td><td class="text-end">₹${(booking.price || 0).toLocaleString()}</td></tr>`).join('');
+          listBody.innerHTML = revenueDataCache.sort((a, b) => new Date(b.booking_date) - new Date(a.booking_date)).map(booking => `<tr><td>${booking.customer_name}</td><td>${booking.phone_number || '-'}</td><td>${new Date(booking.booking_date + 'T00:00:00').toLocaleDateString('en-GB', {day: '2-digit', month: 'short'})}</td><td>${formatTo12H(booking.start_time)} - ${formatTo12H(booking.end_time)}</td><td class="text-end price-col">₹${(booking.price || 0).toLocaleString()}</td></tr>`).join('');
         } else {
           listBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">No bookings found in this date range.</td></tr>';
+        }
+      }
+
+      function togglePriceView() {
+        const btn = document.getElementById('togglePriceBtn');
+        const columns = document.querySelectorAll('.price-col');
+        const isHidden = columns[0].style.display === 'none';
+        if (isHidden) {
+          columns.forEach(col => col.style.display = '');
+          btn.textContent = 'Hide Price';
+        } else {
+          columns.forEach(col => col.style.display = 'none');
+          btn.textContent = 'Show Price';
         }
       }
 
