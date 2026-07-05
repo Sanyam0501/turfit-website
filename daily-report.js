@@ -3,12 +3,12 @@ import nodemailer from "nodemailer";
 
 export default async function handler(req, res) {
   // Allow only Vercel Cron
-  if (
-    process.env.CRON_SECRET &&
-    req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`
-  ) {
-    return res.status(401).json({ error: "Unauthorized access not granted" });
-  }
+  // if (
+  //   process.env.CRON_SECRET &&
+  //   req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`
+  // ) {
+  //   return res.status(401).json({ error: "Unauthorized access not granted" });
+  // }
 
   try {
     const supabase = createClient(
