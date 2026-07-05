@@ -1,6 +1,13 @@
 import { createClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
 
+function formatTo12H(timeStr) {
+  if (!timeStr) return "";
+  let [h, m] = timeStr.split(":");
+  h = parseInt(h);
+  return `${h % 12 || 12}:${m} ${h >= 12 ? "PM" : "AM"}`;
+}
+
 export default async function handler(req, res) {
   // Allow only Vercel Cron
   // if (
@@ -23,9 +30,10 @@ export default async function handler(req, res) {
 
     const { data, error } = await supabase
       .from("turf_bookings")
-      .select("customer_name, booking_date, price, paid_cash, paid_upi")
+      .select("customer_name, booking_date, start_time, price, paid_cash, paid_upi")
       .lte("booking_date", yesterdayISO) // Only fetch bookings up to yesterday
-      .order("booking_date", { ascending: true });
+      .order("booking_date", { ascending: false })
+      .order("start_time", { ascending: false });
 
     if (error) throw error;
 
@@ -52,6 +60,7 @@ export default async function handler(req, res) {
         pendingBookings.push({
           customer: booking.customer_name,
           date: booking.booking_date,
+          time: booking.start_time,
           pending,
         });
       }
@@ -83,12 +92,17 @@ export default async function handler(req, res) {
     } else {
       const tableRows = pendingBookings
         .map(
-          (b) => `
+          (b) => {
+            const bookingDate = new Date(b.date).toLocaleDateString("en-GB", { day: '2-digit', month: 'short' });
+            const bookingTime = formatTo12H(b.time);
+            return `
         <tr>
           <td style="padding: 12px; border-bottom: 1px solid #eee;">${b.customer}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #eee; white-space: nowrap;">${bookingDate} - ${bookingTime}</td>
           <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right;">₹${b.pending.toLocaleString()}</td>
         </tr>
       `
+          }
         )
         .join("");
 
@@ -100,7 +114,8 @@ export default async function handler(req, res) {
             <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px;">
               <thead>
                 <tr>
-                  <th style="text-align: left; padding: 12px; background-color: #f2f2f2; border-bottom: 1px solid #ddd;">Customer</th>
+                  <th style="text-align: left; padding: 12px; background-color: #f2f2f2; border-bottom: 1px solid #ddd; width: 40%;">Customer</th>
+                  <th style="text-align: left; padding: 12px; background-color: #f2f2f2; border-bottom: 1px solid #ddd;">Booking</th>
                   <th style="text-align: right; padding: 12px; background-color: #f2f2f2; border-bottom: 1px solid #ddd;">Pending</th>
                 </tr>
               </thead>
@@ -109,7 +124,7 @@ export default async function handler(req, res) {
               </tbody>
               <tfoot>
                 <tr style="font-weight: bold;">
-                  <td style="padding: 12px; border-top: 2px solid #333;">Total Pending</td>
+                  <td colspan="2" style="padding: 12px; border-top: 2px solid #333;">Total Pending</td>
                   <td style="padding: 12px; border-top: 2px solid #333; text-align: right; color: #d9534f;">₹${totalPending.toLocaleString()}</td>
                 </tr>
               </tfoot>
