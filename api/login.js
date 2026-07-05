@@ -1,6 +1,6 @@
 const loginAttempts = {};
-const MAX_ATTEMPTS = 5;
-const LOCKOUT_TIME = 1 * 30 * 1000; // 5 minutes
+const MAX_ATTEMPTS = 3;
+const LOCKOUT_TIME = 2 * 60 * 1000; // 2 minutes
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
