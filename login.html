@@ -75,6 +75,11 @@
       >
         LOGIN
       </button>
+      <p
+        id="lockTimer"
+        class="text-warning mt-2 fw-bold"
+        style="display: none"
+      ></p>
     </div>
 
     <script>
@@ -82,6 +87,34 @@
       sessionStorage.removeItem("turf_session");
 
       async function initLogin() {
+        let countdown;
+
+        function startLockTimer(seconds) {
+          const timer = document.getElementById("lockTimer");
+          const pinInput = document.getElementById("pinEntry");
+          const loginBtn = document.getElementById("loginBtn");
+
+          clearInterval(countdown);
+
+          timer.style.display = "block";
+          pinInput.disabled = true;
+          loginBtn.disabled = true;
+
+          countdown = setInterval(() => {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+
+            timer.innerText = `Try again in ${mins}:${secs.toString().padStart(2, "0")}`;
+
+            if (seconds <= 0) {
+              clearInterval(countdown);
+              timer.style.display = "none";
+              pinInput.disabled = false;
+              loginBtn.disabled = false;
+            }
+            seconds--;
+          }, 1000);
+        }
         try {
           document
             .getElementById("pinEntry")
@@ -120,21 +153,26 @@
             window.location.href = "admin.html";
           } else {
             document.getElementById("pinEntry").value = "";
-            // Check for the final lockout message from the server
+            let errorMessage = data.error || "Invalid PIN";
+
+            // Handle lockout message
             if (res.status === 429) {
-              throw new Error(data.error || "Too many requests");
+              const error = new Error(errorMessage);
+              if (data.retryAfter) {
+                error.retryAfter = data.retryAfter;
+              }
+              throw error;
             }
-            // Show remaining attempts if available
+
+            // If there are attempts remaining, append that info to the error message
             if (
               data.attemptsRemaining !== undefined &&
               data.attemptsRemaining > 0
             ) {
-              attemptsMessageEl.innerText = `${data.attemptsRemaining} ${data.attemptsRemaining === 1 ? "try" : "tries"} remaining.`;
-              attemptsMessageEl.style.display = "block";
-              return; // Don't show the Swal popup, just the inline message
+              errorMessage = `Invalid PIN. ${data.attemptsRemaining} ${data.attemptsRemaining === 1 ? 'try' : 'tries'} remaining.`;
             }
-            // Use the error message from the server, or a default one
-            throw new Error(data.error || "Invalid PIN");
+
+            throw new Error(errorMessage);
           }
         } catch (err) {
           const input = document.getElementById("pinEntry");
@@ -144,6 +182,11 @@
             title: "Access Denied",
             text: err.message,
             icon: "error",
+            confirmButtonText: "OK"
+          }).then(() => {
+            if (err.retryAfter) {
+              startLockTimer(err.retryAfter);
+            }
           }).then(() => {
             input.focus(); // Optional: focus again after closing
           });

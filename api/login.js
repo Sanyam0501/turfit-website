@@ -13,9 +13,10 @@ export default async function handler(req, res) {
   if (loginAttempts[ip] && loginAttempts[ip].count >= MAX_ATTEMPTS) {
     const timeSinceLastAttempt = Date.now() - loginAttempts[ip].timestamp;
     if (timeSinceLastAttempt < LOCKOUT_TIME) {
-      const timeLeft = Math.ceil((LOCKOUT_TIME - timeSinceLastAttempt) / 1000 / 60);
+      const retryAfter = Math.ceil((LOCKOUT_TIME - timeSinceLastAttempt) / 1000);
       return res.status(429).json({ 
-        error: `Too many failed attempts. Please try again in ${timeLeft} minutes.` 
+        error: `Too many failed attempts. Please try again.`,
+        retryAfter: retryAfter
       });
     } else {
       // If lockout time has passed, reset the counter
