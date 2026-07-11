@@ -27,15 +27,16 @@ export default async function handler(req, res) {
       process.env.SUPABASE_SERVICE_KEY
     );
 
+    // This script runs on the 1st of each month for the previous month.
     const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(today.getDate() - 1);
-    const yesterdayISO = yesterday.toISOString().split("T")[0]; // YYYY-MM-DD
+    // Get the last day of the previous month.
+    const endOfPrevMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+    const endOfPrevMonthISO = endOfPrevMonth.toISOString().split("T")[0]; // YYYY-MM-DD
 
     const { data, error } = await supabase
       .from("turf_bookings")
       .select("customer_name, booking_date, start_time, price, paid_cash, paid_upi")
-      .lte("booking_date", yesterdayISO) // Only fetch bookings up to yesterday
+      .lte("booking_date", endOfPrevMonthISO) // Fetch all bookings up to the end of the previous month
       .order("booking_date", { ascending: false })
       .order("start_time", { ascending: false });
 
@@ -45,15 +46,6 @@ export default async function handler(req, res) {
     let totalPending = 0;
 
     for (const booking of data) {
-      // Skip if booking date is after yesterday (double-check, though DB should handle it)
-      const bookingDate = new Date(booking.booking_date);
-      bookingDate.setHours(0, 0, 0, 0);
-
-      const yesterdayDate = new Date(yesterday);
-      yesterdayDate.setHours(0, 0, 0, 0);
-
-      if (bookingDate > yesterdayDate) continue;
-
       const cash = Number(booking.paid_cash || 0);
       const upi = Number(booking.paid_upi || 0);
       const pending = Number(booking.price) - cash - upi;
@@ -70,25 +62,19 @@ export default async function handler(req, res) {
       }
     }
 
-    const todayFormatted = today.toLocaleDateString("en-GB", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-    const yesterdayFormatted = yesterday.toLocaleDateString("en-GB", {
+    const prevMonthFormatted = endOfPrevMonth.toLocaleDateString("en-GB", {
       day: "2-digit",
       month: "short",
       year: "numeric",
     });
 
     let html;
-
     if (pendingBookings.length === 0) {
       html = `
         <body style="font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f9f9f9;">
           <div style="max-width: 600px; margin: auto; background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <h2 style="color: #1b4332; border-bottom: 2px solid #eee; padding-bottom: 10px;">Pending Payments Report</h2>
-            <p style="font-size: 16px; color: #555;">As of ${yesterdayFormatted}</p>
+            <h2 style="color: #1b4332; border-bottom: 2px solid #eee; padding-bottom: 10px;">Monthly Pending Payments Report</h2>
+            <p style="font-size: 16px; color: #555;">As of ${prevMonthFormatted}</p>
             <p style="font-size: 16px; color: #28a745; font-weight: bold;">✅ No pending payments found.</p>
           </div>
         </body>
@@ -113,8 +99,8 @@ export default async function handler(req, res) {
       html = `
         <body style="font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f9f9f9;">
           <div style="max-width: 600px; margin: auto; background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <h2 style="color: #1b4332; border-bottom: 2px solid #eee; padding-bottom: 10px;">Pending Payments Report</h2>
-            <p style="font-size: 16px; color: #555;">As of ${yesterdayFormatted}</p>
+            <h2 style="color: #1b4332; border-bottom: 2px solid #eee; padding-bottom: 10px;">Monthly Pending Payments Report</h2>
+            <p style="font-size: 16px; color: #555;">As of ${prevMonthFormatted}</p>
             <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px;">
               <thead>
                 <tr>
@@ -149,7 +135,7 @@ export default async function handler(req, res) {
     await transporter.sendMail({
       from: process.env.GMAIL_USER,
       to: process.env.ADMIN_EMAIL,
-      subject: `TURFIT Pending Payments till - ${yesterdayFormatted}`,
+      subject: `TURFIT Monthly Pending Payments Report - ${prevMonthFormatted}`,
       html,
     });
 
