@@ -10,6 +10,10 @@
     { "source": "/admin", "destination": "/admin.html" },
     { "source": "/api/get-public-key", "destination": "/api/get-public-key.js" },
     { "source": "/api/login", "destination": "/api/login.js" },
-    { "source": "/api/daily-report", "destination": "/api/daily-report.js" }
+    { "source": "/api/daily-report", "destination": "/api/daily-report.js" },
+    {
+  "source": "/api/google-auth",
+  "destination": "/api/google-auth.js"
+}
   ]
 }
