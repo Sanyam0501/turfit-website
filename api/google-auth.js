@@ -5,7 +5,7 @@ export default async function handler(req, res) {
     response_type: "code",
     access_type: "offline",
     prompt: "consent",
-    scope: process.env.GOOGLE_SCOPES,
+    scope: "https://www.googleapis.com/auth/business.manage",
   });
 
   res.redirect(
