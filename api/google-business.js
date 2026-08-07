@@ -1,5 +1,6 @@
 export default async function handler(req, res) {
   try {
+    // Get fresh access token
     const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
       headers: {
@@ -16,14 +17,22 @@ export default async function handler(req, res) {
     const tokenData = await tokenRes.json();
 
     if (!tokenRes.ok) {
-      return res.status(tokenRes.status).json(tokenData);
+      return res.status(500).json(tokenData);
     }
 
-    return res.status(200).json({
-      success: true,
-      access_token: tokenData.access_token,
-      expires_in: tokenData.expires_in,
-    });
+    // Get accounts
+    const accountsRes = await fetch(
+      "https://mybusinessaccountmanagement.googleapis.com/v1/accounts",
+      {
+        headers: {
+          Authorization: `Bearer ${tokenData.access_token}`,
+        },
+      }
+    );
+
+    const accounts = await accountsRes.json();
+
+    return res.status(200).json(accounts);
   } catch (err) {
     return res.status(500).json({
       error: err.message,
