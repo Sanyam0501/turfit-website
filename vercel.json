@@ -21,11 +21,11 @@
 },
 {
   "source": "/api/gmb-oauth-init",
-  "destination": "/api/gmb-oauth-init.js"
+  "destination": "/api/google/gmb-oauth-init.js"
 },
 {
   "source": "/api/gmb-oauth-callback",
-  "destination": "/api/gmb-oauth-callback.js"
+  "destination": "/api/google/mb-oauth-callback.js"
 },
 {
   "source": "/api/gmb-data",
