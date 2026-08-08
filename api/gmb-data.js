@@ -1,72 +1,121 @@
-// /api/gmb-data.js
-import { OAuth2Client } from 'google-auth-library';
-import { createClient } from '@supabase/supabase-js';
+import { OAuth2Client } from "google-auth-library";
+import { createClient } from "@supabase/supabase-js";
 
 export default async function handler(req, res) {
-  // Securely connect to Supabase from the backend
-  const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
-
-  // 1. Get refresh token from database
-  const { data: authData, error: authError } = await supabase
-    .from('gmb_auth')
-    .select('refresh_token')
-    .eq('id', 1)
-    .single();
-
-  if (authError || !authData || !authData.refresh_token) {
-    return res.status(401).json({ error: 'Not authenticated with Google. Please connect your account.' });
-  }
-
-  // 2. Use refresh token to get a new access token
-  const oauth2Client = new OAuth2Client(
-    process.env.GMB_CLIENT_ID,
-    process.env.GMB_CLIENT_SECRET
-  );
-  oauth2Client.setCredentials({ refresh_token: authData.refresh_token });
-  const { token: accessToken } = await oauth2Client.getAccessToken();
-
-  // 3. Fetch data from GMB Performance API
   try {
-    // IMPORTANT: Replace YOUR_LOCATION_ID with your actual GMB location ID.
-    // It looks like 'locations/12345678901234567890'.
-    // You can find it in the URL of your GMB dashboard.
-    const locationId = 'locations/YOUR_LOCATION_ID'; 
-    const apiUrl = `https://businessprofileperformance.googleapis.com/v1/${locationId}:getDailyMetricsTimeSeries`;
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_KEY
+    );
 
-    // Get dates for the last 7 days
+    // Get saved Google credentials
+    const { data: authData, error: authError } = await supabase
+      .from("gmb_auth")
+      .select("refresh_token, location_id")
+      .eq("id", 1)
+      .single();
+
+    if (
+      authError ||
+      !authData?.refresh_token ||
+      !authData?.location_id
+    ) {
+      return res.status(401).json({
+        error: "Google Business Profile is not connected."
+      });
+    }
+
+    // Get fresh access token
+    const oauth2Client = new OAuth2Client(
+      process.env.GMB_CLIENT_ID,
+      process.env.GMB_CLIENT_SECRET
+    );
+
+    oauth2Client.setCredentials({
+      refresh_token: authData.refresh_token
+    });
+
+    const { token: accessToken } =
+      await oauth2Client.getAccessToken();
+
+    if (!accessToken) {
+      throw new Error("Could not refresh Google access token.");
+    }
+
+    const locationId = authData.location_id;
+
+    // Last 7 days
     const endDate = new Date();
     const startDate = new Date();
     startDate.setDate(endDate.getDate() - 7);
 
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer `,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        dailyMetric: 'SEARCH_IMPRESSIONS',
-        dailyRange: {
-          startDate: { year: startDate.getFullYear(), month: startDate.getMonth() + 1, day: startDate.getDate() },
-          endDate: { year: endDate.getFullYear(), month: endDate.getMonth() + 1, day: endDate.getDate() },
-        },
-      }),
+    const params = new URLSearchParams({
+      dailyMetric: "BUSINESS_IMPRESSIONS_MOBILE_SEARCH"
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`Google API Error: ${errorData.error.message}`);
-    }
+    params.append(
+      "dailyRange.startDate.year",
+      startDate.getFullYear()
+    );
+    params.append(
+      "dailyRange.startDate.month",
+      startDate.getMonth() + 1
+    );
+    params.append(
+      "dailyRange.startDate.day",
+      startDate.getDate()
+    );
+
+    params.append(
+      "dailyRange.endDate.year",
+      endDate.getFullYear()
+    );
+    params.append(
+      "dailyRange.endDate.month",
+      endDate.getMonth() + 1
+    );
+    params.append(
+      "dailyRange.endDate.day",
+      endDate.getDate()
+    );
+
+    const apiUrl =
+      `https://businessprofileperformance.googleapis.com/v1/${locationId}:getDailyMetricsTimeSeries?${params.toString()}`;
+
+    const response = await fetch(apiUrl, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    });
 
     const gmbData = await response.json();
-    
-    // Sum up the impressions from the time series
-    const totalImpressions = gmbData.timeSeries.points.reduce((sum, point) => sum + parseInt(point.value, 10), 0);
 
-    res.status(200).json({ impressions: totalImpressions });
+    if (!response.ok) {
+      throw new Error(
+        gmbData.error?.message || "Google Business Profile API error"
+      );
+    }
+
+    const points =
+      gmbData.timeSeries?.points || [];
+
+    const totalImpressions = points.reduce(
+      (sum, point) =>
+        sum + Number(point.value || 0),
+      0
+    );
+
+    return res.status(200).json({
+      impressions: totalImpressions,
+      location: locationId
+    });
 
   } catch (error) {
-    console.error('Error fetching GMB data:', error);
-    res.status(500).json({ error: error.message });
+    console.error("GMB data error:", error);
+
+    return res.status(500).json({
+      error: error.message
+    });
   }
 }
