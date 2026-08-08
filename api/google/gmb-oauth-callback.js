@@ -11,7 +11,7 @@ export default async function handler(req, res) {
   const oauth2Client = new OAuth2Client(
     process.env.GMB_CLIENT_ID,
     process.env.GMB_CLIENT_SECRET,
-    "https://turfit.vercel.app/api/gmb-oauth-callback"
+    "https://turfit.vercel.app/api/google/gmb-oauth-callback"
   );
 
   try {
