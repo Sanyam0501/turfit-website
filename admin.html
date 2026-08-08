@@ -668,6 +668,7 @@
         populateSelectors();
         document.getElementById("bookDate").valueAsDate = new Date();
         updateView();
+        loadGmbData();
         addDateValidation();
         checkForUnpaidCompleted(); // Check for notifications on load
 
@@ -676,6 +677,22 @@
           checkForUnpaidCompleted();
           refreshLiveTabs();
         }, 60000); // 60000ms = 1 minute
+      }
+
+      async function loadGmbData() {
+        try {
+          const res = await fetch('/api/gmb-data');
+          const data = await res.json();
+
+          if (res.ok) {
+            document.getElementById('gmbImpressions').innerText = data.impressions.toLocaleString();
+          } else {
+            document.getElementById('gmbImpressions').innerText = 'N/A';
+            document.getElementById('gmbConnectContainer').style.display = 'block';
+          }
+        } catch (error) {
+          document.getElementById('gmbImpressions').innerText = 'Error';
+        }
       }
 
       function populateSelectors() {
