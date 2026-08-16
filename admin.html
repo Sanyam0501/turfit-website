@@ -950,18 +950,6 @@
           Swal.fire("Error", res.error.message, "error");
           // ... inside saveEntry function ...
         } else {
-          // --- AUTOMATIC WHATSAPP MESSAGE ON SAVE ---
-          // This sends an automatic WhatsApp confirmation message immediately after saving.
-          sendWhatsApp(
-            name,
-            phone,
-            date,
-            start24,
-            end24,
-            "confirm", // Reusing "confirm" type for automatic message
-            price,
-            totalPaid
-          );
           // Updated logic for New Bookings
           if (isEdit) {
             bsEditModal.hide();
