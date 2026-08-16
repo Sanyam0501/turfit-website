@@ -736,6 +736,11 @@
         }, 60000); // 60000ms = 1 minute
       }
 
+      function escapeHtmlAttribute(str) {
+        if (typeof str !== 'string') return str;
+        return str.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+      }
+
       function applyDistrictFilter() {
         districtFilterActive = document.getElementById('districtFilter').checked;
         const activeTab = document.querySelector('#bookingTabs .nav-link.active');
@@ -1116,18 +1121,16 @@
         // Payment Reminder button
         const reminderBtn =
           isCompleted && pendingBalance > 0
-            ? `
-        <button class="action-btn" title="Send Payment Reminder" 
-            onclick="sendWhatsApp('${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','remind',${b.price},${pendingBalance})">
+            ? `<button class="action-btn" title="Send Payment Reminder"
+            onclick="sendWhatsApp('${escapeHtmlAttribute(b.customer_name)}','${escapeHtmlAttribute(b.phone_number)}','${escapeHtmlAttribute(b.booking_date)}','${escapeHtmlAttribute(b.start_time)}','${escapeHtmlAttribute(b.end_time)}','remind',${b.price},${pendingBalance})">
             <i class="bi bi-bell-fill text-danger"></i>
         </button>`
             : "";
 
         // NEW: Feedback button (Only shows if booking is finished)
         const feedbackBtn = isCompleted
-          ? `
-        <button class="action-btn" title="Send Google Review Link" 
-            onclick="sendWhatsApp('${b.customer_name}','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','feedback')">
+          ? `<button class="action-btn" title="Send Google Review Link"
+            onclick="sendWhatsApp('${escapeHtmlAttribute(b.customer_name)}','${escapeHtmlAttribute(b.phone_number)}','${escapeHtmlAttribute(b.booking_date)}','${escapeHtmlAttribute(b.start_time)}','${escapeHtmlAttribute(b.end_time)}','feedback')">
             <i class="bi bi-star-fill text-warning"></i>
         </button>`
           : "";
@@ -1145,9 +1148,9 @@
         )}
                     </span>
                 </div>
-                <small class="text-dark"><strong>${
-                  b.customer_name
-                }</strong></small>
+                <small class="text-dark"><strong>${b.customer_name} ${
+          b.is_district_booking ? '<span class="badge bg-info text-white ms-1" style="font-size: 0.6rem; vertical-align: middle;">District</span>' : ''
+        }</strong></small>
                 <br>
                 <small class="text-muted">Total: ₹${totalamt}</small>
                 <br>
@@ -1157,15 +1160,13 @@
                 ${feedbackBtn}
                 ${reminderBtn}
                 <button class="action-btn" onclick="sendWhatsApp('${
-                  b.customer_name
-                }','${b.phone_number}','${b.booking_date}','${b.start_time}','${
-          b.end_time
-        }','confirm',${b.price},${b.paid_amount})">
+                  escapeHtmlAttribute(b.customer_name)
+                }','${escapeHtmlAttribute(b.phone_number)}','${escapeHtmlAttribute(b.booking_date)}','${escapeHtmlAttribute(b.start_time)}','${escapeHtmlAttribute(b.end_time)}','confirm',${b.price},${b.paid_amount})">
                     <i class="bi bi-whatsapp text-success"></i>
                 </button>
 <button class="action-btn text-warning" onclick="openEditModal('${b.id}','${
-          b.customer_name
-        }','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','${b.price}','${b.paid_amount}','${b.paid_cash}','${b.paid_upi}',${b.is_district_booking})">
+                  escapeHtmlAttribute(b.customer_name)
+                }','${escapeHtmlAttribute(b.phone_number)}','${escapeHtmlAttribute(b.booking_date)}','${escapeHtmlAttribute(b.start_time)}','${escapeHtmlAttribute(b.end_time)}','${b.price}','${b.paid_amount}','${b.paid_cash}','${b.paid_upi}',${b.is_district_booking})">
     <i class="bi bi-pencil"></i>
 </button>
             </div>
