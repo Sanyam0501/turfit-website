@@ -187,6 +187,10 @@
                   </select>
                 </div>
               </div>
+              <div class="my-3">
+                <div id="slotStatus" class="text-center fw-bold p-2 rounded-3 small"></div>
+              </div>
+
               <div class="mb-3">
                 <label class="form-label small fw-bold text-muted"
                   >CUSTOMER NAME</label
@@ -726,6 +730,7 @@
         document.getElementById("bookDate").valueAsDate = new Date();
         updateView();
         loadGmbData();
+        addLiveSlotCheckHandlers();
         addDateValidation();
         checkForUnpaidCompleted(); // Check for notifications on load
 
@@ -734,6 +739,52 @@
           checkForUnpaidCompleted();
           refreshLiveTabs();
         }, 60000); // 60000ms = 1 minute
+      }
+
+      function addLiveSlotCheckHandlers() {
+        const fields = ['bookDate', 'h_start', 'm_start', 'ampm_start', 'h_end', 'm_end', 'ampm_end'];
+        fields.forEach(id => {
+          document.getElementById(id).addEventListener('change', checkSlotAvailability);
+        });
+      }
+
+      async function checkSlotAvailability() {
+        const statusEl = document.getElementById('slotStatus');
+        statusEl.innerHTML = '<span class="text-muted">Checking...</span>';
+        statusEl.className = 'text-center fw-bold p-2 rounded-3 small bg-light'; // Reset style
+
+        const date = document.getElementById('bookDate').value;
+        if (!date) {
+            statusEl.innerHTML = '';
+            return;
+        }
+
+        const start24 = get24hFromSelectors(
+            document.getElementById('h_start').value,
+            document.getElementById('m_start').value,
+            document.getElementById('ampm_start').value
+        );
+
+        const end24 = get24hFromSelectors(
+            document.getElementById('h_end').value,
+            document.getElementById('m_end').value,
+            document.getElementById('ampm_end').value
+        );
+
+        const normStart = start24;
+        const normEnd = end24 === "00:00:00" ? "24:00:00" : end24;
+
+        if (normStart >= normEnd) {
+            statusEl.textContent = 'End time must be after start time';
+            statusEl.className = 'text-center fw-bold p-2 rounded-3 small bg-warning-subtle text-warning-emphasis';
+            return;
+        }
+
+        const { data: clash, error } = await findClash(date, normStart, normEnd);
+
+        if (error) return statusEl.textContent = 'Error checking slot';
+        
+        updateSlotStatusUI(clash);
       }
 
       function escapeHtmlAttribute(str) {
@@ -862,32 +913,15 @@
         const normStart = start24;
         const normEnd = end24 === "00:00:00" ? "24:00:00" : end24;
 
-        if (normStart >= normEnd)
-          return Swal.fire("Error", "End time must be after start", "error");
+        if (normStart >= normEnd) return Swal.fire("Error", "End time must be after start time.", "error");
 
-        // --- CLASH CHECK ---
-        let query = supabaseClient
-          .from("turf_bookings")
-          .select("id, customer_name, start_time, end_time")
-          .eq("booking_date", date);
-        if (isEdit) query = query.neq("id", id);
-
-        const { data: existingBookings, error: fetchError } = await query;
-        if (fetchError)
-          return Swal.fire("Error", "Could not verify availability", "error");
-
-        const clash = existingBookings.find((b) => {
-          const bStart = b.start_time;
-          const bEnd = b.end_time === "00:00:00" ? "24:00:00" : b.end_time;
-          return normStart < bEnd && normEnd > bStart;
-        });
+        const { data: clash, error: clashError } = await findClash(date, normStart, normEnd, id);
+        if (clashError) return Swal.fire("Error", "Could not verify availability.", "error");
 
         if (clash) {
           return Swal.fire({
             title: "Slot Unavailable",
-            text: `This time clashes with ${clash.customer_name} (${formatTo12H(
-              clash.start_time
-            )} - ${formatTo12H(clash.end_time)})`,
+            html: `This time clashes with <strong>${clash.customer_name}</strong>'s booking from <strong>${formatTo12H(clash.start_time)}</strong> to <strong>${formatTo12H(clash.end_time)}</strong>.`,
             icon: "error",
           });
         }
@@ -1089,6 +1123,7 @@
 
       function updateView() {
         loadDaySlots();
+        checkSlotAvailability();
 
         const selectedDateValue = document.getElementById("bookDate").value;
         const selectedDate = new Date(selectedDateValue + 'T00:00:00');
@@ -1103,6 +1138,36 @@
         } else {
             const formattedDate = selectedDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' });
             dailyStatsLabel.innerText = `This data is for ${formattedDate}`;
+        }
+      }
+
+      async function findClash(date, normStart, normEnd, excludeId = null) {
+        let query = supabaseClient
+          .from("turf_bookings")
+          .select("id, customer_name, start_time, end_time")
+          .eq("booking_date", date)
+          .lt('start_time', normEnd) // existing.start < new.end
+          .gt('end_time', normStart); // existing.end > new.start
+
+        if (excludeId) {
+          query = query.neq("id", excludeId);
+        }
+        
+        const { data, error } = await query.limit(1).single(); // We only need to know if at least one clash exists
+        return { data, error };
+      }
+
+      function updateSlotStatusUI(clash) {
+        const statusEl = document.getElementById('slotStatus');
+        if (clash) {
+            statusEl.innerHTML = `
+                <i class="bi bi-x-circle-fill me-1"></i> 
+                Unavailable (Clashes with ${clash.customer_name})
+            `;
+            statusEl.className = 'text-center fw-bold p-2 rounded-3 small bg-danger-subtle text-danger-emphasis';
+        } else {
+            statusEl.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> Slot Available';
+            statusEl.className = 'text-center fw-bold p-2 rounded-3 small bg-success-subtle text-success-emphasis';
         }
       }
 
