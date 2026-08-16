@@ -802,6 +802,7 @@
           } else {
             activeTab.click(); // Re-run the load function for other active tabs
           }
+          loadDaySlots(); // Always refresh the daily stats
           checkForUnpaidCompleted(); // Re-check for notifications with the new filter
         }
       }
@@ -1036,10 +1037,10 @@
               cancelButtonText: "CLOSE",
             }).then((result) => {
               if (result.isConfirmed) {
-                sendWhatsApp(name, phone, date, start24, end24, "cancel");
-                setTimeout(updateView, 1000);
+                sendWhatsApp(name, phone, date, start24, end24, "cancel"); // Open WhatsApp
+                setTimeout(() => window.location.reload(), 1500); // Reload after a delay
               } else {
-                updateView();
+                window.location.reload(); // Reload immediately if not sending message
               }
             });
           }
