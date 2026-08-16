@@ -35,7 +35,7 @@ export default async function handler(req, res) {
 
     const { data, error } = await supabase
       .from("turf_bookings")
-      .select("customer_name, booking_date, start_time, price, paid_cash, paid_upi")
+      .select("customer_name, booking_date, start_time, price, paid_cash, paid_upi, is_distruct_booking")
       .lte("booking_date", endOfPrevMonthISO) // Fetch all bookings up to the end of the previous month
       .order("booking_date", { ascending: false })
       .order("start_time", { ascending: false });
@@ -58,6 +58,7 @@ export default async function handler(req, res) {
           date: booking.booking_date,
           time: booking.start_time,
           pending,
+          is_distruct_booking: booking.is_distruct_booking,
         });
       }
     }
@@ -87,7 +88,7 @@ export default async function handler(req, res) {
             const bookingTime = formatTo12H(b.time);
             return `
         <tr>
-          <td style="padding: 12px; border-bottom: 1px solid #eee;">${b.customer}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #eee;">${b.customer}${b.is_distruct_booking ? ' (Distruct)' : ''}</td>
           <td style="padding: 12px; border-bottom: 1px solid #eee; white-space: nowrap;">${bookingDate} - ${bookingTime}</td>
           <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right;">₹${b.pending.toLocaleString()}</td>
         </tr>
