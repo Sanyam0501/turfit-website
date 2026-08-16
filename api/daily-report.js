@@ -44,6 +44,7 @@ export default async function handler(req, res) {
 
     const pendingBookings = [];
     let totalPending = 0;
+    let totalPendingDistrict = 0;
 
     for (const booking of data) {
       const cash = Number(booking.paid_cash || 0);
@@ -52,13 +53,15 @@ export default async function handler(req, res) {
 
       if (pending > 0) {
         totalPending += pending;
+        if (booking.is_district_booking) {
+          totalPendingDistrict += pending;
+        }
 
         pendingBookings.push({
           customer: booking.customer_name,
           date: booking.booking_date,
           time: booking.start_time,
           pending,
-          is_distruct_booking: booking.is_distruct_booking,
         });
       }
     }
@@ -88,7 +91,7 @@ export default async function handler(req, res) {
             const bookingTime = formatTo12H(b.time);
             return `
         <tr>
-          <td style="padding: 12px; border-bottom: 1px solid #eee;">${b.customer}${b.is_distruct_booking ? ' (Distruct)' : ''}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #eee;">${b.customer}${b.is_district_booking ? ' (District)' : ''}</td>
           <td style="padding: 12px; border-bottom: 1px solid #eee; white-space: nowrap;">${bookingDate} - ${bookingTime}</td>
           <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right;">₹${b.pending.toLocaleString()}</td>
         </tr>
@@ -114,6 +117,10 @@ export default async function handler(req, res) {
                 ${tableRows}
               </tbody>
               <tfoot>
+                <tr style="font-weight: bold;">
+                  <td colspan="2" style="padding: 12px; border-top: 2px solid #333;">Total Pending (District)</td>
+                  <td style="padding: 12px; border-top: 2px solid #333; text-align: right; color: #d9534f;">₹${totalPendingDistrict.toLocaleString()}</td>
+                </tr>
                 <tr style="font-weight: bold;">
                   <td colspan="2" style="padding: 12px; border-top: 2px solid #333;">Total Pending</td>
                   <td style="padding: 12px; border-top: 2px solid #333; text-align: right; color: #d9534f;">₹${totalPending.toLocaleString()}</td>
