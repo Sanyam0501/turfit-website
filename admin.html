@@ -802,6 +802,7 @@
           } else {
             activeTab.click(); // Re-run the load function for other active tabs
           }
+          checkForUnpaidCompleted(); // Re-check for notifications with the new filter
         }
       }
       function connectGoogleBusiness() {
@@ -1330,10 +1331,17 @@
         let query = supabaseClient
           .from("turf_bookings")
           .select("*")
-          .limit(initialLoad ? 100 : 500) // Optimization: load fewer on first load
-          .order("booking_date", { ascending: false })
-          .order("start_time", { ascending: false });
+          .limit(initialLoad ? 100 : 500); // Optimization: load fewer on first load
 
+        if (type === 'upcoming') {
+          // For upcoming, fetch future bookings and sort them chronologically
+          query = query.gte('booking_date', toISODateString(now))
+                       .order("booking_date", { ascending: true })
+                       .order("start_time", { ascending: true });
+        } else {
+          query = query.order("booking_date", { ascending: false })
+                       .order("start_time", { ascending: false });
+        }
         if (districtFilterActive) {
           query = query.eq('is_district_booking', true);
         }
@@ -1385,9 +1393,14 @@
 
       async function checkForUnpaidCompleted() {
         const now = new Date();
-        const { data, error } = await supabaseClient
+        let query = supabaseClient
           .from("turf_bookings")
           .select("booking_date, end_time, price, paid_cash, paid_upi");
+
+        if (districtFilterActive) {
+          query = query.eq('is_district_booking', true);
+        }
+        const { data, error } = await query;
 
         if (error) return console.error("Error checking for unpaid bookings:", error);
 
