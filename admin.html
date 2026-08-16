@@ -1153,8 +1153,14 @@
           query = query.neq("id", excludeId);
         }
         
-        const { data, error } = await query.limit(1).single(); // We only need to know if at least one clash exists
-        return { data, error };
+        // Use .limit(1) to check for existence without .single()
+        // .single() throws an error if more than one row is found, which we want to treat as a clash.
+        const { data, error } = await query.limit(1);
+
+        // If there's an error, return it. If data is not empty, return the first clashing booking.
+        // If data is empty (no clash), return null data.
+        const clash = data && data.length > 0 ? data[0] : null;
+        return { data: clash, error };
       }
 
       function updateSlotStatusUI(clash) {
