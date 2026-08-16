@@ -740,7 +740,12 @@
         districtFilterActive = document.getElementById('districtFilter').checked;
         const activeTab = document.querySelector('#bookingTabs .nav-link.active');
         if (activeTab) {
-          activeTab.click(); // Re-run the load function for the active tab
+          const activeTabId = activeTab.getAttribute('data-bs-target');
+          if (activeTabId === '#revenuePanel') {
+            loadRevenueData(); // Reload revenue data specifically
+          } else {
+            activeTab.click(); // Re-run the load function for other active tabs
+          }
         }
       }
       function connectGoogleBusiness() {
@@ -1160,9 +1165,7 @@
                 </button>
 <button class="action-btn text-warning" onclick="openEditModal('${b.id}','${
           b.customer_name
-        }','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','${
-          b.end_time
-        }','${b.price}','${b.paid_amount}', '${b.paid_cash}', '${b.paid_upi}', ${b.is_district_booking})">
+        }','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','${b.price}','${b.paid_amount}','${b.paid_cash}','${b.paid_upi}',${b.is_district_booking})">
     <i class="bi bi-pencil"></i>
 </button>
             </div>
@@ -1177,6 +1180,9 @@
           .from("turf_bookings")
           .select("*")
           .eq("booking_date", selectedDate)
+          if (districtFilterActive) {
+            query = query.eq('is_district_booking', true);
+          }
           .order("start_time");
 
         if (districtFilterActive) {
@@ -1251,6 +1257,9 @@
           .limit(initialLoad ? 100 : 500) // Optimization: load fewer on first load
           .order("booking_date", { ascending: false })
           .order("start_time", { ascending: false });
+        if (districtFilterActive) {
+          query = query.eq('is_district_booking', true);
+        }
 
         if (districtFilterActive) {
           query = query.eq('is_district_booking', true);
@@ -1383,9 +1392,12 @@
         dateLabel.innerText = `Data from ${formattedStart} to ${formattedEnd}`;
 
         // Fetch data for the selected range. We can use the values directly from the inputs.
-        const { data, error } = await supabaseClient
+        let query = supabaseClient
           .from("turf_bookings")
           .select("customer_name, phone_number, booking_date, start_time, end_time, price, paid_cash, paid_upi")
+        if (districtFilterActive) {
+          query = query.eq('is_district_booking', true);
+        }
           .gte("booking_date", customStartEl.value)
           .lte("booking_date", customEndEl.value);
 
@@ -1393,7 +1405,7 @@
           console.error("Error fetching revenue data:", error);
           return;
         }
-
+        const { data, error: fetchError } = await query;
         revenueDataCache = data; // Cache the fetched data
 
         // Calculate revenues for each period
@@ -1493,6 +1505,9 @@
           .from("turf_bookings")
           .select("booking_date, paid_cash, paid_upi")
           .order("booking_date", { ascending: false });
+        if (districtFilterActive) {
+          query = query.eq('is_district_booking', true);
+        }
         
         if (error) {
           console.error("Error fetching breakdown data:", error);
@@ -1500,6 +1515,7 @@
           document.getElementById("weeklyRevenueTableContainer").innerHTML = '<p class="text-center text-danger">Could not load data.</p>';
           return;
         }
+        const { data: fetchedData, error: breakdownError } = await query;
         allBookingsData = data; // Cache the data
         loadMonthlyRevenueBreakdown();
         loadWeeklyRevenueBreakdown();
