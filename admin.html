@@ -234,6 +234,12 @@
                   </div>
                 </div>
               </div>
+              <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="is_district_booking">
+                <label class="form-check-label" for="is_district_booking">
+                  District Booking
+                </label>
+              </div>
               <button
                 class="btn btn-primary-custom w-100 py-3 fw-bold"
                 onclick="saveEntry(false)"
@@ -621,6 +627,12 @@
                 />
               </div>
             </div>
+            <div class="form-check mt-3">
+              <input class="form-check-input" type="checkbox" id="edit_is_district_booking">
+              <label class="form-check-label" for="edit_is_district_booking">
+                District Booking
+              </label>
+            </div>
           </div>
           <div class="modal-footer bg-light d-flex justify-content-between">
             <button class="btn btn-outline-danger" onclick="deleteBooking()">
@@ -799,6 +811,9 @@
         const totalPaid = cash + upi;
         if (!name || !phone || isNaN(price))
           return Swal.fire("Required", "Fill all fields", "warning");
+        const isDistrict = document.getElementById(
+          isEdit ? "edit_is_district_booking" : "is_district_booking"
+        ).checked;
         const start24 = get24hFromSelectors(
           document.getElementById(isEdit ? "edit_h" : "h_start").value,
           document.getElementById(isEdit ? "edit_m" : "m_start").value,
@@ -854,6 +869,7 @@
           paid_amount: totalPaid, // Sum for backwards compatibility
           paid_cash: cash,
           paid_upi: upi,
+          is_district_booking: isDistrict,
         };
         let res = id
           ? await supabaseClient
@@ -1127,9 +1143,9 @@
                 </button>
 <button class="action-btn text-warning" onclick="openEditModal('${b.id}','${
           b.customer_name
-        }','${b.phone_number}','${b.booking_date}','${b.start_time}','${
+        }','${b.phone_number}','${b.booking_date}','${b.start_time}','${b.end_time}','${
           b.end_time
-        }','${b.price}','${b.paid_amount}', '${b.paid_cash}', '${b.paid_upi}')">
+        }','${b.price}','${b.paid_amount}', '${b.paid_cash}', '${b.paid_upi}', ${b.is_district_booking})">
     <i class="bi bi-pencil"></i>
 </button>
             </div>
@@ -1591,7 +1607,7 @@
         ${showMoreButton}`;
       }
 
-      function openEditModal(id, n, p, d, s, e, price, paid, cash, upi) {
+      function openEditModal(id, n, p, d, s, e, price, paid, cash, upi, isDistrict) {
         document.getElementById("edit_id").value = id;
         document.getElementById("edit_name").value = n;
         document.getElementById("edit_phone").value = p.replace(/^(\+91)/, "");
@@ -1599,6 +1615,7 @@
         document.getElementById("edit_price").value = price;
         document.getElementById("edit_paid_cash").value = cash || 0;
         document.getElementById("edit_paid_upi").value = upi || 0;
+        document.getElementById("edit_is_district_booking").checked = isDistrict;
         let [sh, sm] = s.split(":");
         document.getElementById("edit_h").value = parseInt(sh) % 12 || 12;
         document.getElementById("edit_m").value = sm;
