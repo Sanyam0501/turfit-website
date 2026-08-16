@@ -35,7 +35,7 @@ export default async function handler(req, res) {
 
     const { data, error } = await supabase
       .from("turf_bookings")
-      .select("customer_name, booking_date, start_time, price, paid_cash, paid_upi, is_distruct_booking")
+      .select("customer_name, booking_date, start_time, price, paid_cash, paid_upi, is_district_booking")
       .lte("booking_date", endOfPrevMonthISO) // Fetch all bookings up to the end of the previous month
       .order("booking_date", { ascending: false })
       .order("start_time", { ascending: false });
