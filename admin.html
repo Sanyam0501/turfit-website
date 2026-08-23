@@ -914,9 +914,7 @@
                 </div>
               </div>
             </div>
-            <div class="my-3">
-              <div id="slotStatus" class="text-center fw-bold p-2 rounded-3 small"></div>
-            </div>
+            <div id="slotStatus" class="text-center fw-bold p-2 rounded-3 small mb-3 mt-1" style="display: none;"></div>
             <div class="mb-3">
               <label class="small fw-bold text-muted text-uppercase">Customer</label>
               <input type="text" id="userName" class="form-control" />
@@ -928,15 +926,15 @@
             <div class="row g-2">
               <div class="col-4">
                 <label class="small fw-bold text-muted">Total</label>
-                <input type="number" id="bookingPrice" class="form-control border-primary" />
+                <input type="number" id="bookingPrice" class="form-control border border-dark border-2" />
               </div>
               <div class="col-4">
                 <label class="small fw-bold text-muted">Cash</label>
-                <input type="number" id="paidCash" class="form-control border-success" value="0" />
+                <input type="number" id="paidCash" class="form-control border border-dark border-2" value="0" />
               </div>
               <div class="col-4">
                 <label class="small fw-bold text-muted">UPI</label>
-                <input type="number" id="paidUpi" class="form-control border-info" value="0" />
+                <input type="number" id="paidUpi" class="form-control border border-dark border-2" value="0" />
               </div>
             </div>
             <div class="form-check mt-3">
@@ -1051,7 +1049,7 @@
                 <input
                   type="number"
                   id="edit_price"
-                  class="form-control border-primary"
+                  class="form-control border border-dark border-2"
                 />
               </div>
               <div class="col-4">
@@ -1059,7 +1057,7 @@
                 <input
                   type="number"
                   id="edit_paid_cash"
-                  class="form-control border-success"
+                  class="form-control border border-dark border-2"
                   value="0"
                 />
               </div>
@@ -1068,7 +1066,7 @@
                 <input
                   type="number"
                   id="edit_paid_upi"
-                  class="form-control border-info"
+                  class="form-control border border-dark border-2"
                   value="0"
                 />
               </div>
@@ -1612,9 +1610,11 @@
                 </div>
             `;
             statusEl.className = 'text-center fw-bold p-2 rounded-3 small bg-danger-subtle text-danger-emphasis';
+            statusEl.style.display = 'block';
         } else {
             statusEl.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> Slot Available';
             statusEl.className = 'text-center fw-bold p-2 rounded-3 small bg-success-subtle text-success-emphasis';
+            statusEl.style.display = 'block';
         }
       }
 
