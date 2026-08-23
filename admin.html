@@ -1573,9 +1573,13 @@
       function updateSlotStatusUI(clash) {
         const statusEl = document.getElementById('slotStatus');
         if (clash) {
+            const editParams = `'${clash.id}','${escapeHtmlAttribute(clash.customer_name)}','${escapeHtmlAttribute(clash.phone_number || '')}','${escapeHtmlAttribute(clash.booking_date)}','${escapeHtmlAttribute(clash.start_time)}','${escapeHtmlAttribute(clash.end_time)}',${clash.price},${clash.paid_amount},${clash.paid_cash || 0},${clash.paid_upi || 0},${!!clash.is_district_booking}`;
             statusEl.innerHTML = `
-                <i class="bi bi-x-circle-fill me-1"></i> 
-                Unavailable (Clashes with ${clash.customer_name})
+                <div onclick="openEditModal(${editParams})" style="cursor: pointer;">
+                  <i class="bi bi-x-circle-fill me-1"></i> 
+                  Unavailable (Clashes with ${clash.customer_name})
+                  <br><small class="fw-normal" style="opacity:0.8;"><i class="bi bi-pencil-square me-1"></i>Tap to edit this booking</small>
+                </div>
             `;
             statusEl.className = 'text-center fw-bold p-2 rounded-3 small bg-danger-subtle text-danger-emphasis';
         } else {
