@@ -1949,42 +1949,37 @@
         }
 
         track.innerHTML = slotsHTML;
-        // Scroll to current time after the timeline is rendered
-        setTimeout(() => {
-          const container = document.getElementById('timelineTrackContainer');
-          if (container) {
-            const now = new Date();
-            const nowMins = now.getHours() * 60 + now.getMinutes();
-            if (nowMins >= timelineStart && nowMins <= timelineEnd) {
-              const nowPercent = ((nowMins - timelineStart) / totalMinutes) * 100;
-              const scrollPos = (nowPercent / 100) * (container.scrollWidth - container.clientWidth);
-              container.scrollTo({ left: scrollPos, behavior: 'smooth' });
-            }
-          }
-        }, 0);
-        // Auto-scroll to current time on load (mobile only)
-        if (window.innerWidth <= 768) { // mobile breakpoint
-          requestAnimationFrame(() => {
-            const container = document.getElementById('timelineTrackContainer');
-            if (container) {
-              const nowPercent = ((nowMinutes - timelineStart) / totalMinutes) * 100;
-              const scrollPos = (nowPercent / 100) * (container.scrollWidth - container.clientWidth);
-              container.scrollTo({ left: scrollPos, behavior: 'smooth' });
-            }
-          });
-        }
+        // Auto-scroll timeline to LIVE NOW on mobile
+if (isToday && window.innerWidth <= 768) {
+  requestAnimationFrame(() => {
+    const container = document.getElementById("timelineTrackContainer");
 
-        // Auto-scroll to current time on load (especially on mobile)
-        const container = document.getElementById('timelineTrackContainer');
-        if (container) {
-          const now = new Date();
-          const nowMins = now.getHours() * 60 + now.getMinutes();
-          if (nowMins >= timelineStart && nowMins <= timelineEnd) {
-            const nowPercent = ((nowMins - timelineStart) / totalMinutes) * 100;
-            const scrollPos = (nowPercent / 100) * (container.scrollWidth - container.clientWidth);
-            container.scrollLeft = scrollPos;
-          }
-        }
+    if (!container) return;
+
+    const nowPercent = ((nowMinutes - timelineStart) / totalMinutes) * 100;
+
+    if (nowPercent < 0 || nowPercent > 100) return;
+
+    // Total width of the timeline
+    const timelineWidth = container.scrollWidth;
+
+    // Position of LIVE NOW inside the timeline
+    const nowPosition = (nowPercent / 100) * timelineWidth;
+
+    // Put LIVE NOW approximately in the centre of the phone screen
+    const targetScroll =
+      nowPosition - (container.clientWidth / 2);
+
+    // Keep scroll position within valid limits
+    const maxScroll =
+      container.scrollWidth - container.clientWidth;
+
+    container.scrollTo({
+      left: Math.max(0, Math.min(targetScroll, maxScroll)),
+      behavior: "smooth"
+    });
+  });
+}
       }
 
       function togglePendingFilter() {
