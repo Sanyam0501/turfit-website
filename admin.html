@@ -520,7 +520,7 @@
             <div>
               <div class="d-flex align-items-center gap-2">
                 <h5 class="fw-bold m-0 text-dark">
-                  <i class="bi bi-calendar3-range text-success me-2"></i>Bookings 
+                  <i class="bi bi-calendar3-range text-success me-2"></i>Scheduled Bookings
                 </h5>
                 <span id="timelineDateBadge" class="badge bg-success-subtle text-success-emphasis border border-success-subtle">Today</span>
               </div>
@@ -1931,7 +1931,7 @@
                  style="left: ${leftPercent}%; width: calc(${widthPercent}% - 2px);"
                  onclick="openEditModal(${editParams})"
                  title="${escapeHtmlAttribute(b.customer_name)}: ${formatTo12H(b.start_time)} – ${formatTo12H(b.end_time)} ${isPending ? `(Pending: ₹${pending})` : '(Paid)'} - Click to Edit">
-              <div class="slot-name">${isOngoing ? '<span class="badge bg-warning text-dark me-1" style="font-size:0.55rem; padding: 1px 3px;">LIVE</span>' : ''}${b.customer_name}${isDistrict ? ' (Dist)' : ''}</div>
+              <div class="slot-name">${isOngoing ? '<span class="badge bg-warning text-dark me-1" style="font-size:0.55rem; padding: 1px 3px;">LIVE</span>' : ''}${b.customer_name}${isDistrict ? '' : ''}</div>
               <div class="slot-time-text">${formatTo12H(b.start_time)} – ${formatTo12H(b.end_time)}</div>
             </div>
           `;
