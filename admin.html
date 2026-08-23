@@ -1938,7 +1938,7 @@ if (cursor < timelineEnd) {
                  style="left: ${leftPercent}%; width: calc(${widthPercent}% - 2px);"
                  onclick="selectFreeSlot(${f.startMin}, ${f.endMin})"
                  title="Available: ${formatTo12H(minutesToTimeStr(f.startMin))} – ${formatTo12H(minutesToTimeStr(f.endMin))} (Click to Book)">
-              ${showLabel ? `<i class="bi bi-plus me-1 text-success font-weight-bold"></i>Free` : `<i class="bi bi-plus text-muted"></i>`}
+              ${showLabel ? `<i class="bi bi-plus me-1 text-success font-weight-bold"></i>` : `<i class="bi bi-plus text-muted"></i>`}
             </div>
           `;
         });
