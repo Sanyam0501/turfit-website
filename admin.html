@@ -1949,6 +1949,31 @@
         }
 
         track.innerHTML = slotsHTML;
+        // Scroll to current time after the timeline is rendered
+        setTimeout(() => {
+          const container = document.getElementById('timelineTrackContainer');
+          if (container) {
+            const now = new Date();
+            const nowMins = now.getHours() * 60 + now.getMinutes();
+            if (nowMins >= timelineStart && nowMins <= timelineEnd) {
+              const nowPercent = ((nowMins - timelineStart) / totalMinutes) * 100;
+              const scrollPos = (nowPercent / 100) * (container.scrollWidth - container.clientWidth);
+              container.scrollTo({ left: scrollPos, behavior: 'smooth' });
+            }
+          }
+        }, 0);
+        // Auto-scroll to current time on load (mobile only)
+        if (window.innerWidth <= 768) { // mobile breakpoint
+          requestAnimationFrame(() => {
+            const container = document.getElementById('timelineTrackContainer');
+            if (container) {
+              const nowPercent = ((nowMinutes - timelineStart) / totalMinutes) * 100;
+              const scrollPos = (nowPercent / 100) * (container.scrollWidth - container.clientWidth);
+              container.scrollTo({ left: scrollPos, behavior: 'smooth' });
+            }
+          });
+        }
+
         // Auto-scroll to current time on load (especially on mobile)
         const container = document.getElementById('timelineTrackContainer');
         if (container) {
