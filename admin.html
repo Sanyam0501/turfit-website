@@ -236,6 +236,187 @@
         transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       }
 
+      /* Pitch Schedule Visual Timeline */
+      .legend-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        display: inline-block;
+      }
+
+      .timeline-container-wrapper {
+        position: relative;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 8px;
+        border-radius: 10px;
+      }
+
+      .timeline-scroll-track {
+        min-width: 900px;
+        position: relative;
+        padding: 4px 0 16px 0;
+      }
+
+      .timeline-track {
+        position: relative;
+        height: 62px;
+        background: #f8fafc;
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+        overflow: hidden;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.03);
+      }
+
+      .timeline-ruler {
+        position: relative;
+        height: 18px;
+        margin-top: 6px;
+      }
+
+      .timeline-ruler-tick {
+        font-size: 0.72rem;
+        color: #64748b;
+        font-weight: 600;
+        position: absolute;
+        transform: translateX(-50%);
+        white-space: nowrap;
+      }
+
+      .timeline-hour-grid {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        border-right: 1px dashed rgba(203, 213, 225, 0.6);
+        pointer-events: none;
+      }
+
+      .timeline-slot {
+        position: absolute;
+        top: 4px;
+        bottom: 4px;
+        border-radius: 8px;
+        padding: 4px 8px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        overflow: hidden;
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+        z-index: 2;
+        user-select: none;
+      }
+
+      .timeline-slot:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+        z-index: 5;
+        filter: brightness(1.05);
+      }
+
+      .timeline-slot-paid {
+        background: linear-gradient(135deg, #1b4332, #2d6a4f);
+        color: #ffffff;
+        border: 1px solid #1b4332;
+      }
+
+      .timeline-slot-pending {
+        background: linear-gradient(135deg, #b02a37, #dc3545);
+        color: #ffffff;
+        border: 1px solid #a51d2a;
+      }
+
+      .timeline-slot-district {
+        box-shadow: inset 0 0 0 2px #0dcaf0;
+      }
+
+      .timeline-slot-ongoing {
+        animation: livePulse 2s infinite ease-in-out;
+        border: 2px solid #ffc107 !important;
+      }
+
+      @keyframes livePulse {
+        0%, 100% {
+          box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7);
+        }
+        50% {
+          box-shadow: 0 0 0 6px rgba(255, 193, 7, 0);
+        }
+      }
+
+      .timeline-slot-free {
+        position: absolute;
+        top: 4px;
+        bottom: 4px;
+        border-radius: 8px;
+        border: 1.5px dashed #cbd5e1;
+        background: #ffffff;
+        color: #64748b;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        z-index: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .timeline-slot-free:hover {
+        background: #d8f3dc;
+        border-color: var(--accent);
+        color: var(--admin-green);
+        transform: scale(1.01);
+        z-index: 4;
+        box-shadow: 0 2px 8px rgba(45, 106, 79, 0.15);
+      }
+
+      .timeline-now-line {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #dc3545;
+        z-index: 6;
+        pointer-events: none;
+      }
+
+      .timeline-now-badge {
+        position: absolute;
+        top: -2px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #dc3545;
+        color: #ffffff;
+        font-size: 0.58rem;
+        font-weight: bold;
+        padding: 1px 3px;
+        border-radius: 3px;
+        white-space: nowrap;
+      }
+
+      .slot-name {
+        font-size: 0.75rem;
+        font-weight: 700;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.15;
+      }
+
+      .slot-time-text {
+        font-size: 0.65rem;
+        opacity: 0.9;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.15;
+      }
+
       .sticky-header-container {
         max-height: 400px;
         overflow-y: auto;
@@ -330,9 +511,47 @@
         <p class="mb-0 mt-2 opacity-75" id="currentDisplayDate"></p>
       </div>
       <div class="container mt-4 mb-5">
+        <!-- Interactive Pitch Schedule Visual Timeline -->
+        <div class="card p-3 p-md-4 shadow-sm mb-4" id="pitchTimelineCard">
+          <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <div>
+              <div class="d-flex align-items-center gap-2">
+                <h5 class="fw-bold m-0 text-dark">
+                  <i class="bi bi-calendar3-range text-success me-2"></i>Pitch Schedule
+                </h5>
+                <span id="timelineDateBadge" class="badge bg-success-subtle text-success-emphasis border border-success-subtle">Today</span>
+              </div>
+              <small id="timelineStatsSummary" class="text-muted">Loading schedule...</small>
+            </div>
+            <!-- Legend -->
+            <div class="d-flex flex-wrap align-items-center gap-2 small">
+              <span class="d-inline-flex align-items-center gap-1 text-muted">
+                <span class="legend-dot bg-success"></span> Paid
+              </span>
+              <span class="d-inline-flex align-items-center gap-1 text-muted">
+                <span class="legend-dot bg-danger"></span> Pending
+              </span>
+              <span class="d-inline-flex align-items-center gap-1 text-muted">
+                <span class="legend-dot bg-info"></span> District
+              </span>
+              <span class="d-inline-flex align-items-center gap-1 text-muted">
+                <span class="legend-dot bg-light border"></span> Free
+              </span>
+            </div>
+          </div>
+
+          <!-- Timeline Track Container -->
+          <div class="timeline-container-wrapper">
+            <div class="timeline-scroll-track" id="timelineTrackContainer">
+              <div id="timelineTrack" class="timeline-track"></div>
+              <div id="timelineRuler" class="timeline-ruler"></div>
+            </div>
+          </div>
+        </div>
+
         <div class="row g-4">
           <div class="col-lg-4">
-            <div class="card p-4">
+            <div class="card p-4" id="newBookingCard">
               <h5 class="fw-bold mb-4">New Booking</h5>
               <div class="mb-3">
                 <label class="form-label small fw-bold text-muted">DATE</label>
@@ -1078,7 +1297,7 @@
           ) || 0;
         const totalPaid = cash + upi;
         if (!name || !phone || isNaN(price))
-          return Swal.fire("Required", "Fill all fields", "warning");
+          return Swal.fire("Required", "Fill all the fields", "warning");
         const isDistrict = document.getElementById(
           isEdit ? "edit_is_district_booking" : "is_district_booking"
         ).checked;
@@ -1491,6 +1710,241 @@
           data && data.length
             ? data.map((b) => createBookingItem(b)).join("")
             : '<div class="text-center py-4 text-muted small booking-empty-state">No bookings for this date.</div>';
+
+        // Render Pitch Schedule Visual Timeline
+        renderVisualTimeline(data, selectedDate);
+      }
+
+      function timeStrToMinutes(timeStr, isEnd = false) {
+        if (!timeStr) return 0;
+        let [h, m] = timeStr.split(":");
+        let total = parseInt(h) * 60 + parseInt(m);
+        // If end_time is midnight (00:00:00), it represents end of day = 24:00 (1440 min)
+        if (isEnd && (timeStr === "00:00:00" || total === 0)) {
+          total = 24 * 60;
+        }
+        return total;
+      }
+
+      function minutesToTimeStr(mins) {
+        let h24 = Math.floor(mins / 60) % 24;
+        let m = mins % 60;
+        return `${String(h24).padStart(2, "0")}:${String(m).padStart(2, "0")}:00`;
+      }
+
+      function minutesToPickerValues(mins) {
+        let h24 = Math.floor(mins / 60) % 24;
+        let m = mins % 60;
+        let ampm = h24 >= 12 && mins < 1440 ? "PM" : "AM";
+        let h12 = h24 % 12;
+        if (h12 === 0) h12 = 12;
+        // round minutes to nearest 5
+        let roundedM = Math.round(m / 5) * 5;
+        if (roundedM >= 60) {
+          roundedM = 0;
+          h12 = (h12 % 12) + 1;
+        }
+        return {
+          h: h12,
+          m: String(roundedM).padStart(2, "0"),
+          ampm: ampm
+        };
+      }
+
+      function selectFreeSlot(startMin, endMin) {
+        const start = minutesToPickerValues(startMin);
+        const gap = endMin - startMin;
+        // If gap is 90 mins or less, fill entire slot, otherwise default to 1 hour
+        const targetDuration = gap <= 90 ? gap : 60;
+        const end = minutesToPickerValues(startMin + targetDuration);
+
+        document.getElementById("h_start").value = start.h;
+        document.getElementById("m_start").value = start.m;
+        document.getElementById("ampm_start").value = start.ampm;
+
+        document.getElementById("h_end").value = end.h;
+        document.getElementById("m_end").value = end.m;
+        document.getElementById("ampm_end").value = end.ampm;
+
+        checkSlotAvailability();
+
+        const card = document.getElementById("newBookingCard");
+        if (card) {
+          card.scrollIntoView({ behavior: "smooth", block: "center" });
+          card.style.transition = "box-shadow 0.3s ease, transform 0.3s ease";
+          card.style.boxShadow = "0 0 0 3px #2d6a4f, 0 8px 24px rgba(45, 106, 79, 0.25)";
+          card.style.transform = "translateY(-3px)";
+          setTimeout(() => {
+            card.style.boxShadow = "";
+            card.style.transform = "";
+          }, 1200);
+        }
+      }
+
+      function renderVisualTimeline(bookings, selectedDateStr) {
+        const track = document.getElementById("timelineTrack");
+        const ruler = document.getElementById("timelineRuler");
+        const summaryEl = document.getElementById("timelineStatsSummary");
+        const dateBadge = document.getElementById("timelineDateBadge");
+        if (!track || !ruler) return;
+
+        // Standard operating window: 6:00 AM (360) to 24:00 (1440)
+        let timelineStart = 6 * 60; // 360 min
+        let timelineEnd = 24 * 60; // 1440 min
+
+        // Check if any booking is scheduled earlier than 6:00 AM
+        if (bookings && bookings.length > 0) {
+          bookings.forEach(b => {
+            const sm = timeStrToMinutes(b.start_time, false);
+            if (sm < timelineStart && sm >= 0) {
+              timelineStart = Math.floor(sm / 60) * 60;
+            }
+          });
+        }
+
+        const totalMinutes = timelineEnd - timelineStart;
+
+        // Update Date Badge
+        const todayStr = toISODateString(new Date());
+        const isToday = selectedDateStr === todayStr;
+
+        if (isToday) {
+          dateBadge.innerText = "Today";
+          dateBadge.className = "badge bg-success-subtle text-success-emphasis border border-success-subtle";
+        } else {
+          const d = new Date(selectedDateStr + "T00:00:00");
+          dateBadge.innerText = d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+          dateBadge.className = "badge bg-light text-dark border";
+        }
+
+        // Generate ruler ticks and grid lines (every hour)
+        let rulerHTML = "";
+        let gridHTML = "";
+        for (let m = timelineStart; m <= timelineEnd; m += 60) {
+          const leftPercent = ((m - timelineStart) / totalMinutes) * 100;
+          const h24 = Math.floor(m / 60) % 24;
+          const ampm = h24 >= 12 && m < 1440 ? "PM" : "AM";
+          let h12 = h24 % 12;
+          if (m === 1440 || h12 === 0) h12 = 12;
+          const label = `${h12} ${m === 1440 ? "AM" : ampm}`;
+
+          rulerHTML += `<div class="timeline-ruler-tick" style="left: ${leftPercent}%">${label}</div>`;
+          if (m < timelineEnd) {
+            gridHTML += `<div class="timeline-hour-grid" style="left: ${leftPercent}%; width: ${(60 / totalMinutes) * 100}%"></div>`;
+          }
+        }
+        ruler.innerHTML = rulerHTML;
+
+        // Process valid bookings
+        const now = new Date();
+        const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+        let totalBookedMinutes = 0;
+        let validBookings = [];
+
+        if (bookings && bookings.length > 0) {
+          bookings.forEach(b => {
+            const startMin = timeStrToMinutes(b.start_time, false);
+            const endMin = timeStrToMinutes(b.end_time, true);
+            if (endMin > startMin) {
+              validBookings.push({
+                ...b,
+                startMin,
+                endMin,
+                duration: endMin - startMin
+              });
+              totalBookedMinutes += (endMin - startMin);
+            }
+          });
+        }
+
+        validBookings.sort((a, b) => a.startMin - b.startMin);
+
+        // Calculate free gaps between bookings
+        let freeSlots = [];
+        let cursor = timelineStart;
+
+        validBookings.forEach(b => {
+          if (b.startMin > cursor) {
+            const gap = b.startMin - cursor;
+            if (gap >= 15) {
+              freeSlots.push({ startMin: cursor, endMin: b.startMin, duration: gap });
+            }
+          }
+          if (b.endMin > cursor) {
+            cursor = b.endMin;
+          }
+        });
+
+        if (cursor < timelineEnd) {
+          const gap = timelineEnd - cursor;
+          if (gap >= 15) {
+            freeSlots.push({ startMin: cursor, endMin: timelineEnd, duration: gap });
+          }
+        }
+
+        // Summary Text
+        const bookedHours = (totalBookedMinutes / 60).toFixed(1).replace(".0", "");
+        const freeHours = Math.max(0, ((totalMinutes - totalBookedMinutes) / 60)).toFixed(1).replace(".0", "");
+        summaryEl.innerHTML = `<strong>${validBookings.length}</strong> ${validBookings.length === 1 ? 'Slot' : 'Slots'} Booked (${bookedHours} hrs) • <span class="text-success fw-semibold">${freeHours} hrs Available</span>`;
+
+        // Render timeline slots
+        let slotsHTML = gridHTML;
+
+        // 1. Free / Available Slots
+        freeSlots.forEach(f => {
+          const leftPercent = ((f.startMin - timelineStart) / totalMinutes) * 100;
+          const widthPercent = (f.duration / totalMinutes) * 100;
+          const durationStr = f.duration >= 60 ? `${(f.duration / 60).toFixed(1).replace('.0','')}h` : `${f.duration}m`;
+          const showLabel = widthPercent > 4.2;
+
+          slotsHTML += `
+            <div class="timeline-slot-free" 
+                 style="left: ${leftPercent}%; width: calc(${widthPercent}% - 2px);"
+                 onclick="selectFreeSlot(${f.startMin}, ${f.endMin})"
+                 title="Available: ${formatTo12H(minutesToTimeStr(f.startMin))} – ${formatTo12H(minutesToTimeStr(f.endMin))} (Click to Book)">
+              ${showLabel ? `<i class="bi bi-plus me-1 text-success font-weight-bold"></i>Free (${durationStr})` : `<i class="bi bi-plus text-muted"></i>`}
+            </div>
+          `;
+        });
+
+        // 2. Booked Slots
+        validBookings.forEach(b => {
+          const leftPercent = ((b.startMin - timelineStart) / totalMinutes) * 100;
+          const widthPercent = Math.max((b.duration / totalMinutes) * 100, 2.5);
+          const pending = (b.price || 0) - (b.paid_amount || 0);
+          const isPending = pending > 0;
+          const isOngoing = isToday && nowMinutes >= b.startMin && nowMinutes <= b.endMin;
+          const isDistrict = !!b.is_district_booking;
+
+          let colorClass = isPending ? "timeline-slot-pending" : "timeline-slot-paid";
+          if (isDistrict) colorClass += " timeline-slot-district";
+          if (isOngoing) colorClass += " timeline-slot-ongoing";
+
+          const editParams = `'${b.id}','${escapeHtmlAttribute(b.customer_name)}','${escapeHtmlAttribute(b.phone_number || '')}','${escapeHtmlAttribute(b.booking_date)}','${escapeHtmlAttribute(b.start_time)}','${escapeHtmlAttribute(b.end_time)}',${b.price},${b.paid_amount},${b.paid_cash || 0},${b.paid_upi || 0},${isDistrict}`;
+
+          slotsHTML += `
+            <div class="timeline-slot ${colorClass}"
+                 style="left: ${leftPercent}%; width: calc(${widthPercent}% - 2px);"
+                 onclick="openEditModal(${editParams})"
+                 title="${escapeHtmlAttribute(b.customer_name)}: ${formatTo12H(b.start_time)} – ${formatTo12H(b.end_time)} ${isPending ? `(Pending: ₹${pending})` : '(Paid)'} - Click to Edit">
+              <div class="slot-name">${isOngoing ? '<span class="badge bg-warning text-dark me-1" style="font-size:0.55rem; padding: 1px 3px;">LIVE</span>' : ''}${b.customer_name}${isDistrict ? ' (Dist)' : ''}</div>
+              <div class="slot-time-text">${formatTo12H(b.start_time)} – ${formatTo12H(b.end_time)}</div>
+            </div>
+          `;
+        });
+
+        // 3. Live "NOW" indicator
+        if (isToday && nowMinutes >= timelineStart && nowMinutes <= timelineEnd) {
+          const nowPercent = ((nowMinutes - timelineStart) / totalMinutes) * 100;
+          slotsHTML += `
+            <div class="timeline-now-line" style="left: ${nowPercent}%">
+              <span class="timeline-now-badge">NOW</span>
+            </div>
+          `;
+        }
+
+        track.innerHTML = slotsHTML;
       }
 
       function togglePendingFilter() {
