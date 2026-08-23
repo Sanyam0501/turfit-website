@@ -1551,7 +1551,7 @@
       async function findClash(date, normStart, normEnd, excludeId = null) {
         let query = supabaseClient
           .from("turf_bookings")
-          .select("id, customer_name, start_time, end_time")
+          .select("*")
           .eq("booking_date", date)
           .lt('start_time', normEnd) // existing.start < new.end
           .gt('end_time', normStart); // existing.end > new.start
