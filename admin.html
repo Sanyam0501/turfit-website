@@ -66,12 +66,23 @@
       }
 
       .action-btn {
-        padding: 4px 8px;
+        padding: 5px 8px;
         border-radius: 6px;
         cursor: pointer;
-        transition: 0.2s;
-        border: 1px solid transparent;
-        background: transparent;
+        transition: all 0.2s ease;
+        border: 1px solid #e9ecef;
+        background: #f8f9fa;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 32px;
+        height: 32px;
+        color: #495057;
+      }
+
+      .action-btn:hover {
+        background: #e2e6ea;
+        transform: scale(1.05);
       }
 
       .district-filter-wrapper {
@@ -158,6 +169,16 @@
         animation: bookingItemFadeIn 0.25s ease-out forwards;
       }
 
+      .booking-time {
+        white-space: nowrap;
+        letter-spacing: -0.2px;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .min-w-0 {
+        min-width: 0;
+      }
+
       @keyframes bookingItemFadeIn {
         from {
           opacity: 0;
@@ -225,6 +246,37 @@
         top: 0;
         z-index: 1;
         background-color: #f8f9fa; /* Light background to prevent content overlap */
+      }
+
+      @media (max-width: 576px) {
+        .nav-tabs .nav-link {
+          padding: 10px 4px;
+          font-size: 0.78rem;
+        }
+
+        .booking-item {
+          padding: 10px 12px !important;
+        }
+
+        .action-btn {
+          padding: 4px 6px;
+          min-width: 28px;
+          height: 28px;
+          font-size: 0.85rem;
+        }
+
+        .booking-time {
+          font-size: 0.8rem !important;
+        }
+
+        .summary-box {
+          padding: 10px 8px;
+          margin-bottom: 12px;
+        }
+
+        .summary-val {
+          font-size: 1.1rem;
+        }
       }
     </style>
   </head>
@@ -437,7 +489,7 @@
             </div>
 
             <div class="card p-0 overflow-hidden shadow-sm">
-              <ul class="nav nav-tabs nav-fill px-3 bg-white" id="bookingTabs">
+              <ul class="nav nav-tabs nav-fill px-1 px-sm-3 bg-white" id="bookingTabs">
                 <li class="nav-item">
                   <button 
                     class="nav-link active"
@@ -489,7 +541,7 @@
                   </button>
                 </li>
               </ul>
-              <div class="tab-content p-4 bg-white">
+              <div class="tab-content p-2 p-sm-3 p-md-4 bg-white">
                 <div class="tab-pane fade show active" id="todayPanel">
                   <div id="dayList"></div>
                 </div>
@@ -1313,35 +1365,38 @@
           : "";
 
         return `
-        <div class="booking-item p-3 bg-white border rounded mb-2 d-flex justify-content-between align-items-center shadow-sm">
-            <div>
-                <div class="d-flex align-items-center gap-2 mb-1">
-                    <span class="badge bg-light text-dark border" style="font-size: 0.75rem;">${formattedDate}</span>
-                    <span class="fw-bold ${
+        <div class="booking-item p-2 p-sm-3 bg-white border rounded mb-2 d-flex justify-content-between align-items-center shadow-sm">
+            <div class="flex-grow-1 min-w-0 pe-2">
+                <div class="d-flex flex-wrap align-items-center gap-1 gap-sm-2 mb-1">
+                    <span class="badge bg-light text-dark border text-nowrap" style="font-size: 0.72rem;">${formattedDate}</span>
+                    <span class="booking-time fw-bold text-nowrap ${
                       isCompleted ? "text-muted" : "text-success"
-                    }" style="font-size: 0.9rem;">
-                        ${formatTo12H(b.start_time)} - ${formatTo12H(
+                    }" style="font-size: 0.86rem;">
+                        <i class="bi bi-clock me-1 opacity-75"></i>${formatTo12H(b.start_time)} – ${formatTo12H(
           b.end_time
         )}
                     </span>
                 </div>
-                <small class="text-dark"><strong>${b.customer_name} ${
+                <div class="text-truncate">
+                  <small class="text-dark fw-bold">${b.customer_name} ${
           b.is_district_booking ? '<span class="badge bg-info text-white ms-1" style="font-size: 0.6rem; vertical-align: middle;">District</span>' : ''
-        }</strong></small>
-                <br>
-                <small class="text-muted">Total: ₹${totalamt}</small>
-                <br>
-                <small class="text-muted">Pending: ₹${pendingBalance}</small>
+        }</small>
+                </div>
+                <div class="d-flex flex-wrap gap-2 text-muted mt-1" style="font-size: 0.78rem;">
+                  <span class="text-nowrap">Total: ₹${totalamt}</span>
+                  <span>•</span>
+                  <span class="text-nowrap ${pendingBalance > 0 ? 'text-danger fw-semibold' : ''}">Pending: ₹${pendingBalance}</span>
+                </div>
             </div>
-            <div class="d-flex gap-1">
+            <div class="d-flex gap-1 flex-shrink-0 align-items-center">
                 ${feedbackBtn}
                 ${reminderBtn}
-                <button class="action-btn" onclick="sendWhatsApp('${
+                <button class="action-btn" title="Send WhatsApp" onclick="sendWhatsApp('${
                   escapeHtmlAttribute(b.customer_name)
                 }','${escapeHtmlAttribute(b.phone_number)}','${escapeHtmlAttribute(b.booking_date)}','${escapeHtmlAttribute(b.start_time)}','${escapeHtmlAttribute(b.end_time)}','confirm',${b.price},${b.paid_amount})">
                     <i class="bi bi-whatsapp text-success"></i>
                 </button>
-<button class="action-btn text-warning" onclick="openEditModal('${b.id}','${
+<button class="action-btn text-warning" title="Edit Booking" onclick="openEditModal('${b.id}','${
                   escapeHtmlAttribute(b.customer_name)
                 }','${escapeHtmlAttribute(b.phone_number)}','${escapeHtmlAttribute(b.booking_date)}','${escapeHtmlAttribute(b.start_time)}','${escapeHtmlAttribute(b.end_time)}','${b.price}','${b.paid_amount}','${b.paid_cash}','${b.paid_upi}',${b.is_district_booking})">
     <i class="bi bi-pencil"></i>
@@ -1643,7 +1698,7 @@
           listBody.closest('table').classList.add('table-transition');
         }
         if (revenueDataCache && revenueDataCache.length > 0) {
-          listBody.innerHTML = revenueDataCache.sort((a, b) => new Date(b.booking_date) - new Date(a.booking_date)).map(booking => `<tr><td class="py-2 text-center">${booking.customer_name}</td><td class="phone-col d-none d-md-table-cell py-2 text-center">${booking.phone_number || '-'}</td><td class="py-2 text-center">${new Date(booking.booking_date + 'T00:00:00').toLocaleDateString('en-GB', {day: '2-digit', month: 'short'})}</td><td class="py-2 text-center">${formatTo12H(booking.start_time)} - ${formatTo12H(booking.end_time)}</td><td class="text-center price-col d-none d-md-table-cell py-2">₹${(booking.price || 0).toLocaleString()}</td></tr>`).join('');
+          listBody.innerHTML = revenueDataCache.sort((a, b) => new Date(b.booking_date) - new Date(a.booking_date)).map(booking => `<tr><td class="py-2 text-center text-nowrap">${booking.customer_name}</td><td class="phone-col d-none d-md-table-cell py-2 text-center text-nowrap">${booking.phone_number || '-'}</td><td class="py-2 text-center text-nowrap">${new Date(booking.booking_date + 'T00:00:00').toLocaleDateString('en-GB', {day: '2-digit', month: 'short'})}</td><td class="py-2 text-center text-nowrap fw-semibold">${formatTo12H(booking.start_time)} – ${formatTo12H(booking.end_time)}</td><td class="text-center price-col d-none d-md-table-cell py-2 text-nowrap">₹${(booking.price || 0).toLocaleString()}</td></tr>`).join('');
         } else {
           listBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3 booking-empty-state">No bookings found in this date range.</td></tr>';
         }
@@ -1751,11 +1806,11 @@
               year: "numeric",
             });
             return `<tr>
-              <td class="text-center"><strong>${monthName}</strong></td>
-              <td class="text-center">₹${month.revenue.toLocaleString()}</td>
-              <td class="text-center split-col d-none d-md-table-cell">₹${month.cash.toLocaleString()}</td>
-              <td class="text-center split-col d-none d-md-table-cell">₹${month.upi.toLocaleString()}</td>
-              <td class="text-center">${month.bookings}</td>
+              <td class="text-center text-nowrap"><strong>${monthName}</strong></td>
+              <td class="text-center text-nowrap">₹${month.revenue.toLocaleString()}</td>
+              <td class="text-center split-col d-none d-md-table-cell text-nowrap">₹${month.cash.toLocaleString()}</td>
+              <td class="text-center split-col d-none d-md-table-cell text-nowrap">₹${month.upi.toLocaleString()}</td>
+              <td class="text-center text-nowrap">${month.bookings}</td>
             </tr>`;
           })
           .join("");
@@ -1813,11 +1868,11 @@
             const weekLabel = `${week.startDate.toLocaleDateString('en-GB', format)} - ${weekEnd.toLocaleDateString('en-GB', format)}`;
 
             return `<tr>
-              <td class="text-center"><strong>${weekLabel}</strong></td>
-              <td class="text-center">₹${week.revenue.toLocaleString()}</td>
-              <td class="text-center split-col d-none d-md-table-cell">₹${week.cash.toLocaleString()}</td>
-              <td class="text-center split-col d-none d-md-table-cell">₹${week.upi.toLocaleString()}</td>
-              <td class="text-center">${week.bookings}</td>
+              <td class="text-center text-nowrap"><strong>${weekLabel}</strong></td>
+              <td class="text-center text-nowrap">₹${week.revenue.toLocaleString()}</td>
+              <td class="text-center split-col d-none d-md-table-cell text-nowrap">₹${week.cash.toLocaleString()}</td>
+              <td class="text-center split-col d-none d-md-table-cell text-nowrap">₹${week.upi.toLocaleString()}</td>
+              <td class="text-center text-nowrap">${week.bookings}</td>
             </tr>`;
           })
           .join("");
