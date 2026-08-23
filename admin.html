@@ -873,7 +873,7 @@
     <div class="modal fade" id="newBookingModal" tabindex="-1">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content shadow-lg">
-          <div class="modal-header bg-success text-white">
+          <div class="modal-header">
             <h5 class="modal-title fw-bold">
               <i class="bi bi-plus-circle me-2"></i>New Booking
             </h5>
@@ -918,15 +918,12 @@
               <div id="slotStatus" class="text-center fw-bold p-2 rounded-3 small"></div>
             </div>
             <div class="mb-3">
-              <label class="small fw-bold text-muted text-uppercase">Customer Name</label>
+              <label class="small fw-bold text-muted text-uppercase">Customer</label>
               <input type="text" id="userName" class="form-control" />
             </div>
             <div class="mb-3">
-              <label class="small fw-bold text-muted text-uppercase">WhatsApp Number</label>
-              <div class="input-group">
-                <span class="input-group-text">+91</span>
-                <input type="tel" id="userPhone" class="form-control" />
-              </div>
+              <label class="small fw-bold text-muted text-uppercase">Phone</label>
+              <input type="tel" id="userPhone" class="form-control" />
             </div>
             <div class="row g-2">
               <div class="col-4">
@@ -948,7 +945,7 @@
             </div>
           </div>
           <div class="modal-footer bg-light d-flex justify-content-end">
-            <button class="btn btn-success px-4 fw-bold" onclick="saveEntry(false)">
+            <button class="btn btn-primary-custom px-4" onclick="saveEntry(false)">
               SAVE BOOKING
             </button>
           </div>
