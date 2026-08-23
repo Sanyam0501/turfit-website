@@ -522,8 +522,7 @@
                 <h5 class="fw-bold m-0 text-dark">
                   <i class="bi bi-calendar3-range text-success me-2"></i>Scheduled Bookings
                 </h5>
-                <span id="timelineDateBadge" class="badge bg-success-subtle text-success-emphasis border border-success-subtle">Today</span>
-              </div>
+<span id="timelineDateBadge" class="badge bg-success-subtle text-success-emphasis border border-success-subtle"></span>              </div>
               <small id="timelineStatsSummary" class="text-muted">Loading schedule...</small>
             </div>
             <!-- Legend -->
@@ -1097,6 +1096,12 @@
         document.getElementById("appContent").style.display = "block";
         populateSelectors();
         document.getElementById("bookDate").valueAsDate = new Date();
+        document.getElementById("timelineDateBadge").textContent =
+  new Date().toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric"
+  });
         updateView();
         addLiveSlotCheckHandlers();
         addDateValidation();
