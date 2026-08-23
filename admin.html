@@ -1792,9 +1792,9 @@
         const dateBadge = document.getElementById("timelineDateBadge");
         if (!track || !ruler) return;
 
-        // Standard operating window: 6:00 AM (360) to 24:00 (1440)
+        // Standard operating window: 6:00 AM (360) to 12:00 PM (720)
         let timelineStart = 6 * 60; // 360 min
-        let timelineEnd = 24 * 60; // 1440 min
+        let timelineEnd = 12 * 60; // 720 min
 
         // Check if any booking is scheduled earlier than 6:00 AM
         if (bookings && bookings.length > 0) {
@@ -1987,7 +1987,7 @@ if (isToday && window.innerWidth <= 768) {
       behavior: "smooth"
     });
 
-  }, 300);
+  }, 1000);
 }
         
       }
