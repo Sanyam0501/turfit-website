@@ -1928,25 +1928,20 @@ if (cursor < timelineEnd) {
 
         // 1. Free / Available Slots
         freeSlots.forEach(f => {
-  const leftPercent = ((f.startMin - timelineStart) / totalMinutes) * 100;
-  const widthPercent = (f.duration / totalMinutes) * 100;
+          const leftPercent = ((f.startMin - timelineStart) / totalMinutes) * 100;
+          const widthPercent = (f.duration / totalMinutes) * 100;
+          const durationStr = f.duration >= 60 ? `${(f.duration / 60).toFixed(1).replace('.0','')}h` : `${f.duration}m`;
+          const showLabel = widthPercent > 4.2;
 
-  slotsHTML += `
-    <div class="timeline-slot-free"
-         style="left: ${leftPercent}%; width: calc(${widthPercent}% - 2px);"
-         onclick="selectFreeSlot(${f.startMin}, ${f.endMin})"
-         title="Available: ${formatTo12H(minutesToTimeStr(f.startMin))} – ${formatTo12H(minutesToTimeStr(f.endMin))}">
-
-      <span>
-        <i class="bi bi-plus me-1 text-success"></i>
-        ${formatTo12H(minutesToTimeStr(f.startMin))}
-        –
-        ${formatTo12H(minutesToTimeStr(f.endMin))}
-      </span>
-
-    </div>
-  `;
-});
+          slotsHTML += `
+            <div class="timeline-slot-free" 
+                 style="left: ${leftPercent}%; width: calc(${widthPercent}% - 2px);"
+                 onclick="selectFreeSlot(${f.startMin}, ${f.endMin})"
+                 title="Available: ${formatTo12H(minutesToTimeStr(f.startMin))} – ${formatTo12H(minutesToTimeStr(f.endMin))} (Click to Book)">
+              ${showLabel ? `<i class="bi bi-plus me-1 text-success font-weight-bold"></i>Free` : `<i class="bi bi-plus text-muted"></i>`}
+            </div>
+          `;
+        });
 
         // 2. Booked Slots
         validBookings.forEach(b => {
