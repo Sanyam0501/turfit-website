@@ -2003,8 +2003,9 @@ if (cursor < timelineEnd) {
           `;
         });
 
-        // 3. Live "NOW" indicator
-        if (isToday && nowMinutes >= timelineStart && nowMinutes <= timelineEnd) {
+        // 3. Live "NOW" indicator — only show if a booking is currently ongoing
+        const hasOngoingBooking = isToday && validBookings.some(b => nowMinutes >= b.startMin && nowMinutes <= b.endMin);
+        if (hasOngoingBooking && nowMinutes >= timelineStart && nowMinutes <= timelineEnd) {
           const nowPercent = ((nowMinutes - timelineStart) / totalMinutes) * 100;
           slotsHTML += `
             <div class="timeline-now-line" style="left: ${nowPercent}%">
