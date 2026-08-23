@@ -1868,28 +1868,55 @@
 
         validBookings.sort((a, b) => a.startMin - b.startMin);
 
-        // Calculate free gaps between bookings
-        let freeSlots = [];
-        let cursor = timelineStart;
+        // Calculate free slots in fixed 1-hour intervals
+let freeSlots = [];
+let cursor = timelineStart;
 
-        validBookings.forEach(b => {
-          if (b.startMin > cursor) {
-            const gap = b.startMin - cursor;
-            if (gap >= 15) {
-              freeSlots.push({ startMin: cursor, endMin: b.startMin, duration: gap });
-            }
-          }
-          if (b.endMin > cursor) {
-            cursor = b.endMin;
-          }
-        });
+validBookings.forEach(b => {
+  // Break the free gap before this booking into 1-hour slots
+  while (cursor + 60 <= b.startMin) {
+    freeSlots.push({
+      startMin: cursor,
+      endMin: cursor + 60,
+      duration: 60
+    });
 
-        if (cursor < timelineEnd) {
-          const gap = timelineEnd - cursor;
-          if (gap >= 15) {
-            freeSlots.push({ startMin: cursor, endMin: timelineEnd, duration: gap });
-          }
-        }
+    cursor += 60;
+  }
+
+  // If there is a remaining partial gap, show it only if needed
+  if (cursor < b.startMin) {
+    freeSlots.push({
+      startMin: cursor,
+      endMin: b.startMin,
+      duration: b.startMin - cursor
+    });
+  }
+
+  if (b.endMin > cursor) {
+    cursor = b.endMin;
+  }
+});
+
+// Break remaining free time into 1-hour slots
+while (cursor + 60 <= timelineEnd) {
+  freeSlots.push({
+    startMin: cursor,
+    endMin: cursor + 60,
+    duration: 60
+  });
+
+  cursor += 60;
+}
+
+// Remaining partial time at the end
+if (cursor < timelineEnd) {
+  freeSlots.push({
+    startMin: cursor,
+    endMin: timelineEnd,
+    duration: timelineEnd - cursor
+  });
+}
 
         // Summary Text
         const bookedHours = (totalBookedMinutes / 60).toFixed(1).replace(".0", "");
@@ -1901,20 +1928,25 @@
 
         // 1. Free / Available Slots
         freeSlots.forEach(f => {
-          const leftPercent = ((f.startMin - timelineStart) / totalMinutes) * 100;
-          const widthPercent = (f.duration / totalMinutes) * 100;
-          const durationStr = f.duration >= 60 ? `${(f.duration / 60).toFixed(1).replace('.0','')}h` : `${f.duration}m`;
-          const showLabel = widthPercent > 4.2;
+  const leftPercent = ((f.startMin - timelineStart) / totalMinutes) * 100;
+  const widthPercent = (f.duration / totalMinutes) * 100;
 
-          slotsHTML += `
-            <div class="timeline-slot-free" 
-                 style="left: ${leftPercent}%; width: calc(${widthPercent}% - 2px);"
-                 onclick="selectFreeSlot(${f.startMin}, ${f.endMin})"
-                 title="Available: ${formatTo12H(minutesToTimeStr(f.startMin))} – ${formatTo12H(minutesToTimeStr(f.endMin))} (Click to Book)">
-              ${showLabel ? `<i class="bi bi-plus me-1 text-success font-weight-bold"></i>Free` : `<i class="bi bi-plus text-muted"></i>`}
-            </div>
-          `;
-        });
+  slotsHTML += `
+    <div class="timeline-slot-free"
+         style="left: ${leftPercent}%; width: calc(${widthPercent}% - 2px);"
+         onclick="selectFreeSlot(${f.startMin}, ${f.endMin})"
+         title="Available: ${formatTo12H(minutesToTimeStr(f.startMin))} – ${formatTo12H(minutesToTimeStr(f.endMin))}">
+
+      <span>
+        <i class="bi bi-plus me-1 text-success"></i>
+        ${formatTo12H(minutesToTimeStr(f.startMin))}
+        –
+        ${formatTo12H(minutesToTimeStr(f.endMin))}
+      </span>
+
+    </div>
+  `;
+});
 
         // 2. Booked Slots
         validBookings.forEach(b => {
