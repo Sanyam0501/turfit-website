@@ -143,7 +143,7 @@ export default async function handler(req, res) {
     await transporter.sendMail({
       from: process.env.GMAIL_USER,
       to: process.env.ADMIN_EMAIL,
-      subject: `TURFIT Monthly Pending Payments Report - ${prevMonthFormatted}`,
+      subject: `TURFIT Monthly Pending Payments Report till ${prevMonthFormatted}`,
       html,
     });
 

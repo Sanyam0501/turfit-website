@@ -74,18 +74,113 @@
         background: transparent;
       }
 
+      .district-filter-wrapper {
+        background: #ffffff;
+        border: 1.5px solid #d8e2dc;
+        border-radius: 50rem;
+        padding: 7px 16px;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        user-select: none;
+      }
+
+      .district-filter-wrapper.active-district {
+        background: #d8f3dc;
+        border-color: var(--accent);
+        box-shadow: 0 3px 10px rgba(45, 106, 79, 0.18);
+      }
+
+      .district-filter-wrapper .form-check-input {
+        cursor: pointer;
+        width: 2.2em;
+        height: 1.2em;
+        margin-top: 0;
+        transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.2s ease;
+      }
+
+      .district-filter-wrapper .form-check-input:checked {
+        background-color: var(--accent);
+        border-color: var(--accent);
+      }
+
+      .district-filter-wrapper label {
+        cursor: pointer;
+        margin-bottom: 0;
+        transition: color 0.3s ease;
+      }
+
+      .district-filter-wrapper.active-district label {
+        color: var(--admin-green) !important;
+        font-weight: 700 !important;
+      }
+
       .summary-box {
         background: #fff;
         border-radius: 12px;
         padding: 15px;
         margin-bottom: 20px;
         border-left: 5px solid var(--accent);
+        transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s ease, opacity 0.25s ease;
+      }
+
+      .summary-box:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08) !important;
+      }
+
+      .summary-box.stats-refreshing {
+        opacity: 0.75;
+        transform: scale(0.985);
       }
 
       .summary-val {
         font-size: 1.25rem;
         font-weight: bold;
         color: var(--admin-green);
+        display: inline-block;
+        transition: color 0.3s ease, transform 0.3s ease;
+      }
+
+      .booking-item {
+        transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.25s ease;
+        animation: bookingItemFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+
+      .booking-item:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08) !important;
+      }
+
+      .booking-empty-state {
+        animation: bookingItemFadeIn 0.25s ease-out forwards;
+      }
+
+      @keyframes bookingItemFadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(6px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .tab-pane {
+        transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .tab-pane.pane-loading {
+        opacity: 0.35;
+        transform: translateY(4px);
+        pointer-events: none;
+      }
+
+      .table-transition tbody tr {
+        animation: bookingItemFadeIn 0.25s ease-out forwards;
       }
 
       .time-group {
@@ -117,6 +212,7 @@
         width: 10px;
         height: 10px;
         border-radius: 50%;
+        transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       }
 
       .sticky-header-container {
@@ -257,11 +353,13 @@
 
           <div class="col-lg-8">
             <div class="d-flex justify-content-end mb-3">
-              <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" role="switch" id="districtFilter" onchange="applyDistrictFilter()">
-                <label class="form-check-label fw-bold text-muted small" for="districtFilter">
-                  Show Only District Bookings
-                </label>
+              <div class="district-filter-wrapper" id="districtFilterWrapper">
+                <div class="form-check form-switch m-0 p-0 d-flex align-items-center gap-2">
+                  <input class="form-check-input ms-0" type="checkbox" role="switch" id="districtFilter" onchange="applyDistrictFilter()">
+                  <label class="form-check-label fw-bold text-muted small" for="districtFilter">
+                    Show Only District Bookings
+                  </label>
+                </div>
               </div>
             </div>
             <!-- <div class="d-flex justify-content-end mb-2">
@@ -524,7 +622,7 @@
                   <div class="tab-content">
                     <div class="tab-pane fade show active" id="monthly-breakdown">
                       <div class="table-responsive sticky-header-container">
-                        <table class="table table-striped table-hover small">
+                        <table class="table table-striped table-hover small table-transition">
                           <thead>
                             <tr>
                               <th class="text-center">Month</th>
@@ -756,19 +854,75 @@
         return str.replace(/'/g, "\\'").replace(/"/g, '&quot;');
       }
 
-      function applyDistrictFilter() {
-        districtFilterActive = document.getElementById('districtFilter').checked;
-        const activeTab = document.querySelector('#bookingTabs .nav-link.active');
-        if (activeTab) {
-          const activeTabId = activeTab.getAttribute('data-bs-target');
-          if (activeTabId === '#revenuePanel') {
-            loadRevenueData(); // Reload revenue data specifically
-          } else {
-            activeTab.click(); // Re-run the load function for other active tabs
-          }
-          loadDaySlots(); // Always refresh the daily stats
-          checkForUnpaidCompleted(); // Re-check for notifications with the new filter
+      function animateCounter(elementId, targetVal, duration = 350) {
+        const el = document.getElementById(elementId);
+        if (!el) return;
+        const currentText = (el.innerText || "0").replace(/[^0-9.-]+/g, "");
+        const currentNum = parseFloat(currentText) || 0;
+        const targetNum = parseFloat(targetVal) || 0;
+        if (currentNum === targetNum) {
+          el.innerText = targetNum.toLocaleString();
+          return;
         }
+
+        const startTime = performance.now();
+        function step(now) {
+          const elapsed = now - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+          const ease = 1 - Math.pow(1 - progress, 3);
+          const val = Math.round(currentNum + (targetNum - currentNum) * ease);
+          el.innerText = val.toLocaleString();
+          if (progress < 1) {
+            requestAnimationFrame(step);
+          } else {
+            el.innerText = targetNum.toLocaleString();
+          }
+        }
+        requestAnimationFrame(step);
+      }
+
+      async function applyDistrictFilter() {
+        const checkbox = document.getElementById('districtFilter');
+        districtFilterActive = checkbox.checked;
+        const wrapper = document.getElementById('districtFilterWrapper');
+        if (wrapper) {
+          if (districtFilterActive) {
+            wrapper.classList.add('active-district');
+          } else {
+            wrapper.classList.remove('active-district');
+          }
+        }
+
+        const activeTab = document.querySelector('#bookingTabs .nav-link.active');
+        const activeTabId = activeTab ? activeTab.getAttribute('data-bs-target') : '#todayPanel';
+        const activePane = document.querySelector(activeTabId);
+        if (activePane) {
+          activePane.classList.add('pane-loading');
+        }
+
+        const summaryBoxes = document.querySelectorAll('.summary-box');
+        summaryBoxes.forEach((box) => box.classList.add('stats-refreshing'));
+
+        const tasks = [loadDaySlots(), checkForUnpaidCompleted()];
+
+        if (activeTabId === '#upcomingPanel') {
+          tasks.push(loadHistory('upcoming'));
+        } else if (activeTabId === '#ongoingPanel') {
+          tasks.push(loadHistory('ongoing'));
+        } else if (activeTabId === '#completedPanel') {
+          tasks.push(loadHistory('completed'));
+        } else if (activeTabId === '#revenuePanel') {
+          tasks.push(loadRevenueData());
+        }
+
+        await Promise.all(tasks);
+
+        setTimeout(() => {
+          if (activePane) {
+            activePane.classList.remove('pane-loading');
+          }
+          summaryBoxes.forEach((box) => box.classList.remove('stats-refreshing'));
+        }, 150);
       }
 
       function populateSelectors() {
@@ -1159,7 +1313,7 @@
           : "";
 
         return `
-        <div class="p-3 bg-white border rounded mb-2 d-flex justify-content-between align-items-center shadow-sm">
+        <div class="booking-item p-3 bg-white border rounded mb-2 d-flex justify-content-between align-items-center shadow-sm">
             <div>
                 <div class="d-flex align-items-center gap-2 mb-1">
                     <span class="badge bg-light text-dark border" style="font-size: 0.75rem;">${formattedDate}</span>
@@ -1239,21 +1393,17 @@
           });
         }
 
-        // 4. Update UI
-        document.getElementById("statReceived").innerText =
-          totalReceived.toLocaleString();
-        document.getElementById("statPending").innerText =
-          totalPending.toLocaleString();
-        document.getElementById("cashReceived").innerText =
-          cashTotal.toLocaleString();
-        document.getElementById("upiReceived").innerText =
-          upiTotal.toLocaleString();
+        // 4. Update UI with animated numbers
+        animateCounter("statReceived", totalReceived);
+        animateCounter("statPending", totalPending);
+        animateCounter("cashReceived", cashTotal);
+        animateCounter("upiReceived", upiTotal);
 
         const container = document.getElementById("dayList");
         container.innerHTML =
           data && data.length
             ? data.map((b) => createBookingItem(b)).join("")
-            : '<div class="text-center py-4 text-muted small">No bookings for this date.</div>';
+            : '<div class="text-center py-4 text-muted small booking-empty-state">No bookings for this date.</div>';
       }
 
       function togglePendingFilter() {
@@ -1407,10 +1557,10 @@
         if (start > end) {
           dateLabel.innerHTML = `<span class="text-danger fw-bold">"From" date cannot be after "To" date. Please select a valid range.</span>`;
           // Clear the summary boxes as the range is invalid
-          document.getElementById("revenueTotal").innerText = '0';
-          document.getElementById("revenuePending").innerText = '0';
-          document.getElementById("revenueCash").innerText = '0';
-          document.getElementById("revenueUpi").innerText = '0';
+          animateCounter("revenueTotal", 0);
+          animateCounter("revenuePending", 0);
+          animateCounter("revenueCash", 0);
+          animateCounter("revenueUpi", 0);
           revenueDataCache = []; // Clear cache on invalid range
           return; // Stop execution to prevent fetching data with an invalid range
         }
@@ -1455,11 +1605,11 @@
           }
         });
 
-        // Update UI
-        document.getElementById("revenueTotal").innerText = current.total.toLocaleString();
-        document.getElementById("revenueCash").innerText = current.cash.toLocaleString();
-        document.getElementById("revenueUpi").innerText = current.upi.toLocaleString();
-        document.getElementById("revenuePending").innerText = current.pending.toLocaleString();
+        // Update UI with animated numbers
+        animateCounter("revenueTotal", current.total);
+        animateCounter("revenueCash", current.cash);
+        animateCounter("revenueUpi", current.upi);
+        animateCounter("revenuePending", current.pending);
 
         // If the booking list is currently visible, refresh it automatically.
         const listContainer = document.getElementById('revenueBookingListContainer');
@@ -1489,10 +1639,13 @@
 
       function renderRevenueBookingList() {
         const listBody = document.getElementById("revenueBookingListBody");
+        if (listBody && listBody.closest('table')) {
+          listBody.closest('table').classList.add('table-transition');
+        }
         if (revenueDataCache && revenueDataCache.length > 0) {
           listBody.innerHTML = revenueDataCache.sort((a, b) => new Date(b.booking_date) - new Date(a.booking_date)).map(booking => `<tr><td class="py-2 text-center">${booking.customer_name}</td><td class="phone-col d-none d-md-table-cell py-2 text-center">${booking.phone_number || '-'}</td><td class="py-2 text-center">${new Date(booking.booking_date + 'T00:00:00').toLocaleDateString('en-GB', {day: '2-digit', month: 'short'})}</td><td class="py-2 text-center">${formatTo12H(booking.start_time)} - ${formatTo12H(booking.end_time)}</td><td class="text-center price-col d-none d-md-table-cell py-2">₹${(booking.price || 0).toLocaleString()}</td></tr>`).join('');
         } else {
-          listBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">No bookings found in this date range.</td></tr>';
+          listBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3 booking-empty-state">No bookings found in this date range.</td></tr>';
         }
       }
 
@@ -1677,7 +1830,7 @@
         }
 
         tableContainer.innerHTML = `<div class="table-responsive sticky-header-container">
-          <table class="table table-striped table-hover small">
+          <table class="table table-striped table-hover small table-transition">
             <thead><tr><th class="text-center">Week</th><th class="text-center">Total Revenue</th><th class="text-center split-col d-none d-md-table-cell">Cash</th><th class="text-center split-col d-none d-md-table-cell">UPI</th><th class="text-center">Bookings</th></tr></thead>
             <tbody>${tableRows}</tbody>
           </table>
