@@ -10,18 +10,6 @@
     { "source": "/admin", "destination": "/admin.html" },
     { "source": "/api/get-public-key", "destination": "/api/get-public-key.js" },
     { "source": "/api/login", "destination": "/api/login.js" },
-    { "source": "/api/daily-report", "destination": "/api/daily-report.js" },
-{
-  "source": "/api/google/gmb-oauth-init",
-  "destination": "/api/google/gmb-oauth-init.js"
-},
-{
-  "source": "/api/google/gmb-oauth-callback",
-  "destination": "/api/google/gmb-oauth-callback.js"
-},
-{
-  "source": "/api/gmb-data",
-  "destination": "/api/gmb-data.js"
-}
+    { "source": "/api/daily-report", "destination": "/api/daily-report.js" }
   ]
 }
