@@ -1695,13 +1695,17 @@
       }
 
       function scrollTabsToCenter() {
-        setTimeout(() => {
+        function doScroll(smooth) {
           const tabsEl = document.getElementById('bookingTabs');
           if (!tabsEl) return;
           const rect = tabsEl.getBoundingClientRect();
           const targetY = window.scrollY + rect.top - (window.innerHeight * 0.25) + (rect.height / 2);
-          window.scrollTo({ top: Math.max(0, targetY), behavior: 'smooth' });
-        }, 100);
+          window.scrollTo({ top: Math.max(0, targetY), behavior: smooth ? 'smooth' : 'instant' });
+        }
+        // Fire multiple times to beat Bootstrap tab transitions & mobile rendering delays
+        setTimeout(() => doScroll(true), 50);
+        setTimeout(() => doScroll(true), 200);
+        setTimeout(() => doScroll(false), 400);
       }
 
       async function loadDaySlots() {
