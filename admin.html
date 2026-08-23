@@ -394,7 +394,8 @@
         left: 50%;
         transform: translateX(-50%);
         background: #ffc107;
-        color: #ffffff;
+        border: 1px solid red;
+        color: black;
         font-size: 0.58rem;
         font-weight: bold;
         padding: 1px 3px;
@@ -522,7 +523,8 @@
                 <h5 class="fw-bold m-0 text-dark">
                   <i class="bi bi-calendar3-range text-success me-2"></i>Scheduled Bookings
                 </h5>
-<span id="timelineDateBadge" class="badge bg-success-subtle text-success-emphasis border border-success-subtle"></span>              </div>
+                <span id="timelineDateBadge" class="badge bg-success-subtle text-success-emphasis border border-success-subtle">Today</span>
+              </div>
               <small id="timelineStatsSummary" class="text-muted">Loading schedule...</small>
             </div>
             <!-- Legend -->
@@ -1096,12 +1098,6 @@
         document.getElementById("appContent").style.display = "block";
         populateSelectors();
         document.getElementById("bookDate").valueAsDate = new Date();
-        document.getElementById("timelineDateBadge").textContent =
-  new Date().toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric"
-  });
         updateView();
         addLiveSlotCheckHandlers();
         addDateValidation();
@@ -1815,13 +1811,11 @@
         // Update Date Badge
         const todayStr = toISODateString(new Date());
         const isToday = selectedDateStr === todayStr;
-
+        const d = new Date(selectedDateStr + "T00:00:00");
+        dateBadge.innerText = d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
         if (isToday) {
-          dateBadge.innerText = "Today";
           dateBadge.className = "badge bg-success-subtle text-success-emphasis border border-success-subtle";
         } else {
-          const d = new Date(selectedDateStr + "T00:00:00");
-          dateBadge.innerText = d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
           dateBadge.className = "badge bg-light text-dark border";
         }
 
