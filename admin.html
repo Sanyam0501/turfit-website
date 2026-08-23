@@ -562,6 +562,16 @@
           </div>
         </div>
 
+        <!-- Mobile Quick Action Buttons (visible only on small screens) -->
+        <div class="d-lg-none d-flex gap-2 mt-3 mb-2 px-1">
+          <button class="btn btn-success flex-fill fw-bold shadow-sm" onclick="document.getElementById('newBookingCard').scrollIntoView({behavior:'smooth', block:'center'})">
+            <i class="bi bi-plus-circle me-1"></i> Add New Booking
+          </button>
+          <button class="btn btn-info text-white flex-fill fw-bold shadow-sm" id="btnAddDistrict">
+            <i class="bi bi-building me-1"></i> Add District Booking
+          </button>
+        </div>
+
         <div class="row g-4">
           <div class="col-lg-4">
             <div class="card p-4" id="newBookingCard">
