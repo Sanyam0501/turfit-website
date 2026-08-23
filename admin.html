@@ -564,119 +564,173 @@
 
         <!-- Mobile Quick Action Buttons (visible only on small screens) -->
         <div class="d-lg-none d-flex gap-2 mt-3 mb-2 px-1">
-          <button class="btn btn-success flex-fill fw-bold shadow-sm" onclick="document.getElementById('newBookingCard').scrollIntoView({behavior:'smooth', block:'center'})">
-            <i class="bi bi-plus-circle me-1"></i> Add New Booking
-          </button>
+          <button class="btn btn-success flex-fill fw-bold shadow-sm"
+  onclick="openNewBookingModal()">
+  <i class="bi bi-plus-circle me-1"></i> Add New Booking
+</button>
           <button class="btn btn-info text-white flex-fill fw-bold shadow-sm" id="btnAddDistrict">
             <i class="bi bi-building me-1"></i> Add District Booking
           </button>
         </div>
 
-        
-        <div class="row g-4">
-          <div class="col-lg-4">
-            <div class="card p-4" id="newBookingCard">
-              <h5 class="fw-bold mb-4">New Booking</h5>
-              <div class="mb-3">
-                <label class="form-label small fw-bold text-muted">DATE</label>
-                <input
-                  type="date"
-                  id="bookDate"
-                  class="form-control"
-                  onchange="updateView()"
-                />
-              </div>
-              <div class="mb-3">
-                <label class="form-label small fw-bold text-muted"
-                  >START TIME</label
-                >
-                <div class="time-group">
-                  <select id="h_start" class="form-select"></select>
-                  <select id="m_start" class="form-select"></select>
-                  <select id="ampm_start" class="form-select">
-                    <option value="AM">AM</option>
-                    <option value="PM" selected>PM</option>
-                  </select>
-                </div>
-              </div>
-              <div class="mb-3">
-                <label class="form-label small fw-bold text-muted"
-                  >END TIME</label
-                >
-                <div class="time-group">
-                  <select id="h_end" class="form-select"></select>
-                  <select id="m_end" class="form-select"></select>
-                  <select id="ampm_end" class="form-select">
-                    <option value="AM">AM</option>
-                    <option value="PM" selected>PM</option>
-                  </select>
-                </div>
-              </div>
-              <div class="my-3">
-                <div id="slotStatus" class="text-center fw-bold p-2 rounded-3 small"></div>
-              </div>
 
-              <div class="mb-3">
-                <label class="form-label small fw-bold text-muted"
-                  >CUSTOMER NAME</label
-                >
-                <input type="text" id="userName" class="form-control" />
-              </div>
-              <div class="mb-3">
-                <label class="form-label small fw-bold text-muted"
-                  >WHATSAPP NUMBER</label
-                >
-                <div class="input-group">
-                  <span class="input-group-text">+91</span>
-                  <input type="tel" id="userPhone" class="form-control" />
-                </div>
-              </div>
-              <div class="row">
-                <div class="col-6 mb-3">
-                  <label class="form-label small fw-bold text-muted"
-                    >TOTAL PRICE</label
-                  >
-                  <input type="number" id="bookingPrice" class="form-control" />
-                </div>
-                <div class="row">
-                  <div class="col-6 mb-3">
-                    <label class="form-label small fw-bold text-muted"
-                      >CASH PAID</label
-                    >
-                    <input
-                      type="number"
-                      id="paidCash"
-                      class="form-control"
-                      value="0"
-                    />
-                  </div>
-                  <div class="col-6 mb-3">
-                    <label class="form-label small fw-bold text-muted"
-                      >UPI PAID</label
-                    >
-                    <input
-                      type="number"
-                      id="paidUpi"
-                      class="form-control"
-                      value="0"
-                    />
-                  </div>
-                </div>
-              </div>
-              <div class="form-check mb-3">
-                <input class="form-check-input" type="checkbox" id="is_district_booking">
-                <label class="form-check-label" for="is_district_booking">
-                  District Booking
-                </label>
-              </div>
-              <button
-                class="btn btn-primary-custom w-100 py-3 fw-bold"
-                onclick="saveEntry(false)"
-              >
-                SAVE BOOKING
-              </button>
+        <div class="row g-4">
+          <div class="modal fade" id="newBookingModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content shadow-lg">
+
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold">
+          <i class="bi bi-plus-circle me-2"></i>New Booking
+        </h5>
+
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="modal">
+        </button>
+      </div>
+
+      <div class="modal-body p-4">
+
+        <div class="mb-3">
+          <label class="small fw-bold text-muted text-uppercase">
+            Booking Date
+          </label>
+          <input
+            type="date"
+            id="bookDate"
+            class="form-control">
+        </div>
+
+        <div class="row g-2 mb-3">
+          <div class="col-12">
+            <label class="small fw-bold text-muted text-uppercase">
+              Start Time
+            </label>
+
+            <div class="time-group">
+              <select id="h_start" class="form-select bg-light"></select>
+              <select id="m_start" class="form-select bg-light"></select>
+
+              <select id="ampm_start" class="form-select bg-light">
+                <option value="AM">AM</option>
+                <option value="PM" selected>PM</option>
+              </select>
             </div>
           </div>
+        </div>
+
+        <div class="row g-2 mb-3">
+          <div class="col-12">
+            <label class="small fw-bold text-muted text-uppercase">
+              End Time
+            </label>
+
+            <div class="time-group">
+              <select id="h_end" class="form-select bg-light"></select>
+              <select id="m_end" class="form-select bg-light"></select>
+
+              <select id="ampm_end" class="form-select bg-light">
+                <option value="AM">AM</option>
+                <option value="PM" selected>PM</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <div
+            id="slotStatus"
+            class="text-center fw-bold p-2 rounded-3 small">
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="small fw-bold text-muted text-uppercase">
+            Customer
+          </label>
+          <input
+            type="text"
+            id="userName"
+            class="form-control">
+        </div>
+
+        <div class="mb-3">
+          <label class="small fw-bold text-muted text-uppercase">
+            Phone
+          </label>
+
+          <div class="input-group">
+            <span class="input-group-text">+91</span>
+            <input
+              type="tel"
+              id="userPhone"
+              class="form-control">
+          </div>
+        </div>
+
+        <div class="row g-2">
+          <div class="col-4">
+            <label class="small fw-bold text-muted">
+              Total
+            </label>
+            <input
+              type="number"
+              id="bookingPrice"
+              class="form-control border-primary">
+          </div>
+
+          <div class="col-4">
+            <label class="small fw-bold text-muted">
+              Cash
+            </label>
+            <input
+              type="number"
+              id="paidCash"
+              class="form-control border-success"
+              value="0">
+          </div>
+
+          <div class="col-4">
+            <label class="small fw-bold text-muted">
+              UPI
+            </label>
+            <input
+              type="number"
+              id="paidUpi"
+              class="form-control border-info"
+              value="0">
+          </div>
+        </div>
+
+        <div class="form-check mt-3">
+          <input
+            class="form-check-input"
+            type="checkbox"
+            id="is_district_booking">
+
+          <label
+            class="form-check-label"
+            for="is_district_booking">
+            District Booking
+          </label>
+        </div>
+
+      </div>
+
+      <div class="modal-footer bg-light">
+        <button
+          type="button"
+          class="btn btn-primary-custom px-4 w-100"
+          onclick="saveEntry(false)">
+          SAVE BOOKING
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
 
           <div class="col-lg-8">
             <div class="d-flex justify-content-center justify-content-lg-end mb-3">
@@ -1099,6 +1153,7 @@
     <script>
       let supabaseClient;
       let bsEditModal;
+      let bsNewBookingModal;
       let pendingFilterActive = false;
       let weeksToShow = 10; // State for weekly breakdown
       let districtFilterActive = false;
@@ -1114,6 +1169,39 @@
           keys.SUPABASE_ANON_KEY
         );
         bsEditModal = new bootstrap.Modal(document.getElementById("editModal"));
+        bsNewBookingModal = new bootstrap.Modal(
+  document.getElementById("newBookingModal")
+);
+function openNewBookingModal() {
+  // Reset booking fields
+  document.getElementById("userName").value = "";
+  document.getElementById("userPhone").value = "";
+  document.getElementById("bookingPrice").value = "";
+  document.getElementById("paidCash").value = "0";
+  document.getElementById("paidUpi").value = "0";
+  document.getElementById("is_district_booking").checked = false;
+
+  // Default to today
+  document.getElementById("bookDate").valueAsDate = new Date();
+
+  // Default time
+  document.getElementById("h_start").value = "1";
+  document.getElementById("m_start").value = "00";
+  document.getElementById("ampm_start").value = "PM";
+
+  document.getElementById("h_end").value = "2";
+  document.getElementById("m_end").value = "00";
+  document.getElementById("ampm_end").value = "PM";
+
+  document.getElementById("slotStatus").innerHTML = "";
+
+  bsNewBookingModal.show();
+
+  // Check availability after modal opens
+  setTimeout(() => {
+    checkSlotAvailability();
+  }, 200);
+}
 
         document.getElementById("appContent").style.display = "block";
         populateSelectors();
