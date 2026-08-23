@@ -1886,7 +1886,7 @@
         // Summary Text
         const bookedHours = (totalBookedMinutes / 60).toFixed(1).replace(".0", "");
         const freeHours = Math.max(0, ((totalMinutes - totalBookedMinutes) / 60)).toFixed(1).replace(".0", "");
-        summaryEl.innerHTML = `<strong>${validBookings.length}</strong> ${validBookings.length === 1 ? 'Slot' : 'Slots'} Booked (${bookedHours} hrs) • <span class="text-success fw-semibold">${freeHours} hrs Available</span>`;
+        summaryEl.innerHTML = `<strong>${validBookings.length}</strong> ${validBookings.length === 1 ? 'Slot' : 'Slots'} Booked Today`;
 
         // Render timeline slots
         let slotsHTML = gridHTML;
@@ -1903,7 +1903,7 @@
                  style="left: ${leftPercent}%; width: calc(${widthPercent}% - 2px);"
                  onclick="selectFreeSlot(${f.startMin}, ${f.endMin})"
                  title="Available: ${formatTo12H(minutesToTimeStr(f.startMin))} – ${formatTo12H(minutesToTimeStr(f.endMin))} (Click to Book)">
-              ${showLabel ? `<i class="bi bi-plus me-1 text-success font-weight-bold"></i>Free (${durationStr})` : `<i class="bi bi-plus text-muted"></i>`}
+              ${showLabel ? `<i class="bi bi-plus me-1 text-success font-weight-bold"></i>Free` : `<i class="bi bi-plus text-muted"></i>`}
             </div>
           `;
         });
