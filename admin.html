@@ -664,7 +664,7 @@
                     class="nav-link active"
                     data-bs-toggle="tab"
                     data-bs-target="#todayPanel"
-                    onclick="loadDaySlots()"
+                    onclick="loadDaySlots(); scrollTabsToCenter();"
                   >
                     Today
                   </button>
@@ -674,7 +674,7 @@
                     class="nav-link"
                     data-bs-toggle="tab"
                     data-bs-target="#upcomingPanel"
-                    onclick="loadHistory('upcoming')"
+                    onclick="loadHistory('upcoming'); scrollTabsToCenter();"
                   >
                     Upcoming
                   </button>
@@ -684,7 +684,7 @@
                     class="nav-link"
                     data-bs-toggle="tab"
                     data-bs-target="#ongoingPanel"
-                    onclick="loadHistory('ongoing')"
+                    onclick="loadHistory('ongoing'); scrollTabsToCenter();"
                   >
                     Ongoing
                   </button>
@@ -694,7 +694,7 @@
                     class="nav-link"
                     data-bs-toggle="tab"
                     data-bs-target="#completedPanel"
-                    onclick="loadHistory('completed')"
+                    onclick="loadHistory('completed'); scrollTabsToCenter();"
                   >
                     Completed
                   </button>
@@ -704,7 +704,7 @@
                     class="nav-link"
                     data-bs-toggle="tab"
                     data-bs-target="#revenuePanel"
-                    onclick="loadRevenueData()"
+                    onclick="loadRevenueData(); scrollTabsToCenter();"
                   >
                     <i class="bi bi-graph-up-arrow"></i> Revenue
                   </button>
@@ -1692,6 +1692,16 @@
 </button>
             </div>
         </div>`;
+      }
+
+      function scrollTabsToCenter() {
+        setTimeout(() => {
+          const tabsEl = document.getElementById('bookingTabs');
+          if (!tabsEl) return;
+          const rect = tabsEl.getBoundingClientRect();
+          const targetY = window.scrollY + rect.top - (window.innerHeight / 2) + (rect.height / 2);
+          window.scrollTo({ top: Math.max(0, targetY), behavior: 'smooth' });
+        }, 100);
       }
 
       async function loadDaySlots() {
