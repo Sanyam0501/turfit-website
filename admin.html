@@ -1811,11 +1811,13 @@
         // Update Date Badge
         const todayStr = toISODateString(new Date());
         const isToday = selectedDateStr === todayStr;
-        const d = new Date(selectedDateStr + "T00:00:00");
-        dateBadge.innerText = d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+
         if (isToday) {
+          dateBadge.innerText = "Today";
           dateBadge.className = "badge bg-success-subtle text-success-emphasis border border-success-subtle";
         } else {
+          const d = new Date(selectedDateStr + "T00:00:00");
+          dateBadge.innerText = d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
           dateBadge.className = "badge bg-light text-dark border";
         }
 
@@ -1947,6 +1949,17 @@
         }
 
         track.innerHTML = slotsHTML;
+        // Auto-scroll to current time on load (especially on mobile)
+        const container = document.getElementById('timelineTrackContainer');
+        if (container) {
+          const now = new Date();
+          const nowMins = now.getHours() * 60 + now.getMinutes();
+          if (nowMins >= timelineStart && nowMins <= timelineEnd) {
+            const nowPercent = ((nowMins - timelineStart) / totalMinutes) * 100;
+            const scrollPos = (nowPercent / 100) * (container.scrollWidth - container.clientWidth);
+            container.scrollLeft = scrollPos;
+          }
+        }
       }
 
       function togglePendingFilter() {
