@@ -1931,7 +1931,7 @@
                  style="left: ${leftPercent}%; width: calc(${widthPercent}% - 2px);"
                  onclick="openEditModal(${editParams})"
                  title="${escapeHtmlAttribute(b.customer_name)}: ${formatTo12H(b.start_time)} – ${formatTo12H(b.end_time)} ${isPending ? `(Pending: ₹${pending})` : '(Paid)'} - Click to Edit">
-              <div class="slot-name">${isOngoing ? '<span class="badge bg-warning text-dark me-1" style="font-size:0.55rem; padding: 1px 3px;">LIVE</span>' : ''}${b.customer_name}${isDistrict ? '' : ''}</div>
+              <div class="slot-name">${b.customer_name}${isDistrict ? '' : ''}</div>
               <div class="slot-time-text">${formatTo12H(b.start_time)} – ${formatTo12H(b.end_time)}</div>
             </div>
           `;
