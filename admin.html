@@ -721,7 +721,16 @@
                   <div id="ongoingList"></div>
                 </div>
                 <div class="tab-pane fade" id="completedPanel">
-                  <div class="d-flex justify-content-end mb-2">
+                  <div class="row g-2 align-items-end mb-3">
+                    <div class="col-6 col-md-auto">
+                      <label for="completedRangeStart" class="form-label small fw-bold text-muted mb-1">FROM</label>
+                      <input type="date" id="completedRangeStart" class="form-control form-control-sm" onchange="loadHistory('completed')" />
+                    </div>
+                    <div class="col-6 col-md-auto">
+                      <label for="completedRangeEnd" class="form-label small fw-bold text-muted mb-1">TO</label>
+                      <input type="date" id="completedRangeEnd" class="form-control form-control-sm" onchange="loadHistory('completed')" />
+                    </div>
+                    <div class="col-12 col-md-auto ms-md-auto">
                     <button
                       id="btnPendingFilter"
                       class="btn btn-sm btn-outline-danger"
@@ -729,6 +738,7 @@
                     >
                       <i class="bi bi-funnel"></i> Unpaid
                     </button>
+                    </div>
                   </div>
                   <div id="completedList"></div>
                 </div>
@@ -2133,8 +2143,16 @@ if (isToday && window.innerWidth <= 768) {
         loadHistory("completed");
       }
 
+      function getCompletedDateRange() {
+        return {
+          start: document.getElementById("completedRangeStart").value,
+          end: document.getElementById("completedRangeEnd").value,
+        };
+      }
+
       async function loadHistory(type) {
         const now = new Date();
+        const completedRange = type === "completed" ? getCompletedDateRange() : null;
         let query = supabaseClient
           .from("turf_bookings")
           .select("*")
@@ -2148,6 +2166,17 @@ if (isToday && window.innerWidth <= 768) {
         } else {
           query = query.order("booking_date", { ascending: false })
                        .order("start_time", { ascending: false });
+        }
+        if (completedRange && completedRange.start && completedRange.end && completedRange.start > completedRange.end) {
+          const list = document.getElementById(`${type}List`);
+          list.innerHTML = '<div class="text-center py-4 text-danger small">The start date must be before the end date.</div>';
+          return;
+        }
+        if (completedRange && completedRange.start) {
+          query = query.gte("booking_date", completedRange.start);
+        }
+        if (completedRange && completedRange.end) {
+          query = query.lte("booking_date", completedRange.end);
         }
         if (districtFilterActive) {
           query = query.eq('is_district_booking', true);
@@ -2171,10 +2200,13 @@ if (isToday && window.innerWidth <= 768) {
           if (type === "ongoing") return now >= startDT && now <= endDT;
           if (type === "completed") {
             const isCompleted = now > endDT;
+            const inDateRange =
+              (!completedRange.start || b.booking_date >= completedRange.start) &&
+              (!completedRange.end || b.booking_date <= completedRange.end);
             if (pendingFilterActive) {
-              return isCompleted && b.price - b.paid_amount > 0;
+              return isCompleted && inDateRange && b.price - b.paid_amount > 0;
             }
-            return isCompleted;
+            return isCompleted && inDateRange;
           }
         });
 
