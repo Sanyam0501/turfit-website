@@ -914,7 +914,9 @@
                 </div>
               </div>
             </div>
-            <div id="slotStatus" class="text-center fw-bold p-2 rounded-3 small mb-3 mt-1" style="display: none;"></div>
+            <div id="slotStatus" class="text-center fw-bold p-2 rounded-3 small mb-3 mt-1 bg-success-subtle text-success-emphasis">
+              <i class="bi bi-check-circle-fill me-1"></i> Slot Available
+            </div>
             <div class="mb-3">
               <label class="small fw-bold text-muted text-uppercase">Customer</label>
               <input type="text" id="userName" class="form-control" />
@@ -1110,6 +1112,8 @@
       let allBookingsData = []; // Cache for breakdown data
       let initialLoad = true;
       let revenueDataCache = []; // Cache for revenue tab bookings
+      let currentSlotClash = null;
+      let pendingPaymentForPhone = 0;
 
       async function init() {
         const res = await fetch("/api/get-public-key");
@@ -1126,6 +1130,7 @@
         updateView();
         addLiveSlotCheckHandlers();
         addDateValidation();
+        addNewBookingStatusHandlers();
         checkForUnpaidCompleted(); // Check for notifications on load
 
         // Set up a recurring check every minute for real-time updates
@@ -1140,6 +1145,34 @@
         fields.forEach(id => {
           document.getElementById(id).addEventListener('change', checkSlotAvailability);
         });
+      }
+
+      function addNewBookingStatusHandlers() {
+        const modalEl = document.getElementById("newBookingModal");
+        const phoneEl = document.getElementById("userPhone");
+
+        phoneEl.addEventListener("input", checkPendingPaymentForPhone);
+        modalEl.addEventListener("shown.bs.modal", () => {
+          currentSlotClash = null;
+          pendingPaymentForPhone = 0;
+          updateSlotStatusUI(null);
+          checkSlotAvailability();
+        });
+      }
+
+      async function checkPendingPaymentForPhone() {
+        const phone = document.getElementById("userPhone").value.trim().replace(/^(\+91)/, "");
+        pendingPaymentForPhone = 0;
+
+        if (phone) {
+          try {
+            pendingPaymentForPhone = await getPendingPaymentForPhone(phone);
+          } catch (error) {
+            console.error("Could not check pending payment:", error);
+          }
+        }
+
+        updateSlotStatusUI(currentSlotClash);
       }
 
       async function checkSlotAvailability() {
@@ -1178,6 +1211,7 @@
 
         if (error) return statusEl.textContent = 'Error checking slot';
         
+        currentSlotClash = clash;
         updateSlotStatusUI(clash);
       }
 
@@ -1344,22 +1378,6 @@
         const totalPaid = cash + upi;
         if (!name || !phone || isNaN(price))
           return Swal.fire("Required", "Fill all the fields", "warning");
-
-        if (!isEdit) {
-          try {
-            const pendingAmount = await getPendingPaymentForPhone(phone);
-            if (pendingAmount > 0) {
-              await Swal.fire({
-                title: "Pending payment found",
-                html: `<strong style="color: #dc3545; font-size: 1.25rem;">₹${pendingAmount.toLocaleString()}</strong> is pending for this phone number.`,
-                icon: "warning",
-                confirmButtonText: "Continue",
-              });
-            }
-          } catch (error) {
-            return Swal.fire("Error", "Could not check pending payment.", "error");
-          }
-        }
 
         const isDistrict = document.getElementById(
           isEdit ? "edit_is_district_booking" : "is_district_booking"
@@ -1634,6 +1652,9 @@
 
       function updateSlotStatusUI(clash) {
         const statusEl = document.getElementById('slotStatus');
+        const pendingMessage = pendingPaymentForPhone > 0
+          ? `<br><span class="text-danger"><i class="bi bi-exclamation-circle-fill me-1"></i>₹${pendingPaymentForPhone.toLocaleString()} pending for this phone number</span>`
+          : '';
         if (clash) {
             const editParams = `'${clash.id}','${escapeHtmlAttribute(clash.customer_name)}','${escapeHtmlAttribute(clash.phone_number || '')}','${escapeHtmlAttribute(clash.booking_date)}','${escapeHtmlAttribute(clash.start_time)}','${escapeHtmlAttribute(clash.end_time)}',${clash.price},${clash.paid_amount},${clash.paid_cash || 0},${clash.paid_upi || 0},${!!clash.is_district_booking}`;
             statusEl.innerHTML = `
@@ -1641,12 +1662,13 @@
                   <i class="bi bi-x-circle-fill me-1"></i> 
                   Unavailable (Clashes with ${clash.customer_name})
                   <br><small class="fw-normal" style="opacity:0.8;"><i class="bi bi-pencil-square me-1"></i>Tap to edit this booking</small>
+                  ${pendingMessage}
                 </div>
             `;
             statusEl.className = 'text-center fw-bold p-2 rounded-3 small bg-danger-subtle text-danger-emphasis';
             statusEl.style.display = 'block';
         } else {
-            statusEl.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> Slot Available';
+          statusEl.innerHTML = `<i class="bi bi-check-circle-fill me-1"></i> Slot Available${pendingMessage}`;
             statusEl.className = 'text-center fw-bold p-2 rounded-3 small bg-success-subtle text-success-emphasis';
             statusEl.style.display = 'block';
         }
