@@ -2025,7 +2025,7 @@ if (cursor < timelineEnd) {
         // Summary Text
         const bookedHours = (totalBookedMinutes / 60).toFixed(1).replace(".0", "");
         const freeHours = Math.max(0, ((totalMinutes - totalBookedMinutes) / 60)).toFixed(1).replace(".0", "");
-        summaryEl.innerHTML = `<strong>${validBookings.length}</strong> ${validBookings.length === 1 ? 'Slot' : 'Slots'} Booked Today`;
+        summaryEl.innerHTML = `<strong>${validBookings.length}</strong> ${validBookings.length === 1 ? 'Slot' : 'Slots'} Booked`;
 
         // Render timeline slots
         let slotsHTML = gridHTML;
