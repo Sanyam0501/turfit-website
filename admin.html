@@ -2487,7 +2487,7 @@ if (isToday && window.innerWidth <= 768) {
         });
 
         const tableBody = document.getElementById("monthlyRevenueTableBody");
-        tableBody.innerHTML = Object.values(monthlyData)
+        const sortedMonths = Object.values(monthlyData)
           .sort((a, b) => b.date - a.date) // Sort by most recent month
           .map((month) => {
             const monthName = month.date.toLocaleString("default", {
@@ -2503,6 +2503,7 @@ if (isToday && window.innerWidth <= 768) {
             </tr>`;
           })
           .join("");
+        tableBody.innerHTML = sortedMonths || '<tr><td colspan="5" class="text-center text-muted py-3">No bookings found.</td></tr>';
       }
 
       function showMoreWeeks() {
@@ -2548,6 +2549,10 @@ if (isToday && window.innerWidth <= 768) {
 
         const tableContainer = document.getElementById("weeklyRevenueTableContainer");
         const sortedWeeks = Object.values(weeklyData).sort((a, b) => b.startDate - a.startDate);
+        if (sortedWeeks.length === 0) {
+          tableContainer.innerHTML = '<p class="text-center text-muted py-3 mb-0">No bookings found.</p>';
+          return;
+        }
         const tableRows = sortedWeeks
           .slice(0, weeksToShow) // Limit to the number of weeks to show
           .map((week) => {
