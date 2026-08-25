@@ -1300,6 +1300,23 @@
         document.getElementById("edit_paid_upi").value = 0;
       }
 
+      async function getPendingPaymentForPhone(phone) {
+        const { data, error } = await supabaseClient
+          .from("turf_bookings")
+          .select("price, paid_cash, paid_upi")
+          .eq("phone_number", phone);
+
+        if (error) throw error;
+
+        return data.reduce((total, booking) => {
+          const pending =
+            Number(booking.price || 0) -
+            Number(booking.paid_cash || 0) -
+            Number(booking.paid_upi || 0);
+          return total + (pending > 0 ? pending : 0);
+        }, 0);
+      }
+
       async function saveEntry(isEdit) {
         const id = isEdit ? document.getElementById("edit_id").value : null;
         const name = document
@@ -1327,6 +1344,23 @@
         const totalPaid = cash + upi;
         if (!name || !phone || isNaN(price))
           return Swal.fire("Required", "Fill all the fields", "warning");
+
+        if (!isEdit) {
+          try {
+            const pendingAmount = await getPendingPaymentForPhone(phone);
+            if (pendingAmount > 0) {
+              await Swal.fire({
+                title: "Pending payment found",
+                html: `<strong style="color: #dc3545; font-size: 1.25rem;">₹${pendingAmount.toLocaleString()}</strong> is pending for this phone number.`,
+                icon: "warning",
+                confirmButtonText: "Continue",
+              });
+            }
+          } catch (error) {
+            return Swal.fire("Error", "Could not check pending payment.", "error");
+          }
+        }
+
         const isDistrict = document.getElementById(
           isEdit ? "edit_is_district_booking" : "is_district_booking"
         ).checked;
