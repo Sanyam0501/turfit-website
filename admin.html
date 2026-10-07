@@ -1313,11 +1313,6 @@
           document.getElementById("paidUpi").value = "0";
           document.getElementById("is_district_booking").checked = true;
 
-          document.getElementById("districtBookingId").value = parsed.bookingId || "";
-          document.getElementById("districtPrice").value = parsed.price || "";
-          document.getElementById("districtPhone").value = parsed.phone || "";
-          document.getElementById("districtNameTest").value = "";
-
           const districtModal = bootstrap.Modal.getOrCreateInstance(document.getElementById("districtBookingModal"));
           districtModal.hide();
 
