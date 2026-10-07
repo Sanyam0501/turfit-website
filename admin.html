@@ -1168,6 +1168,10 @@
         fields.forEach(id => {
           document.getElementById(id).addEventListener('change', checkSlotAvailability);
         });
+        document.getElementById("is_district_booking").addEventListener("change", () => {
+          updateDistrictBookingPrice();
+          checkSlotAvailability();
+        });
       }
 
       function addNewBookingStatusHandlers() {
@@ -1335,6 +1339,7 @@
       }
 
       async function checkSlotAvailability() {
+        updateDistrictBookingPrice();
         const statusEl = document.getElementById('slotStatus');
         statusEl.innerHTML = '<span class="text-muted">Checking...</span>';
         statusEl.className = 'text-center fw-bold p-2 rounded-3 small bg-light'; // Reset style
@@ -1372,6 +1377,51 @@
         
         currentSlotClash = clash;
         updateSlotStatusUI(clash);
+      }
+
+      function updateDistrictBookingPrice() {
+        const districtCheckbox = document.getElementById("is_district_booking");
+        const priceInput = document.getElementById("bookingPrice");
+        if (!districtCheckbox || !priceInput) return;
+
+        priceInput.readOnly = districtCheckbox.checked;
+        if (!districtCheckbox.checked) return;
+
+        const bookingDate = document.getElementById("bookDate").value;
+        const startTime = get24hFromSelectors(
+          document.getElementById("h_start").value,
+          document.getElementById("m_start").value,
+          document.getElementById("ampm_start").value
+        );
+        const endTime = get24hFromSelectors(
+          document.getElementById("h_end").value,
+          document.getElementById("m_end").value,
+          document.getElementById("ampm_end").value
+        );
+
+        if (!bookingDate) {
+          priceInput.value = "";
+          return;
+        }
+
+        const [year, month, day] = bookingDate.split("-").map(Number);
+        const weekday = new Date(year, month - 1, day).getDay();
+        const isWeekend = weekday === 0 || weekday === 6;
+        const startMinutes = timeStrToMinutes(startTime, false);
+        const endMinutes = endTime === "00:00:00"
+          ? 24 * 60
+          : timeStrToMinutes(endTime, true);
+
+        if (endMinutes <= startMinutes) {
+          priceInput.value = "";
+          return;
+        }
+
+        const isPeakTime = startMinutes >= 18 * 60;
+        const hourlyRate = isWeekend
+          ? (isPeakTime ? 800 : 700)
+          : (isPeakTime ? 700 : 600);
+        priceInput.value = String(Math.round(hourlyRate * (endMinutes - startMinutes) / 60));
       }
 
       function escapeHtmlAttribute(str) {
