@@ -1307,7 +1307,7 @@
           document.getElementById("m_end").value = endParts.m;
           document.getElementById("ampm_end").value = endParts.ampm;
 
-          document.getElementById("userName").value = "";
+          document.getElementById("userName").value = "District Booking";
           document.getElementById("userPhone").value = parsed.phone || "";
           document.getElementById("bookingPrice").value = parsed.price || "";
           document.getElementById("paidCash").value = "0";
@@ -1538,6 +1538,7 @@
         const isDistrict = document.getElementById(
           isEdit ? "edit_is_district_booking" : "is_district_booking"
         ).checked;
+        const customerName = isDistrict && !name ? "District Booking" : name;
 
         if (isNaN(price))
           return Swal.fire("Required", "Enter a valid price", "warning");
@@ -1572,7 +1573,7 @@
         }
 
         const bookingData = {
-          customer_name: name,
+          customer_name: customerName,
           phone_number: phone,
           booking_date: date,
           start_time: start24,
