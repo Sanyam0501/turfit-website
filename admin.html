@@ -1292,52 +1292,69 @@
       }
 
       function applyDistrictBookingMessage() {
-        const message = document.getElementById("districtMessageInput").value;
-        const parsed = parseDistrictBookingMessage(message);
-
-        if (!parsed) {
-          Swal.fire("Could not parse", "Paste a valid District booking message with the date, time, and Booking ID.", "warning");
-          return;
-        }
-
-        const startParts = timeStringToSelectValues(parsed.startTime);
-        const endParts = timeStringToSelectValues(parsed.endTime);
-
-        document.getElementById("bookDate").value = parsed.bookingDate;
-        document.getElementById("h_start").value = startParts.h;
-        document.getElementById("m_start").value = startParts.m;
-        document.getElementById("ampm_start").value = startParts.ampm;
-        document.getElementById("h_end").value = endParts.h;
-        document.getElementById("m_end").value = endParts.m;
-        document.getElementById("ampm_end").value = endParts.ampm;
-
-        document.getElementById("userName").value = "";
-        document.getElementById("userPhone").value = parsed.phone || "";
-        document.getElementById("bookingPrice").value = parsed.price || "";
-        document.getElementById("paidCash").value = "0";
-        document.getElementById("paidUpi").value = "0";
-        document.getElementById("is_district_booking").checked = true;
-
-        document.getElementById("districtBookingId").value = parsed.bookingId || "";
-        document.getElementById("districtPrice").value = parsed.price || "";
-        document.getElementById("districtPhone").value = parsed.phone || "";
-        document.getElementById("districtNameTest").value = "";
-
-        const districtModal = bootstrap.Modal.getOrCreateInstance(document.getElementById("districtBookingModal"));
-        districtModal.hide();
-
-        const newModal = bootstrap.Modal.getOrCreateInstance(document.getElementById("newBookingModal"));
-        newModal.show();
-        updateView();
-        checkSlotAvailability();
+        const messageInput = document.getElementById("districtMessageInput");
+        const message = messageInput ? messageInput.value : "";
 
         Swal.fire({
-          title: "District booking parsed",
-          text: "Date, time, booking ID, and price have been filled. Name and phone are left blank unless you add them.",
-          icon: "success",
-          timer: 1800,
+          title: "Parsing booking...",
+          html: '<div class="d-flex align-items-center justify-content-center"><span class="spinner-border spinner-border-sm me-2"></span>Parsing District booking</div>',
+          allowOutsideClick: false,
           showConfirmButton: false,
+          didOpen: () => {
+            const popup = document.querySelector('.swal2-popup');
+            if (popup) popup.style.minWidth = '260px';
+          }
         });
+
+        setTimeout(() => {
+          const parsed = parseDistrictBookingMessage(message);
+
+          if (!parsed) {
+            Swal.close();
+            Swal.fire("Could not parse", "Paste a valid District booking message with the date, time, and Booking ID.", "warning");
+            return;
+          }
+
+          const startParts = timeStringToSelectValues(parsed.startTime);
+          const endParts = timeStringToSelectValues(parsed.endTime);
+
+          document.getElementById("bookDate").value = parsed.bookingDate;
+          document.getElementById("h_start").value = startParts.h;
+          document.getElementById("m_start").value = startParts.m;
+          document.getElementById("ampm_start").value = startParts.ampm;
+          document.getElementById("h_end").value = endParts.h;
+          document.getElementById("m_end").value = endParts.m;
+          document.getElementById("ampm_end").value = endParts.ampm;
+
+          document.getElementById("userName").value = "";
+          document.getElementById("userPhone").value = parsed.phone || "";
+          document.getElementById("bookingPrice").value = parsed.price || "";
+          document.getElementById("paidCash").value = "0";
+          document.getElementById("paidUpi").value = "0";
+          document.getElementById("is_district_booking").checked = true;
+
+          document.getElementById("districtBookingId").value = parsed.bookingId || "";
+          document.getElementById("districtPrice").value = parsed.price || "";
+          document.getElementById("districtPhone").value = parsed.phone || "";
+          document.getElementById("districtNameTest").value = "";
+
+          const districtModal = bootstrap.Modal.getOrCreateInstance(document.getElementById("districtBookingModal"));
+          districtModal.hide();
+
+          const newModal = bootstrap.Modal.getOrCreateInstance(document.getElementById("newBookingModal"));
+          newModal.show();
+          updateView();
+          checkSlotAvailability();
+
+          Swal.close();
+          Swal.fire({
+            title: "District booking parsed",
+            text: "Date, time, booking ID, and price have been filled. Name and phone are left blank unless you add them.",
+            icon: "success",
+            timer: 1800,
+            showConfirmButton: false,
+          });
+        }, 700);
       }
 
       async function checkSlotAvailability() {
