@@ -979,13 +979,36 @@
           </div>
           <div class="modal-body p-4">
             <div class="mb-3">
-              <label class="small fw-bold text-muted text-uppercase">District / Team Name</label>
-              <input type="text" id="districtNameTest" class="form-control" placeholder="Enter name..." />
+              <label class="small fw-bold text-muted text-uppercase">Paste District Booking Message</label>
+              <textarea id="districtMessageInput" class="form-control" rows="8" placeholder="Paste the District Play Partner booking message here..."></textarea>
+            </div>
+            <div class="row g-2">
+              <div class="col-md-6">
+                <label class="small fw-bold text-muted text-uppercase">Booking ID</label>
+                <input type="text" id="districtBookingId" class="form-control" placeholder="Auto-filled" />
+              </div>
+              <div class="col-md-6">
+                <label class="small fw-bold text-muted text-uppercase">Price</label>
+                <input type="number" id="districtPrice" class="form-control" placeholder="Auto-filled" />
+              </div>
+            </div>
+            <div class="row g-2 mt-0">
+              <div class="col-md-6">
+                <label class="small fw-bold text-muted text-uppercase">Phone</label>
+                <input type="tel" id="districtPhone" class="form-control" placeholder="Blank if not provided" />
+              </div>
+              <div class="col-md-6">
+                <label class="small fw-bold text-muted text-uppercase">District / Team Name</label>
+                <input type="text" id="districtNameTest" class="form-control" placeholder="Blank if not provided" />
+              </div>
             </div>
           </div>
-          <div class="modal-footer bg-light d-flex justify-content-end">
-            <button class="btn btn-info text-white px-4 fw-bold" onclick="alert('Its in testing phase right now'); bootstrap.Modal.getInstance(document.getElementById('districtBookingModal')).hide();">
-              TEST SAVE
+          <div class="modal-footer bg-light d-flex justify-content-between">
+            <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('districtMessageInput').value = ''; document.getElementById('districtBookingId').value = ''; document.getElementById('districtPrice').value = ''; document.getElementById('districtPhone').value = ''; document.getElementById('districtNameTest').value = '';">
+              CLEAR
+            </button>
+            <button class="btn btn-info text-white px-4 fw-bold" onclick="applyDistrictBookingMessage()">
+              PARSE & FILL
             </button>
           </div>
         </div>
@@ -1141,6 +1164,15 @@
         addLiveSlotCheckHandlers();
         addDateValidation();
         addNewBookingStatusHandlers();
+        const districtInput = document.getElementById("districtMessageInput");
+        if (districtInput) {
+          districtInput.addEventListener("paste", () => setTimeout(applyDistrictBookingMessage, 150));
+          districtInput.addEventListener("input", () => {
+            if (districtInput.value.trim().length > 10) {
+              setTimeout(applyDistrictBookingMessage, 250);
+            }
+          });
+        }
         checkForUnpaidCompleted(); // Check for notifications on load
 
         // Set up a recurring check every minute for real-time updates
@@ -1183,6 +1215,129 @@
         }
 
         updateSlotStatusUI(currentSlotClash);
+      }
+
+      function normalizeDistrictMessage(rawText) {
+        return String(rawText || "")
+          .replace(/\u00A0/g, " ")
+          .replace(/\r/g, "")
+          .replace(/\*\*/g, "")
+          .trim();
+      }
+
+      function parseDistrictBookingMessage(rawText) {
+        const message = normalizeDistrictMessage(rawText);
+        if (!message) return null;
+
+        const monthMap = {
+          jan: "01", feb: "02", mar: "03", apr: "04", may: "05", jun: "06",
+          jul: "07", aug: "08", sep: "09", sept: "09", oct: "10", nov: "11", dec: "12"
+        };
+
+        const bookingIdMatch = message.match(/booking\s*id\s*[:*]?\s*\*?([A-Z0-9]+)\*?/i);
+        const rawDateMatch = message.match(/on\s+\*?(\d{1,2})\s+([A-Za-z]{3,9})\s+(\d{4})\s+(\d{1,2})(?::(\d{2}))?\s*(AM|PM)\s*-\s*(\d{1,2})(?::(\d{2}))?\s*(AM|PM)\*?/i);
+
+        if (!bookingIdMatch || !rawDateMatch) {
+          return null;
+        }
+
+        const day = parseInt(rawDateMatch[1], 10);
+        const monthName = rawDateMatch[2].toLowerCase();
+        const year = parseInt(rawDateMatch[3], 10);
+        const month = monthMap[monthName] || "01";
+
+        const startHour = parseInt(rawDateMatch[4], 10);
+        const startMinute = parseInt(rawDateMatch[5] || "0", 10);
+        const startMeridiem = rawDateMatch[6].toUpperCase();
+        const endHour = parseInt(rawDateMatch[7], 10);
+        const endMinute = parseInt(rawDateMatch[8] || "0", 10);
+        const endMeridiem = rawDateMatch[9].toUpperCase();
+
+        const to24h = (hour, minute, meridiem) => {
+          let h = parseInt(hour, 10);
+          if (meridiem === "PM" && h < 12) h += 12;
+          if (meridiem === "AM" && h === 12) h = 0;
+          return `${String(h).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00`;
+        };
+
+        const formattedDate = `${year}-${month}-${String(day).padStart(2, "0")}`;
+        const priceMatch = message.match(/(?:₹|inr|rs\.?|rupees?)\s*([0-9][0-9,]*(?:\.\d{1,2})?)/i);
+        const phoneMatch = message.match(/(?:phone\s*(?:number)?|contact)\s*[:\-]?\s*(?:\+?91\s*)?(\d{10})/i);
+
+        return {
+          bookingId: bookingIdMatch[1].toUpperCase(),
+          bookingDate: formattedDate,
+          startTime: to24h(startHour, startMinute, startMeridiem),
+          endTime: to24h(endHour, endMinute, endMeridiem),
+          price: priceMatch ? Number(priceMatch[1].replace(/,/g, "")) : "",
+          phone: phoneMatch ? phoneMatch[1].replace(/\D/g, "") : "",
+          customerName: "",
+          districtName: "",
+        };
+      }
+
+      function timeStringToSelectValues(time24) {
+        if (!time24) return { h: "1", m: "00", ampm: "AM" };
+
+        const [hours, minutes] = time24.split(":");
+        let h = parseInt(hours, 10);
+        const ampm = h >= 12 ? "PM" : "AM";
+        h = h % 12 || 12;
+
+        return {
+          h: String(h),
+          m: String(minutes || "00"),
+          ampm
+        };
+      }
+
+      function applyDistrictBookingMessage() {
+        const message = document.getElementById("districtMessageInput").value;
+        const parsed = parseDistrictBookingMessage(message);
+
+        if (!parsed) {
+          Swal.fire("Could not parse", "Paste a valid District booking message with the date, time, and Booking ID.", "warning");
+          return;
+        }
+
+        const startParts = timeStringToSelectValues(parsed.startTime);
+        const endParts = timeStringToSelectValues(parsed.endTime);
+
+        document.getElementById("bookDate").value = parsed.bookingDate;
+        document.getElementById("h_start").value = startParts.h;
+        document.getElementById("m_start").value = startParts.m;
+        document.getElementById("ampm_start").value = startParts.ampm;
+        document.getElementById("h_end").value = endParts.h;
+        document.getElementById("m_end").value = endParts.m;
+        document.getElementById("ampm_end").value = endParts.ampm;
+
+        document.getElementById("userName").value = "";
+        document.getElementById("userPhone").value = parsed.phone || "";
+        document.getElementById("bookingPrice").value = parsed.price || "";
+        document.getElementById("paidCash").value = "0";
+        document.getElementById("paidUpi").value = "0";
+        document.getElementById("is_district_booking").checked = true;
+
+        document.getElementById("districtBookingId").value = parsed.bookingId || "";
+        document.getElementById("districtPrice").value = parsed.price || "";
+        document.getElementById("districtPhone").value = parsed.phone || "";
+        document.getElementById("districtNameTest").value = "";
+
+        const districtModal = bootstrap.Modal.getOrCreateInstance(document.getElementById("districtBookingModal"));
+        districtModal.hide();
+
+        const newModal = bootstrap.Modal.getOrCreateInstance(document.getElementById("newBookingModal"));
+        newModal.show();
+        updateView();
+        checkSlotAvailability();
+
+        Swal.fire({
+          title: "District booking parsed",
+          text: "Date, time, booking ID, and price have been filled. Name and phone are left blank unless you add them.",
+          icon: "success",
+          timer: 1800,
+          showConfirmButton: false,
+        });
       }
 
       async function checkSlotAvailability() {
@@ -1386,12 +1541,14 @@
             document.getElementById(isEdit ? "edit_paid_upi" : "paidUpi").value
           ) || 0;
         const totalPaid = cash + upi;
-        if (!name || !phone || isNaN(price))
-          return Swal.fire("Required", "Fill all the fields", "warning");
-
         const isDistrict = document.getElementById(
           isEdit ? "edit_is_district_booking" : "is_district_booking"
         ).checked;
+
+        if (isNaN(price))
+          return Swal.fire("Required", "Enter a valid price", "warning");
+        if (!isDistrict && (!name || !phone))
+          return Swal.fire("Required", "Fill all the fields", "warning");
         const start24 = get24hFromSelectors(
           document.getElementById(isEdit ? "edit_h" : "h_start").value,
           document.getElementById(isEdit ? "edit_m" : "m_start").value,
