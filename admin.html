@@ -1172,6 +1172,15 @@
           updateDistrictBookingPrice();
           checkSlotAvailability();
         });
+        document.getElementById("bookingPrice").addEventListener("input", () => {
+          syncDistrictPaymentFields(false);
+        });
+        document.getElementById("edit_is_district_booking").addEventListener("change", () => {
+          syncDistrictPaymentFields(true);
+        });
+        document.getElementById("edit_price").addEventListener("input", () => {
+          syncDistrictPaymentFields(true);
+        });
       }
 
       function addNewBookingStatusHandlers() {
@@ -1313,7 +1322,7 @@
 
           document.getElementById("userName").value = "District Booking";
           document.getElementById("userPhone").value = parsed.phone || "";
-          document.getElementById("bookingPrice").value = parsed.price || "";
+          document.getElementById("bookingPrice").value = "";
           document.getElementById("paidCash").value = "0";
           document.getElementById("paidUpi").value = "0";
           document.getElementById("is_district_booking").checked = true;
@@ -1384,8 +1393,10 @@
         const priceInput = document.getElementById("bookingPrice");
         if (!districtCheckbox || !priceInput) return;
 
-        priceInput.readOnly = districtCheckbox.checked;
-        if (!districtCheckbox.checked) return;
+        if (!districtCheckbox.checked) {
+          syncDistrictPaymentFields(false);
+          return;
+        }
 
         const bookingDate = document.getElementById("bookDate").value;
         const startTime = get24hFromSelectors(
@@ -1421,7 +1432,25 @@
         const hourlyRate = isWeekend
           ? (isPeakTime ? 800 : 700)
           : (isPeakTime ? 700 : 600);
-        priceInput.value = String(Math.round(hourlyRate * (endMinutes - startMinutes) / 60));
+        const grossPrice = hourlyRate * (endMinutes - startMinutes) / 60;
+        priceInput.value = String(Math.round(grossPrice * 0.98));
+        syncDistrictPaymentFields(false);
+      }
+
+      function syncDistrictPaymentFields(isEdit) {
+        const prefix = isEdit ? "edit_" : "";
+        const districtCheckbox = document.getElementById(`${prefix}is_district_booking`);
+        const priceInput = document.getElementById(isEdit ? "edit_price" : "bookingPrice");
+        const cashInput = document.getElementById(isEdit ? "edit_paid_cash" : "paidCash");
+        const upiInput = document.getElementById(isEdit ? "edit_paid_upi" : "paidUpi");
+        if (!districtCheckbox || !priceInput || !cashInput || !upiInput) return;
+
+        cashInput.readOnly = districtCheckbox.checked;
+        upiInput.readOnly = districtCheckbox.checked;
+        if (!districtCheckbox.checked) return;
+
+        cashInput.value = "0";
+        upiInput.value = priceInput.value;
       }
 
       function escapeHtmlAttribute(str) {
@@ -1575,19 +1604,23 @@
         const price = parseFloat(
           document.getElementById(isEdit ? "edit_price" : "bookingPrice").value
         );
-        const cash =
+        let cash =
           parseFloat(
             document.getElementById(isEdit ? "edit_paid_cash" : "paidCash")
               .value
           ) || 0;
-        const upi =
+        let upi =
           parseFloat(
             document.getElementById(isEdit ? "edit_paid_upi" : "paidUpi").value
           ) || 0;
-        const totalPaid = cash + upi;
         const isDistrict = document.getElementById(
           isEdit ? "edit_is_district_booking" : "is_district_booking"
         ).checked;
+        if (isDistrict) {
+          cash = 0;
+          upi = Number.isFinite(price) ? price : 0;
+        }
+        const totalPaid = cash + upi;
         const customerName = isDistrict && !name ? "District Booking" : name;
 
         if (isNaN(price))
@@ -2830,6 +2863,7 @@ if (isToday && window.innerWidth <= 768) {
         document.getElementById("edit_h_end").value = parseInt(eh) % 12 || 12;
         document.getElementById("edit_m_end").value = em;
         document.getElementById("edit_ampm_end").value = eh >= 12 ? "PM" : "AM";
+        syncDistrictPaymentFields(true);
         bsEditModal.show();
       }
       
