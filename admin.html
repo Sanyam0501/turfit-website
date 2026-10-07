@@ -1127,6 +1127,7 @@
       let revenueDataCache = []; // Cache for revenue tab bookings
       let currentSlotClash = null;
       let pendingPaymentForPhone = 0;
+      let pendingDistrictBookingId = "";
 
       async function init() {
         const res = await fetch("/api/get-public-key");
@@ -1312,6 +1313,7 @@
           document.getElementById("paidCash").value = "0";
           document.getElementById("paidUpi").value = "0";
           document.getElementById("is_district_booking").checked = true;
+          pendingDistrictBookingId = parsed.bookingId;
 
           const districtModal = bootstrap.Modal.getOrCreateInstance(document.getElementById("districtBookingModal"));
           districtModal.hide();
@@ -1581,6 +1583,9 @@
           paid_upi: upi,
           is_district_booking: isDistrict,
         };
+        if (!isEdit && isDistrict && pendingDistrictBookingId) {
+          bookingData.district_booking_id = pendingDistrictBookingId;
+        }
         let res = id
           ? await supabaseClient
               .from("turf_bookings")
@@ -1591,6 +1596,8 @@
           Swal.fire("Error", res.error.message, "error");
           // ... inside saveEntry function ...
         } else {
+          if (!isEdit) pendingDistrictBookingId = "";
+
           // Updated logic for New Bookings
           if (isEdit) {
             bsEditModal.hide();
@@ -1598,35 +1605,40 @@
             const newModal = bootstrap.Modal.getInstance(document.getElementById("newBookingModal"));
             if (newModal) newModal.hide();
           }
-          Swal.fire({
-            title: "Saved!",
-            text: "Booking recorded successfully.",
-            icon: "success",
-            showCancelButton: true,
-            confirmButtonText: "SEND WHATSAPP",
-            confirmButtonColor: "#25D366",
-            cancelButtonText: "CLOSE & RELOAD",
-          }).then((r) => {
-            if (r.isConfirmed) {
-              // FIXED: Changed 'paid' to 'totalPaid' to match your variable name
-              sendWhatsApp(
-                name,
-                phone,
-                date,
-                start24,
-                end24,
-                "confirm",
-                price,
-                totalPaid
-              );
-
-              // Add a small delay then reload so the WhatsApp tab can open
-              setTimeout(updateView, 1500);
-            } else {
-              // This block runs on "CLOSE & RELOAD"
-              window.location.reload();
-            }
-          });
+          if (isDistrict) {
+            Swal.fire({
+              title: "Saved!",
+              text: "District booking recorded successfully.",
+              icon: "success",
+              confirmButtonText: "CLOSE",
+            }).then(() => window.location.reload());
+          } else {
+            Swal.fire({
+              title: "Saved!",
+              text: "Booking recorded successfully.",
+              icon: "success",
+              showCancelButton: true,
+              confirmButtonText: "SEND WHATSAPP",
+              confirmButtonColor: "#25D366",
+              cancelButtonText: "CLOSE & RELOAD",
+            }).then((r) => {
+              if (r.isConfirmed) {
+                sendWhatsApp(
+                  name,
+                  phone,
+                  date,
+                  start24,
+                  end24,
+                  "confirm",
+                  price,
+                  totalPaid
+                );
+                setTimeout(updateView, 1500);
+              } else {
+                window.location.reload();
+              }
+            });
+          }
         }
       }
 
@@ -1635,6 +1647,7 @@
         const name = document.getElementById("edit_name").value;
         const phone = document.getElementById("edit_phone").value;
         const date = document.getElementById("edit_date").value;
+        const isDistrict = document.getElementById("edit_is_district_booking").checked;
 
         // Get time from selectors for the message
         const start24 = get24hFromSelectors(
@@ -1670,23 +1683,31 @@
           } else {
             bsEditModal.hide();
 
-            // Updated Success Logic
-            Swal.fire({
-              title: "Deleted!",
-              text: "The booking has been removed.",
-              icon: "success",
-              showCancelButton: true,
-              confirmButtonColor: "#25D366",
-              confirmButtonText: "SEND CANCELLATION",
-              cancelButtonText: "CLOSE",
-            }).then((result) => {
-              if (result.isConfirmed) {
-                sendWhatsApp(name, phone, date, start24, end24, "cancel"); // Open WhatsApp
-                setTimeout(() => window.location.reload(), 1500); // Reload after a delay
-              } else {
-                window.location.reload(); // Reload immediately if not sending message
-              }
-            });
+            if (isDistrict) {
+              Swal.fire({
+                title: "Deleted!",
+                text: "The District booking has been removed.",
+                icon: "success",
+                confirmButtonText: "CLOSE",
+              }).then(() => window.location.reload());
+            } else {
+              Swal.fire({
+                title: "Deleted!",
+                text: "The booking has been removed.",
+                icon: "success",
+                showCancelButton: true,
+                confirmButtonColor: "#25D366",
+                confirmButtonText: "SEND CANCELLATION",
+                cancelButtonText: "CLOSE",
+              }).then((result) => {
+                if (result.isConfirmed) {
+                  sendWhatsApp(name, phone, date, start24, end24, "cancel");
+                  setTimeout(() => window.location.reload(), 1500);
+                } else {
+                  window.location.reload();
+                }
+              });
+            }
           }
         }
       }
@@ -1850,6 +1871,10 @@
             weekday: "short",
           }
         );
+        const districtBookingIdLabel =
+          b.is_district_booking && b.district_booking_id
+            ? `<span class="badge bg-info-subtle text-info-emphasis border border-info-subtle text-nowrap" style="font-size: 0.72rem;">ID: ${b.district_booking_id}</span>`
+            : "";
 
         // Payment Reminder button
         const reminderBtn =
@@ -1873,6 +1898,7 @@
             <div class="flex-grow-1 min-w-0 pe-2">
                 <div class="d-flex flex-wrap align-items-center gap-1 gap-sm-2 mb-1">
                     <span class="badge bg-light text-dark border text-nowrap" style="font-size: 0.72rem;">${formattedDate}</span>
+                    ${districtBookingIdLabel}
                     <span class="booking-time fw-bold text-nowrap ${
                       isCompleted ? "text-muted" : "text-success"
                     }" style="font-size: 0.86rem;">
